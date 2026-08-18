@@ -13,24 +13,24 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
-import { AppInput } from '../../../src/components/ui/AppInput';
-import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
-import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
-import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
-import { EmptyState } from '../../../src/components/ui/EmptyState';
-import { ErrorState } from '../../../src/components/ui/ErrorState';
-import { LoadingState } from '../../../src/components/ui/LoadingState';
-import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
-import { toApiError } from '../../../src/services/api/client';
-import { clientsService } from '../../../src/services/api/clients';
-import { worksService } from '../../../src/services/api/works';
-import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
-import type { Client } from '../../../src/types/client';
-import type { WorkStatus } from '../../../src/types/work';
+import { AppButton } from '../../../../src/components/ui/AppButton';
+import { AppInput } from '../../../../src/components/ui/AppInput';
+import { AppSnackbar } from '../../../../src/components/ui/AppSnackbar';
+import type { AppSnackbarType } from '../../../../src/components/ui/AppSnackbar';
+import { ConfirmDialog } from '../../../../src/components/ui/ConfirmDialog';
+import { EmptyState } from '../../../../src/components/ui/EmptyState';
+import { ErrorState } from '../../../../src/components/ui/ErrorState';
+import { LoadingState } from '../../../../src/components/ui/LoadingState';
+import { ScreenContainer } from '../../../../src/components/ui/ScreenContainer';
+import { toApiError } from '../../../../src/services/api/client';
+import { clientsService } from '../../../../src/services/api/clients';
+import { worksService } from '../../../../src/services/api/works';
+import { useSessionStore } from '../../../../src/store/useSessionStore';
+import { colors, sizes, spacing, typography } from '../../../../src/theme';
+import type { Client } from '../../../../src/types/client';
+import type { WorkStatus } from '../../../../src/types/work';
 import { z } from 'zod';
-import { createWorkSchema } from '../../../src/validation/schemas';
+import { createWorkSchema } from '../../../../src/validation/schemas';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -357,6 +357,15 @@ export default function EditarObraScreen() {
           </Pressable>
           <Text style={styles.title}>Editar obra</Text>
         </View>
+
+        <AppButton
+          title="Medições"
+          variant="outline"
+          size="md"
+          accessibilityLabel="Ver medições da obra"
+          onPress={() => router.push(`/obras/${workId}/medicoes`)}
+          style={styles.measurementsButton}
+        />
 
         {workQuery.isLoading ? (
           <LoadingState text="Carregando obra..." />
@@ -734,6 +743,9 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.sm,
+  },
+  measurementsButton: {
+    marginBottom: spacing.lg,
   },
   deleteButton: {
     marginTop: spacing.md,
