@@ -165,3 +165,44 @@ export const createQuoteSchema = z.object({
 });
 
 export type CreateQuoteFormData = z.infer<typeof createQuoteSchema>;
+
+// ─── Ordens de Serviço (Fase 5) ────────────────────────────────────────────
+
+export const createServiceOrderSchema = z.object({
+  clientId: z.string().min(1, 'Cliente é obrigatório'),
+  workId: z.string().min(1, 'Obra é obrigatória'),
+  scheduledDate: z.string().optional(),
+  observations: z.string().trim().optional(),
+  materials: z
+    .array(
+      z.object({
+        materialName: z.string().trim().min(1),
+        quantity: z.coerce.number().min(0),
+        unit: z.string().trim().default('un'),
+      }),
+    )
+    .optional(),
+});
+
+export type CreateServiceOrderFormData = z.infer<typeof createServiceOrderSchema>;
+
+// ─── Ordens de Produção (Fase 5) ──────────────────────────────────────────
+
+export const createProductionOrderSchema = z.object({
+  clientId: z.string().optional(),
+  workId: z.string().optional(),
+  dueDate: z.string().optional(),
+  responsiblePerson: z.string().trim().optional(),
+  observations: z.string().trim().optional(),
+  items: z
+    .array(
+      z.object({
+        productName: z.string().trim().min(1, 'Nome do produto é obrigatório'),
+        quantity: z.coerce.number().min(0.01),
+        unit: z.string().trim().default('un'),
+      }),
+    )
+    .min(1, 'Adicione pelo menos 1 item'),
+});
+
+export type CreateProductionOrderFormData = z.infer<typeof createProductionOrderSchema>;
