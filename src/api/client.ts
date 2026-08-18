@@ -3,7 +3,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import { SecureTokenStorage } from '../services/auth/SecureTokenStorage';
 import { config } from '../constants/config';
 
 interface FailedRequest {
@@ -27,32 +27,23 @@ function processQueue(error: unknown, token: string | null = null): void {
 }
 
 async function getAccessToken(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(config.tokenKey);
-  } catch {
-    return null;
-  }
+  return await SecureTokenStorage.getAccessToken();
 }
 
 async function getRefreshTokenValue(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(config.refreshTokenKey);
-  } catch {
-    return null;
-  }
+  return await SecureTokenStorage.getRefreshToken();
 }
 
 async function saveTokens(
   accessToken: string,
   refreshToken: string
 ): Promise<void> {
-  await SecureStore.setItemAsync(config.tokenKey, accessToken);
-  await SecureStore.setItemAsync(config.refreshTokenKey, refreshToken);
+  await SecureTokenStorage.setAccessToken(accessToken);
+  await SecureTokenStorage.setRefreshToken(refreshToken);
 }
 
 async function clearTokens(): Promise<void> {
-  await SecureStore.deleteItemAsync(config.tokenKey);
-  await SecureStore.deleteItemAsync(config.refreshTokenKey);
+  await SecureTokenStorage.clearTokens();
 }
 
 async function refreshTokens(): Promise<string> {
