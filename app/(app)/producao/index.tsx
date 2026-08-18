@@ -135,7 +135,7 @@ export default function ProducaoScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Produção', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Produção', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Produção</Text>

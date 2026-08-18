@@ -430,7 +430,7 @@ export default function NovoOrcamentoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Novo orçamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Novo orçamento', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

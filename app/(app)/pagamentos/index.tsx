@@ -132,7 +132,7 @@ export default function PagamentosScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Pagamentos', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Pagamentos', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Pagamentos</Text>

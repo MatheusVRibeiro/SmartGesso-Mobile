@@ -126,7 +126,7 @@ export default function ServicosScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Serviços', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Serviços', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Serviços</Text>

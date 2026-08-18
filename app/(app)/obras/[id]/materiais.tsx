@@ -110,7 +110,7 @@ export default function MateriaisScreen() {
   if (!workId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Materiais', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Materiais', headerShown: true }} />
         <ErrorState message="Obra não encontrada" />
       </ScreenContainer>
     );
@@ -118,7 +118,7 @@ export default function MateriaisScreen() {
 
   return (
     <ScreenContainer scroll keyboard={false}>
-      <Stack.Screen options={{ title: 'Materiais', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Materiais', headerShown: true }} />
 
       <View style={styles.header}>
         <Pressable

@@ -393,7 +393,7 @@ export default function NovaOrdemProducaoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Nova ordem de produção', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Nova ordem de produção', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

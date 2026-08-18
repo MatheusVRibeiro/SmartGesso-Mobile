@@ -227,7 +227,7 @@ export default function DetalheOrdemProducaoScreen() {
   if (!orderId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Ordem de produção', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Ordem de produção', headerShown: true }} />
         <ErrorState message="Ordem de produção não encontrada" />
       </ScreenContainer>
     );
@@ -240,7 +240,7 @@ export default function DetalheOrdemProducaoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe da ordem', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Detalhe da ordem', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

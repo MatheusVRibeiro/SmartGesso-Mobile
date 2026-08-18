@@ -218,7 +218,7 @@ export default function NovaMedicaoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Nova medição', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Nova medição', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

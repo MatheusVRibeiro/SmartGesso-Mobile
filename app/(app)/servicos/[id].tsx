@@ -98,7 +98,7 @@ export default function DetalheOrdemServicoScreen() {
   if (!orderId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Ordem de serviço', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Ordem de serviço', headerShown: true }} />
         <ErrorState message="Ordem de serviço não encontrada" />
       </ScreenContainer>
     );
@@ -110,7 +110,7 @@ export default function DetalheOrdemServicoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe da ordem de serviço', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Detalhe da ordem de serviço', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

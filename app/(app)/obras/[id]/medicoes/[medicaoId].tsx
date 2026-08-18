@@ -267,7 +267,7 @@ export default function EditarMedicaoScreen() {
   if (!measurementId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Medição', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Medição', headerShown: true }} />
         <ErrorState message="Medição não encontrada" />
       </ScreenContainer>
     );
@@ -276,7 +276,7 @@ export default function EditarMedicaoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Editar medição', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Editar medição', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -334,7 +334,7 @@ export default function EditarObraScreen() {
   if (!workId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Obra', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Obra', headerShown: true }} />
         <ErrorState message="Obra não encontrada" />
       </ScreenContainer>
     );
@@ -343,7 +343,7 @@ export default function EditarObraScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Editar obra', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Editar obra', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -391,7 +391,7 @@ export default function NovaOrdemServicoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Nova ordem de serviço', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Nova ordem de serviço', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -164,7 +164,7 @@ export default function MedicoesListScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Medições', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Medições', headerShown: true }} />
 
       <View style={styles.header}>
         <Pressable

@@ -121,7 +121,7 @@ export default function DespesasScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Despesas', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Despesas', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Despesas</Text>

@@ -97,7 +97,7 @@ export default function DetalhePagamentoScreen() {
   if (!paymentId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Pagamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Pagamento', headerShown: true }} />
         <ErrorState message="Pagamento não encontrado" />
       </ScreenContainer>
     );
@@ -109,7 +109,7 @@ export default function DetalhePagamentoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe do pagamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Detalhe do pagamento', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

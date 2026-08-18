@@ -134,7 +134,7 @@ export default function OrcamentosScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Orçamentos', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Orçamentos', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Orçamentos</Text>

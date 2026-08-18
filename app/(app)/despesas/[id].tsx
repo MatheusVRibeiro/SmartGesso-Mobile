@@ -84,7 +84,7 @@ export default function DetalheDespesaScreen() {
   if (!expenseId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Despesa', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Despesa', headerShown: true }} />
         <ErrorState message="Despesa não encontrada" />
       </ScreenContainer>
     );
@@ -96,7 +96,7 @@ export default function DetalheDespesaScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe da despesa', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Detalhe da despesa', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -133,7 +133,7 @@ export default function DetalheOrcamentoScreen() {
   if (!quoteId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Orçamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Orçamento', headerShown: true }} />
         <ErrorState message="Orçamento não encontrado" />
       </ScreenContainer>
     );
@@ -145,7 +145,7 @@ export default function DetalheOrcamentoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe do orçamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Detalhe do orçamento', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -300,7 +300,7 @@ export default function NovoPagamentoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Novo pagamento', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Novo pagamento', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

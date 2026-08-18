@@ -285,7 +285,7 @@ export default function NovaObraScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Nova obra', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Nova obra', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

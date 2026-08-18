@@ -93,7 +93,7 @@ export default function NovaDespesaScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Nova despesa', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Nova despesa', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable

@@ -155,7 +155,7 @@ export default function ObrasListScreen() {
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Obras', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Obras', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Obras</Text>
