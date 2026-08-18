@@ -1,6 +1,7 @@
 import { getApiClient } from './client';
 import type {
   ProductionOrder,
+  ProductionOrderItem,
   ProductionOrderListResponse,
   CreateProductionOrderInput,
   UpdateProductionOrderInput,
@@ -34,5 +35,17 @@ export const productionOrdersService = {
 
   async remove(id: string): Promise<void> {
     await api().delete(`/production-orders/${id}`);
+  },
+
+  /** Registra produção (produzido/desperdiçado) de um item da ordem. */
+  async registerProduction(
+    itemId: string,
+    data: { producedQty: number; wastedQty?: number; status?: string },
+  ): Promise<ProductionOrderItem> {
+    const response = await api().post<ProductionOrderItem>(
+      `/production-orders/${itemId}/production`,
+      data,
+    );
+    return response.data;
   },
 };

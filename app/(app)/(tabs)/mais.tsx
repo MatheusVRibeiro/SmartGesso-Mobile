@@ -54,6 +54,20 @@ export default function MaisScreen() {
       action: () => router.push('/clientes'),
     },
     {
+      id: 'orcamentos',
+      title: 'Orçamentos',
+      icon: 'document-text-outline',
+      section: 'Operação',
+      action: () => router.push('/orcamentos'),
+    },
+    {
+      id: 'servicos',
+      title: 'Serviços',
+      icon: 'hammer-outline',
+      section: 'Operação',
+      action: () => router.push('/servicos'),
+    },
+    {
       id: 'producao',
       title: 'Produção',
       icon: 'layers-outline',
@@ -72,21 +86,21 @@ export default function MaisScreen() {
       title: 'Pagamentos',
       icon: 'card-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Pagamentos'),
+      action: () => router.push('/pagamentos'),
     },
     {
       id: 'cobrancas',
       title: 'Cobranças',
       icon: 'receipt-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Cobranças'),
+      action: () => router.push('/pagamentos'),
     },
     {
       id: 'despesas',
       title: 'Despesas',
       icon: 'wallet-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Despesas'),
+      action: () => router.push('/despesas'),
     },
 
     // Relatórios

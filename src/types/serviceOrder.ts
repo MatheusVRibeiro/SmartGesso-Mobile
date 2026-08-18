@@ -78,6 +78,8 @@ export interface ProductionOrder {
   observations?: string | null;
   createdAt: string;
   updatedAt: string;
+  client?: { id: string; name: string };
+  work?: { id: string; name: string };
   items?: ProductionOrderItem[];
 }
 
