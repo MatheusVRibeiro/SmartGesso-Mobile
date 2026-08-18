@@ -134,3 +134,34 @@ export const createMeasurementSchema = z.object({
 });
 
 export type CreateMeasurementFormData = z.infer<typeof createMeasurementSchema>;
+
+// ─── Orçamentos (Fase 4) ───────────────────────────────────────────────────
+
+export const quoteItemSchema = z.object({
+  itemType: z.enum(['PRODUTO', 'SERVICO', 'MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE']),
+  name: z.string().trim().min(1, 'Nome é obrigatório'),
+  description: z.string().trim().optional(),
+  quantity: z.coerce.number().min(0.01, 'Quantidade deve ser maior que 0'),
+  unit: z.string().trim().default('un'),
+  unitPrice: z.coerce.number().min(0, 'Preço deve ser maior ou igual a 0'),
+});
+
+export const createQuoteSchema = z.object({
+  clientId: z.string().min(1, 'Cliente é obrigatório'),
+  workId: z.string().optional(),
+  discount: z.coerce.number().min(0).default(0),
+  marginPct: z.coerce.number().min(0).max(100).default(0),
+  paymentMethod: z.enum([
+    'AVISTA',
+    'AVISTA_DESCONTO',
+    'ENTRADA_SALDO',
+    'QUINZENAL_2X',
+    'MENSAL',
+    'PARCELADO',
+    'PERSONALIZADO',
+  ]).default('AVISTA'),
+  observations: z.string().trim().optional(),
+  items: z.array(quoteItemSchema).min(1, 'Adicione pelo menos 1 item'),
+});
+
+export type CreateQuoteFormData = z.infer<typeof createQuoteSchema>;
