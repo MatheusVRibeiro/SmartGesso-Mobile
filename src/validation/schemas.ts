@@ -60,3 +60,56 @@ export const acceptInvitationSchema = z
   });
 
 export type AcceptInvitationFormData = z.infer<typeof acceptInvitationSchema>;
+
+// ─── Clientes (Fase 2) ─────────────────────────────────────────────────────
+
+export const createClientSchema = z.object({
+  type: z.enum(['FISICA', 'JURIDICA']).default('FISICA'),
+  name: z.string().trim().min(1, 'Nome é obrigatório'),
+  document: z.string().trim().optional(),
+  email: z.string().trim().email('E-mail inválido').optional().or(z.literal('')),
+  phone: z.string().trim().optional(),
+  whatsapp: z.string().trim().optional(),
+  observations: z.string().trim().optional(),
+});
+
+export type CreateClientFormData = z.infer<typeof createClientSchema>;
+
+// ─── Obras (Fase 2) ────────────────────────────────────────────────────────
+
+export const createWorkSchema = z.object({
+  clientId: z.string().min(1, 'Cliente é obrigatório'),
+  name: z.string().trim().min(1, 'Nome da obra é obrigatório'),
+  reference: z.string().trim().optional(),
+  postalCode: z.string().trim().optional(),
+  street: z.string().trim().optional(),
+  number: z.string().trim().optional(),
+  complement: z.string().trim().optional(),
+  district: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  status: z.enum(['PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA']).default('PLANEJADA'),
+  observations: z.string().trim().optional(),
+});
+
+export type CreateWorkFormData = z.infer<typeof createWorkSchema>;
+
+// ─── Catálogo (Fase 2) ─────────────────────────────────────────────────────
+
+export const createCatalogItemSchema = z.object({
+  name: z.string().trim().min(1, 'Nome é obrigatório'),
+  description: z.string().trim().optional(),
+  unit: z.string().trim().min(1, 'Unidade é obrigatória').default('un'),
+  price: z.coerce.number().min(0).optional(),
+  cost: z.coerce.number().min(0).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+});
+
+export type CreateCatalogItemFormData = z.infer<typeof createCatalogItemSchema>;
+
+export const createMaterialSchema = createCatalogItemSchema.extend({
+  stockQty: z.coerce.number().min(0).default(0),
+  minStockQty: z.coerce.number().min(0).default(0),
+});
+
+export type CreateMaterialFormData = z.infer<typeof createMaterialSchema>;

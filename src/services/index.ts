@@ -7,6 +7,9 @@ export {
 
 export { authService } from './api/auth';
 export { companyService } from './api/companies';
+export { clientsService } from './api/clients';
+export { worksService } from './api/works';
+export { catalogService } from './api/catalog';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
 
