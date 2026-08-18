@@ -1,19 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { Text, StyleSheet, View, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Text, StyleSheet, View } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScreenContainer, AppInput, PasswordInput, AppButton, AppSnackbar } from '../../src/components/ui';
-import { colors, spacing, typography, radius } from '../../src/theme';
-import { loginSchema, type LoginFormData } from '../../src/validation/schemas';
+import { ScreenContainer, PasswordInput, AppButton, AppSnackbar } from '../../src/components/ui';
+import { colors, spacing, typography } from '../../src/theme';
+import { acceptInvitationSchema, type AcceptInvitationFormData } from '../../src/validation/schemas';
 import { authService } from '../../src/services/api/auth';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import type { AuthUser } from '../../src/types/auth';
-import type { CompanyResult } from '../../src/types/company';
 
-export default function LoginScreen() {
+export default function AcceptInvitationScreen() {
   const router = useRouter();
+  const { token } = useLocalSearchParams<{ token: string }>();
   const { setSession } = useSessionStore();
 
   const [loading, setLoading] = useState(false);
@@ -23,23 +23,27 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<AcceptInvitationFormData>({
+    resolver: zodResolver(acceptInvitationSchema),
     defaultValues: {
-      email: '',
+      token: token ?? '',
       password: '',
+      confirmPassword: '',
     },
   });
 
   const onSubmit = useCallback(
-    async (data: LoginFormData) => {
+    async (data: AcceptInvitationFormData) => {
       try {
         setLoading(true);
         setSnackbar((prev) => ({ ...prev, visible: false }));
 
-        const response = await authService.login(data);
+        const response = await authService.acceptInvitation({
+          token: data.token,
+          password: data.password,
+        });
 
-        // Salvar tokens no SecureStore
+        // Salvar tokens
         await SecureTokenStorage.setAccessToken(response.accessToken);
         await SecureTokenStorage.setRefreshToken(response.refreshToken);
 
@@ -48,7 +52,7 @@ export default function LoginScreen() {
           id: response.user.id,
           name: response.user.name,
           email: response.user.email,
-          activeCompanyId: response.activeCompanyId ?? null,
+          activeCompanyId: response.companyId,
         };
 
         // Atualizar store de sessão
@@ -60,7 +64,7 @@ export default function LoginScreen() {
         const message =
           error?.response?.data?.message ||
           error?.message ||
-          'Credenciais inválidas';
+          'Erro ao aceitar convite. Tente novamente.';
         setSnackbar({ visible: true, message, type: 'error' });
       } finally {
         setLoading(false);
@@ -69,32 +73,45 @@ export default function LoginScreen() {
     [router, setSession],
   );
 
-  const handleForgotPassword = useCallback(() => {
-    router.push('/(auth)/forgot-password');
-  }, [router]);
+  if (!token) {
+    return (
+      <ScreenContainer scroll padding>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Convite inválido</Text>
+          <Text style={styles.errorSubtitle}>
+            O link de convite é inválido ou expirou.
+          </Text>
+          <AppButton
+            title="Voltar para o login"
+            onPress={() => router.replace('/(auth)/login')}
+            accessibilityLabel="Voltar para o login"
+          />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer scroll padding>
       <View style={styles.header}>
-        <Text style={styles.logo}>SmartGesso</Text>
-        <Text style={styles.subtitle}>Acesse sua conta</Text>
+        <Text style={styles.title}>Aceitar convite</Text>
+        <Text style={styles.subtitle}>
+          Defina sua senha para acessar o sistema
+        </Text>
       </View>
 
       <View style={styles.form}>
         <Controller
           control={control}
-          name="email"
+          name="password"
           render={({ field: { onChange, onBlur, value } }) => (
-            <AppInput
-              label="E-mail"
-              placeholder="seu@email.com"
+            <PasswordInput
+              label="Senha"
+              placeholder="Mínimo 6 caracteres"
               value={value}
               onChangeText={onChange}
-              error={errors.email?.message}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              accessibilityLabel="Campo de e-mail"
+              error={errors.password?.message}
+              accessibilityLabel="Campo de senha"
               returnKeyType="next"
             />
           )}
@@ -102,37 +119,28 @@ export default function LoginScreen() {
 
         <Controller
           control={control}
-          name="password"
+          name="confirmPassword"
           render={({ field: { onChange, onBlur, value } }) => (
             <PasswordInput
-              label="Senha"
-              placeholder="Sua senha"
+              label="Confirmar senha"
+              placeholder="Repita a senha"
               value={value}
               onChangeText={onChange}
-              error={errors.password?.message}
-              accessibilityLabel="Campo de senha"
+              error={errors.confirmPassword?.message}
+              accessibilityLabel="Campo de confirmação de senha"
               returnKeyType="done"
             />
           )}
         />
 
         <AppButton
-          title="Entrar"
+          title="Criar senha e acessar"
           loading={loading}
           disabled={loading}
-          accessibilityLabel="Entrar na conta"
+          accessibilityLabel="Criar senha e acessar o sistema"
           onPress={handleSubmit(onSubmit)}
           style={styles.submitButton}
         />
-
-        <Pressable
-          onPress={handleForgotPassword}
-          accessibilityRole="button"
-          accessibilityLabel="Esqueci a senha"
-          style={styles.forgotButton}
-        >
-          <Text style={styles.forgotText}>Esqueci a senha</Text>
-        </Pressable>
       </View>
 
       <AppSnackbar
@@ -147,19 +155,19 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    alignItems: 'center',
     marginTop: spacing['4xl'],
     marginBottom: spacing['3xl'],
   },
-  logo: {
-    fontSize: typography.sizes['2xl'],
+  title: {
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: colors.primary,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
+    lineHeight: 24,
   },
   form: {
     flex: 1,
@@ -167,14 +175,23 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: spacing.md,
   },
-  forgotButton: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing['3xl'],
   },
-  forgotText: {
-    fontSize: typography.sizes.sm,
-    color: colors.primary,
-    fontWeight: typography.weights.medium,
+  errorTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.danger,
+    marginBottom: spacing.sm,
+  },
+  errorSubtitle: {
+    fontSize: typography.sizes.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing['2xl'],
+    lineHeight: 24,
   },
 });

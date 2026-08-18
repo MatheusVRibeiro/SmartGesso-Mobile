@@ -1,21 +1,39 @@
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
+import { AppCard } from '../../../src/components/ui/AppCard';
+import { EmptyState } from '../../../src/components/ui/EmptyState';
+import { colors, spacing, typography } from '../../../src/theme';
 
 export default function ServicosScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>TODO — Serviços</Text>
-    </View>
+    <ScreenContainer scroll padding keyboard={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Serviços</Text>
+      </View>
+
+      <AppCard shadow="light" style={styles.card}>
+        <EmptyState
+          title="Nenhum serviço registrado"
+          description="Os serviços aparecerão aqui quando forem cadastrados"
+          icon="hammer-outline"
+          iconColor={colors.textLight}
+        />
+      </AppCard>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  header: {
+    marginBottom: spacing.xl,
   },
-  text: {
-    fontSize: 18,
-    color: '#666',
+  title: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  card: {
+    padding: spacing.lg,
   },
 });
