@@ -8,6 +8,7 @@ import { AppCard } from '../../../src/components/ui/AppCard';
 import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
+import { queryClient } from '../../../src/lib/queryClient';
 import { colors, spacing, typography } from '../../../src/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -37,6 +38,7 @@ export default function MaisScreen() {
   const handleLogout = async () => {
     try {
       await SecureTokenStorage.clearTokens();
+      queryClient.clear();
       clearSession();
       router.replace('/(auth)/login');
     } catch (error) {

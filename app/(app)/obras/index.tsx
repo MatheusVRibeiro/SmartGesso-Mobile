@@ -15,7 +15,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { worksService } from '../../../src/services/api/works';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Work, WorkStatus } from '../../../src/types/work';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ function WorkCard({ work, onPress }: { work: Work; onPress: () => void }) {
   const badge = WORK_STATUS_BADGE[work.status];
 
   return (
-    <AppCard shadow="light" style={styles.card}>
+    <AppCard shadow="light" radius={radius.md} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver obra ${work.name}`}
@@ -76,35 +76,55 @@ function WorkCard({ work, onPress }: { work: Work; onPress: () => void }) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {work.name}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.cardLeft}>
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name="construct-outline"
+                size={sizes.icon.md}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+            </View>
+            <View style={styles.cardInfo}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {work.name}
+                </Text>
+                <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+              </View>
 
-        <View style={styles.cardRow}>
+              <View style={styles.cardRow}>
+                <Ionicons
+                  name="person-outline"
+                  size={sizes.icon.sm}
+                  color={colors.textSecondary}
+                  accessibilityElementsHidden
+                />
+                <Text style={styles.cardText} numberOfLines={1}>
+                  {work.client?.name ?? 'Cliente não informado'}
+                </Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Ionicons
+                  name="location-outline"
+                  size={sizes.icon.sm}
+                  color={colors.textSecondary}
+                  accessibilityElementsHidden
+                />
+                <Text style={styles.cardText} numberOfLines={1}>
+                  {formatLocation(work)}
+                </Text>
+              </View>
+            </View>
+          </View>
           <Ionicons
-            name="person-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
             accessibilityElementsHidden
           />
-          <Text style={styles.cardText} numberOfLines={1}>
-            {work.client?.name ?? 'Cliente não informado'}
-          </Text>
-        </View>
-
-        <View style={styles.cardRow}>
-          <Ionicons
-            name="location-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
-            accessibilityElementsHidden
-          />
-          <Text style={styles.cardText} numberOfLines={1}>
-            {formatLocation(work)}
-          </Text>
         </View>
       </Pressable>
     </AppCard>
@@ -233,6 +253,29 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',

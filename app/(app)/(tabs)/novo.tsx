@@ -49,15 +49,33 @@ export default function NovoScreen() {
   const router = useRouter();
 
   const handleAction = (action: typeof QUICK_ACTIONS[number]) => {
-    if (action.id === 'cliente') {
-      router.push('/clientes/novo');
-      return;
+    switch (action.id) {
+      case 'cliente':
+        router.push('/clientes/novo');
+        break;
+      case 'medicao':
+        // Medições são sub-recurso de obras — navega para lista de obras
+        router.push('/obras');
+        break;
+      case 'orcamento':
+        router.push('/orcamentos/novo');
+        break;
+      case 'servico':
+        router.push('/servicos/novo');
+        break;
+      case 'pagamento':
+        router.push('/pagamentos/novo');
+        break;
+      case 'despesa':
+        router.push('/despesas/novo');
+        break;
+      default:
+        Alert.alert(
+          'Módulo em desenvolvimento',
+          `A funcionalidade "${action.title}" ainda está em desenvolvimento. Em breve disponível!`,
+          [{ text: 'Entendi' }],
+        );
     }
-    Alert.alert(
-      'Módulo em desenvolvimento',
-      `A funcionalidade "${action.title}" ainda está em desenvolvimento. Em breve disponível!`,
-      [{ text: 'Entendi' }]
-    );
   };
 
   return (

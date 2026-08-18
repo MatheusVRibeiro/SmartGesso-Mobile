@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full,
     backgroundColor: colors.inputBackground,
     borderWidth: 1,

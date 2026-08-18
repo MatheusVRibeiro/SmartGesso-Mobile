@@ -55,11 +55,22 @@ export default function AcceptInvitationScreen() {
           activeCompanyId: response.companyId,
         };
 
-        // Atualizar store de sessão
-        setSession(user, null);
-
-        // Redirecionar para a tela principal
-        router.replace('/(app)/(tabs)');
+        // Se temCompanyId, buscar empresas e setar a empresa ativa
+        if (user.activeCompanyId) {
+          try {
+            const companies = await authService.companies();
+            const matched = companies.find(
+              (c) => c.company.id === user.activeCompanyId,
+            );
+            setSession(user, matched ?? null);
+          } catch {
+            setSession(user);
+          }
+          router.replace('/(app)/(tabs)');
+        } else {
+          setSession(user);
+          router.replace('/(company)/select-company');
+        }
       } catch (error: any) {
         const message =
           error?.response?.data?.message ||
@@ -92,56 +103,58 @@ export default function AcceptInvitationScreen() {
   }
 
   return (
-    <ScreenContainer scroll padding>
-      <View style={styles.header}>
-        <Text style={styles.title}>Aceitar convite</Text>
-        <Text style={styles.subtitle}>
-          Defina sua senha para acessar o sistema
-        </Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScreenContainer scroll padding>
+        <View style={styles.header}>
+          <Text style={styles.title}>Aceitar convite</Text>
+          <Text style={styles.subtitle}>
+            Defina sua senha para acessar o sistema
+          </Text>
+        </View>
 
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <PasswordInput
-              label="Senha"
-              placeholder="Mínimo 6 caracteres"
-              value={value}
-              onChangeText={onChange}
-              error={errors.password?.message}
-              accessibilityLabel="Campo de senha"
-              returnKeyType="next"
-            />
-          )}
-        />
+        <View style={styles.form}>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <PasswordInput
+                label="Senha"
+                placeholder="Mínimo 6 caracteres"
+                value={value}
+                onChangeText={onChange}
+                error={errors.password?.message}
+                accessibilityLabel="Campo de senha"
+                returnKeyType="next"
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="confirmPassword"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <PasswordInput
-              label="Confirmar senha"
-              placeholder="Repita a senha"
-              value={value}
-              onChangeText={onChange}
-              error={errors.confirmPassword?.message}
-              accessibilityLabel="Campo de confirmação de senha"
-              returnKeyType="done"
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <PasswordInput
+                label="Confirmar senha"
+                placeholder="Repita a senha"
+                value={value}
+                onChangeText={onChange}
+                error={errors.confirmPassword?.message}
+                accessibilityLabel="Campo de confirmação de senha"
+                returnKeyType="done"
+              />
+            )}
+          />
 
-        <AppButton
-          title="Criar senha e acessar"
-          loading={loading}
-          disabled={loading}
-          accessibilityLabel="Criar senha e acessar o sistema"
-          onPress={handleSubmit(onSubmit)}
-          style={styles.submitButton}
-        />
-      </View>
+          <AppButton
+            title="Criar senha e acessar"
+            loading={loading}
+            disabled={loading}
+            accessibilityLabel="Criar senha e acessar o sistema"
+            onPress={handleSubmit(onSubmit)}
+            style={styles.submitButton}
+          />
+        </View>
+      </ScreenContainer>
 
       <AppSnackbar
         visible={snackbar.visible}
@@ -149,7 +162,7 @@ export default function AcceptInvitationScreen() {
         type={snackbar.type}
         onHide={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
-    </ScreenContainer>
+    </View>
   );
 }
 

@@ -84,45 +84,65 @@ export default function ClientesListScreen() {
       accessibilityLabel={`Abrir cliente ${item.name}`}
       activeOpacity={0.7}
     >
-      <AppCard shadow="light" style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <StatusBadge
-            status="active"
-            label={item.type === 'JURIDICA' ? 'Pessoa Jurídica' : 'Pessoa Física'}
-            size="sm"
+      <AppCard shadow="light" radius={radius.md} style={styles.card}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardLeft}>
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name="person-outline"
+                size={sizes.icon.md}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+            </View>
+            <View style={styles.cardInfo}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <StatusBadge
+                  status="active"
+                  label={item.type === 'JURIDICA' ? 'PJ' : 'PF'}
+                  size="sm"
+                />
+              </View>
+
+              {item.whatsapp || item.phone ? (
+                <View style={styles.cardRow}>
+                  <Ionicons
+                    name={item.whatsapp ? 'logo-whatsapp' : 'call-outline'}
+                    size={sizes.icon.sm}
+                    color={colors.textSecondary}
+                    accessibilityElementsHidden
+                  />
+                  <Text style={styles.cardRowText} numberOfLines={1}>
+                    {item.whatsapp ?? item.phone}
+                  </Text>
+                </View>
+              ) : null}
+
+              {item.email ? (
+                <View style={styles.cardRow}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={sizes.icon.sm}
+                    color={colors.textSecondary}
+                    accessibilityElementsHidden
+                  />
+                  <Text style={styles.cardRowText} numberOfLines={1}>
+                    {item.email}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
+            accessibilityElementsHidden
           />
         </View>
-
-        {item.whatsapp || item.phone ? (
-          <View style={styles.cardRow}>
-            <Ionicons
-              name={item.whatsapp ? 'logo-whatsapp' : 'call-outline'}
-              size={sizes.icon.sm}
-              color={colors.textSecondary}
-              accessibilityElementsHidden
-            />
-            <Text style={styles.cardRowText} numberOfLines={1}>
-              {item.whatsapp ?? item.phone}
-            </Text>
-          </View>
-        ) : null}
-
-        {item.email ? (
-          <View style={styles.cardRow}>
-            <Ionicons
-              name="mail-outline"
-              size={sizes.icon.sm}
-              color={colors.textSecondary}
-              accessibilityElementsHidden
-            />
-            <Text style={styles.cardRowText} numberOfLines={1}>
-              {item.email}
-            </Text>
-          </View>
-        ) : null}
       </AppCard>
     </TouchableOpacity>
   );
@@ -257,12 +277,34 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
   },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   cardName: {
     flex: 1,
@@ -273,8 +315,7 @@ const styles = StyleSheet.create({
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
+    gap: spacing.xs,
   },
   cardRowText: {
     flex: 1,

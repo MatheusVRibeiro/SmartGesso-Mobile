@@ -14,7 +14,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { quotesService } from '../../../src/services/api/quotes';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
 import type { QuoteStatus } from '../../../src/types/quote';
 
@@ -55,7 +55,7 @@ function QuoteCard({ quote, onPress }: QuoteCardProps) {
   const badge = QUOTE_STATUS_BADGE[quote.status];
 
   return (
-    <AppCard shadow="light" style={styles.card}>
+    <AppCard shadow="light" radius={radius.md} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver orçamento ${quote.quoteNumber} versão ${quote.version}`}
@@ -65,28 +65,48 @@ function QuoteCard({ quote, onPress }: QuoteCardProps) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            #{quote.quoteNumber} v{quote.version}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.cardLeft}>
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name="document-text-outline"
+                size={sizes.icon.md}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+            </View>
+            <View style={styles.cardInfo}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  #{quote.quoteNumber} v{quote.version}
+                </Text>
+                <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+              </View>
 
-        <View style={styles.cardRow}>
+              <View style={styles.cardRow}>
+                <Ionicons
+                  name="person-outline"
+                  size={sizes.icon.sm}
+                  color={colors.textSecondary}
+                  accessibilityElementsHidden
+                />
+                <Text style={styles.cardText} numberOfLines={1}>
+                  {quote.client?.name ?? 'Cliente não informado'}
+                </Text>
+              </View>
+
+              <View style={styles.cardFooter}>
+                <Text style={styles.cardDate}>{formatDate(quote.createdAt)}</Text>
+                <Text style={styles.cardTotal}>{formatCurrency(quote.total)}</Text>
+              </View>
+            </View>
+          </View>
           <Ionicons
-            name="person-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
             accessibilityElementsHidden
           />
-          <Text style={styles.cardText} numberOfLines={1}>
-            {quote.client?.name ?? 'Cliente não informado'}
-          </Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.cardDate}>{formatDate(quote.createdAt)}</Text>
-          <Text style={styles.cardTotal}>{formatCurrency(quote.total)}</Text>
         </View>
       </Pressable>
     </AppCard>
@@ -191,6 +211,29 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',

@@ -10,7 +10,6 @@ import { authService } from '../../src/services/api/auth';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import type { AuthUser } from '../../src/types/auth';
-import type { CompanyResult } from '../../src/types/company';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -51,11 +50,23 @@ export default function LoginScreen() {
           activeCompanyId: response.activeCompanyId ?? null,
         };
 
-        // Atualizar store de sessão
-        setSession(user, null);
-
-        // Redirecionar para a tela principal
-        router.replace('/(app)/(tabs)');
+        // Se temCompanyId ativo, buscar empresas e setar a empresa ativa
+        // (senão, vai para select-company para o usuário escolher)
+        if (user.activeCompanyId) {
+          try {
+            const companies = await authService.companies();
+            const matched = companies.find(
+              (c) => c.company.id === user.activeCompanyId,
+            );
+            setSession(user, matched ?? null);
+          } catch {
+            setSession(user);
+          }
+          router.replace('/(app)/(tabs)');
+        } else {
+          setSession(user);
+          router.replace('/(company)/select-company');
+        }
       } catch (error: any) {
         const message =
           error?.response?.data?.message ||
@@ -74,66 +85,68 @@ export default function LoginScreen() {
   }, [router]);
 
   return (
-    <ScreenContainer scroll padding>
-      <View style={styles.header}>
-        <Text style={styles.logo}>SmartGesso</Text>
-        <Text style={styles.subtitle}>Acesse sua conta</Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScreenContainer scroll padding>
+        <View style={styles.header}>
+          <Text style={styles.logo}>SmartGesso</Text>
+          <Text style={styles.subtitle}>Acesse sua conta</Text>
+        </View>
 
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <AppInput
-              label="E-mail"
-              placeholder="seu@email.com"
-              value={value}
-              onChangeText={onChange}
-              error={errors.email?.message}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              accessibilityLabel="Campo de e-mail"
-              returnKeyType="next"
-            />
-          )}
-        />
+        <View style={styles.form}>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AppInput
+                label="E-mail"
+                placeholder="seu@email.com"
+                value={value}
+                onChangeText={onChange}
+                error={errors.email?.message}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Campo de e-mail"
+                returnKeyType="next"
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <PasswordInput
-              label="Senha"
-              placeholder="Sua senha"
-              value={value}
-              onChangeText={onChange}
-              error={errors.password?.message}
-              accessibilityLabel="Campo de senha"
-              returnKeyType="done"
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <PasswordInput
+                label="Senha"
+                placeholder="Sua senha"
+                value={value}
+                onChangeText={onChange}
+                error={errors.password?.message}
+                accessibilityLabel="Campo de senha"
+                returnKeyType="done"
+              />
+            )}
+          />
 
-        <AppButton
-          title="Entrar"
-          loading={loading}
-          disabled={loading}
-          accessibilityLabel="Entrar na conta"
-          onPress={handleSubmit(onSubmit)}
-          style={styles.submitButton}
-        />
+          <AppButton
+            title="Entrar"
+            loading={loading}
+            disabled={loading}
+            accessibilityLabel="Entrar na conta"
+            onPress={handleSubmit(onSubmit)}
+            style={styles.submitButton}
+          />
 
-        <Pressable
-          onPress={handleForgotPassword}
-          accessibilityRole="button"
-          accessibilityLabel="Esqueci a senha"
-          style={styles.forgotButton}
-        >
-          <Text style={styles.forgotText}>Esqueci a senha</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            onPress={handleForgotPassword}
+            accessibilityRole="button"
+            accessibilityLabel="Esqueci a senha"
+            style={styles.forgotButton}
+          >
+            <Text style={styles.forgotText}>Esqueci a senha</Text>
+          </Pressable>
+        </View>
+      </ScreenContainer>
 
       <AppSnackbar
         visible={snackbar.visible}
@@ -141,7 +154,7 @@ export default function LoginScreen() {
         type={snackbar.type}
         onHide={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
-    </ScreenContainer>
+    </View>
   );
 }
 

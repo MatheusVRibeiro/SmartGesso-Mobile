@@ -57,63 +57,65 @@ export default function ForgotPasswordScreen() {
   }, [router]);
 
   return (
-    <ScreenContainer scroll padding>
-      <View style={styles.header}>
-        <Text style={styles.title}>Recuperar senha</Text>
-        <Text style={styles.subtitle}>
-          Informe seu e-mail para receber o link de recuperação
-        </Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScreenContainer scroll padding>
+        <View style={styles.header}>
+          <Text style={styles.title}>Recuperar senha</Text>
+          <Text style={styles.subtitle}>
+            Informe seu e-mail para receber o link de recuperação
+          </Text>
+        </View>
 
-      <View style={styles.form}>
-        {!success ? (
-          <>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <AppInput
-                  label="E-mail"
-                  placeholder="seu@email.com"
-                  value={value}
-                  onChangeText={onChange}
-                  error={errors.email?.message}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  accessibilityLabel="Campo de e-mail"
-                  returnKeyType="done"
-                />
-              )}
-            />
+        <View style={styles.form}>
+          {!success ? (
+            <>
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <AppInput
+                    label="E-mail"
+                    placeholder="seu@email.com"
+                    value={value}
+                    onChangeText={onChange}
+                    error={errors.email?.message}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    accessibilityLabel="Campo de e-mail"
+                    returnKeyType="done"
+                  />
+                )}
+              />
 
-            <AppButton
-              title="Enviar link"
-              loading={loading}
-              disabled={loading}
-              accessibilityLabel="Enviar link de recuperação"
-              onPress={handleSubmit(onSubmit)}
-              style={styles.submitButton}
-            />
-          </>
-        ) : (
-          <View style={styles.successContainer}>
-            <Text style={styles.successIcon}>✉️</Text>
-            <Text style={styles.successText}>
-              Se o e-mail estiver cadastrado, você receberá um link de recuperação.
-            </Text>
-          </View>
-        )}
+              <AppButton
+                title="Enviar link"
+                loading={loading}
+                disabled={loading}
+                accessibilityLabel="Enviar link de recuperação"
+                onPress={handleSubmit(onSubmit)}
+                style={styles.submitButton}
+              />
+            </>
+          ) : (
+            <View style={styles.successContainer}>
+              <Text style={styles.successIcon}>✉️</Text>
+              <Text style={styles.successText}>
+                Se o e-mail estiver cadastrado, você receberá um link de recuperação.
+              </Text>
+            </View>
+          )}
 
-        <Pressable
-          onPress={handleBackToLogin}
-          accessibilityRole="button"
-          accessibilityLabel="Voltar para o login"
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>Voltar para o login</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            onPress={handleBackToLogin}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar para o login"
+            style={styles.backButton}
+          >
+            <Text style={styles.backText}>Voltar para o login</Text>
+          </Pressable>
+        </View>
+      </ScreenContainer>
 
       <AppSnackbar
         visible={snackbar.visible}
@@ -121,7 +123,7 @@ export default function ForgotPasswordScreen() {
         type={snackbar.type}
         onHide={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
-    </ScreenContainer>
+    </View>
   );
 }
 

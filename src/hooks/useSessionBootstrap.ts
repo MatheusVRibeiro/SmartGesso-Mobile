@@ -26,7 +26,23 @@ export function useSessionBootstrap() {
         }
 
         const user = await authService.me();
-        if (!cancelled) setSession(user);
+        if (cancelled) return;
+
+        // Se temCompanyId ativo, buscar empresas e setar a empresa ativa
+        if (user.activeCompanyId) {
+          try {
+            const companies = await authService.companies();
+            if (cancelled) return;
+            const matched = companies.find(
+              (c) => c.company.id === user.activeCompanyId,
+            );
+            setSession(user, matched ?? null);
+          } catch {
+            setSession(user);
+          }
+        } else {
+          setSession(user);
+        }
       } catch {
         // Token inválido/expirado ou rede — limpa e vai para login
         await SecureTokenStorage.clearTokens().catch(() => {});

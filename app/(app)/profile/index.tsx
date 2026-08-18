@@ -2,12 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
-import { AppButton } from '../../src/components/ui/AppButton';
-import { useSessionStore } from '../../src/store/useSessionStore';
-import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
-import { colors, spacing, typography, radius } from '../../src/theme';
-import { config } from '../../src/constants/config';
+import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
+import { AppButton } from '../../../src/components/ui/AppButton';
+import { useSessionStore } from '../../../src/store/useSessionStore';
+import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
+import { queryClient } from '../../../src/lib/queryClient';
+import { colors, spacing, typography, radius } from '../../../src/theme';
+import { config } from '../../../src/constants/config';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await SecureTokenStorage.clearTokens();
+    queryClient.clear();
     clearSession();
     router.replace('/(auth)/login');
   };
@@ -81,7 +83,7 @@ export default function ProfileScreen() {
         {/* App Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informações do app</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Nome</Text>
             <Text style={styles.infoValue}>{config.appName}</Text>
@@ -102,7 +104,7 @@ export default function ProfileScreen() {
             style={styles.actionButton}
             accessibilityLabel="Entrar em contato com o suporte"
           />
-          
+
           <AppButton
             title="Sair"
             variant="danger"

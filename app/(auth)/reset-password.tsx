@@ -81,54 +81,56 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <ScreenContainer scroll padding>
-      <View style={styles.header}>
-        <Text style={styles.title}>Nova senha</Text>
-        <Text style={styles.subtitle}>Defina uma nova senha para sua conta</Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScreenContainer scroll padding>
+        <View style={styles.header}>
+          <Text style={styles.title}>Nova senha</Text>
+          <Text style={styles.subtitle}>Defina uma nova senha para sua conta</Text>
+        </View>
 
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <PasswordInput
-              label="Nova senha"
-              placeholder="Mínimo 6 caracteres"
-              value={value}
-              onChangeText={onChange}
-              error={errors.password?.message}
-              accessibilityLabel="Campo de nova senha"
-              returnKeyType="next"
-            />
-          )}
-        />
+        <View style={styles.form}>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <PasswordInput
+                label="Nova senha"
+                placeholder="Mínimo 6 caracteres"
+                value={value}
+                onChangeText={onChange}
+                error={errors.password?.message}
+                accessibilityLabel="Campo de nova senha"
+                returnKeyType="next"
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="confirmPassword"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <PasswordInput
-              label="Confirmar senha"
-              placeholder="Repita a senha"
-              value={value}
-              onChangeText={onChange}
-              error={errors.confirmPassword?.message}
-              accessibilityLabel="Campo de confirmação de senha"
-              returnKeyType="done"
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <PasswordInput
+                label="Confirmar senha"
+                placeholder="Repita a senha"
+                value={value}
+                onChangeText={onChange}
+                error={errors.confirmPassword?.message}
+                accessibilityLabel="Campo de confirmação de senha"
+                returnKeyType="done"
+              />
+            )}
+          />
 
-        <AppButton
-          title="Redefinir"
-          loading={loading}
-          disabled={loading}
-          accessibilityLabel="Redefinir senha"
-          onPress={handleSubmit(onSubmit)}
-          style={styles.submitButton}
-        />
-      </View>
+          <AppButton
+            title="Redefinir"
+            loading={loading}
+            disabled={loading}
+            accessibilityLabel="Redefinir senha"
+            onPress={handleSubmit(onSubmit)}
+            style={styles.submitButton}
+          />
+        </View>
+      </ScreenContainer>
 
       <AppSnackbar
         visible={snackbar.visible}
@@ -136,7 +138,7 @@ export default function ResetPasswordScreen() {
         type={snackbar.type}
         onHide={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
-    </ScreenContainer>
+    </View>
   );
 }
 

@@ -6,6 +6,7 @@ import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
 import { AppButton } from '../../src/components/ui/AppButton';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
+import { queryClient } from '../../src/lib/queryClient';
 import { colors, spacing, typography, radius } from '../../src/theme';
 
 export default function AccessSuspendedScreen() {
@@ -24,6 +25,7 @@ export default function AccessSuspendedScreen() {
 
   const handleLogout = async () => {
     await SecureTokenStorage.clearTokens();
+    queryClient.clear();
     clearSession();
     router.replace('/(auth)/login');
   };

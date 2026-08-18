@@ -25,7 +25,7 @@ import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Client } from '../../../src/types/client';
 import type { CreatePaymentInput, PaymentMethod } from '../../../src/types/finance';
 import { z } from 'zod';
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.inputBackground,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: sizes.buttonHeight.sm / 2,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     height: sizes.inputHeight,
     gap: spacing.sm,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   methodChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 999,
+    borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: spacing.sm,
+    borderRadius: radius.md,
     marginBottom: spacing.xs,
     backgroundColor: colors.card,
   },
@@ -604,10 +604,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   optionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,

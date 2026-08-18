@@ -1,12 +1,11 @@
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
-import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, spacing, typography } from '../../../src/theme';
+import { colors, radius, shadows, spacing, typography } from '../../../src/theme';
 
 const METRICS = [
   {
@@ -37,19 +36,26 @@ const METRICS = [
 
 export default function HomeScreen() {
   const activeCompany = useSessionStore((s) => s.activeCompany);
+  const currentUser = useSessionStore((s) => s.currentUser);
+
+  const userName = currentUser?.name?.split(' ')[0] ?? 'usuário';
+  const companyName = activeCompany?.company?.tradeName ?? 'SmartGesso';
 
   return (
     <ScreenContainer scroll padding keyboard={false}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Bem-vindo ao</Text>
-        <Text style={styles.companyName}>
-          {activeCompany?.company?.tradeName ?? 'SmartGesso'}
-        </Text>
+        <Text style={styles.greeting}>Olá, {userName}</Text>
+        <Text style={styles.companyName}>{companyName}</Text>
       </View>
 
       <View style={styles.metricsContainer}>
         {METRICS.map((metric) => (
-          <AppCard key={metric.id} shadow="light" style={styles.metricCard}>
+          <AppCard
+            key={metric.id}
+            shadow="light"
+            radius={radius.md}
+            style={styles.metricCard}
+          >
             <View style={styles.metricHeader}>
               <View style={styles.metricIconContainer}>
                 <Ionicons name={metric.icon} size={20} color={colors.primary} />
@@ -57,12 +63,7 @@ export default function HomeScreen() {
               <StatusBadge status="warning" label="Em breve" size="sm" />
             </View>
             <Text style={styles.metricTitle}>{metric.title}</Text>
-            <EmptyState
-              title=""
-              description={metric.description}
-              icon="construct-outline"
-              iconColor={colors.textLight}
-            />
+            <Text style={styles.metricDescription}>{metric.description}</Text>
           </AppCard>
         ))}
       </View>
@@ -72,15 +73,17 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing['2xl'],
+    paddingTop: spacing.md,
   },
   greeting: {
     fontSize: typography.sizes.md,
+    fontWeight: typography.weights.regular,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   companyName: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -97,10 +100,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   metricIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight + '20',
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -108,6 +111,11 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.text,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  metricDescription: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
 });
