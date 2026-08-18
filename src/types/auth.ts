@@ -1,3 +1,5 @@
+// ─── Legacy types (kept for backward compat with src/api/, src/context/) ───
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -7,6 +9,7 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  activeCompanyId?: string | null;
 }
 
 export interface User {
@@ -43,3 +46,51 @@ export interface AuthContextData extends AuthState {
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
+
+// ─── New types (services layer — verified against NestJS auth.service.ts) ──
+
+/** Minimal user returned by GET /auth/me (subset of legacy User) */
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  activeCompanyId: string | null;
+}
+
+/** Token pair returned by all token-issuing endpoints */
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AcceptInvitationRequest {
+  token: string;
+  password: string;
+}
+
+export interface AcceptInvitationResponse extends AuthTokens {
+  user: { id: string; name: string; email: string };
+  companyId: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface SwitchCompanyRequest {
+  companyId: string;
+}
+
+export interface SwitchCompanyResponse extends AuthTokens {
+  activeCompanyId: string;
+}
+
+export type SessionStatus =
+  | 'initializing'
+  | 'authenticated'
+  | 'unauthenticated';

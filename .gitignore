@@ -3,6 +3,11 @@
 # dependencies
 node_modules/
 
+# environment variables (nunca versionar .env — apenas .env.example)
+.env
+.env.*
+!.env.example
+
 # Expo
 .expo/
 dist/
