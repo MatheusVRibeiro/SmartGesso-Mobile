@@ -113,3 +113,24 @@ export const createMaterialSchema = createCatalogItemSchema.extend({
 });
 
 export type CreateMaterialFormData = z.infer<typeof createMaterialSchema>;
+
+// ─── Medições (Fase 3) ─────────────────────────────────────────────────────
+
+export const createMeasurementSchema = z.object({
+  environmentName: z.string().trim().min(1, 'Nome do ambiente é obrigatório'),
+  applicationType: z
+    .enum(['DRYWALL', 'FORRO', 'PAREDE', 'SANCA', 'REBAIXAMENTO', 'OUTRO'])
+    .default('DRYWALL'),
+  length: z.coerce.number().min(0).optional(),
+  width: z.coerce.number().min(0).optional(),
+  ceilingHeight: z.coerce.number().min(0).optional(),
+  doors: z.coerce.number().int().min(0).default(0),
+  windows: z.coerce.number().int().min(0).default(0),
+  cutouts: z.coerce.number().int().min(0).default(0),
+  fixtures: z.coerce.number().int().min(0).default(0),
+  hasCove: z.boolean().default(false),
+  hasDropCeiling: z.boolean().default(false),
+  observations: z.string().trim().optional(),
+});
+
+export type CreateMeasurementFormData = z.infer<typeof createMeasurementSchema>;

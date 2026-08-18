@@ -10,6 +10,8 @@ export { companyService } from './api/companies';
 export { clientsService } from './api/clients';
 export { worksService } from './api/works';
 export { catalogService } from './api/catalog';
+export { measurementsService } from './api/measurements';
+export { compositionsService } from './api/compositions';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
 
