@@ -15,6 +15,8 @@ export { compositionsService } from './api/compositions';
 export { quotesService } from './api/quotes';
 export { serviceOrdersService } from './api/serviceOrders';
 export { productionOrdersService } from './api/productionOrders';
+export { paymentsService } from './api/payments';
+export { expensesService } from './api/expenses';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
 

@@ -206,3 +206,33 @@ export const createProductionOrderSchema = z.object({
 });
 
 export type CreateProductionOrderFormData = z.infer<typeof createProductionOrderSchema>;
+
+// ─── Financeiro (Fase 6) ───────────────────────────────────────────────────
+
+export const createPaymentSchema = z.object({
+  clientId: z.string().min(1, 'Cliente é obrigatório'),
+  quoteId: z.string().optional(),
+  amount: z.coerce.number().min(0.01, 'Valor deve ser maior que 0'),
+  paymentMethod: z.enum([
+    'DINHEIRO', 'PIX', 'CARTAO_CREDITO', 'CARTAO_DEBITO',
+    'BOLETO', 'TRANSFERENCIA', 'CHEQUE', 'OUTRO',
+  ]).default('PIX'),
+  paymentDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().trim().optional(),
+});
+
+export type CreatePaymentFormData = z.infer<typeof createPaymentSchema>;
+
+export const createExpenseSchema = z.object({
+  category: z.enum([
+    'MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE', 'ALUGUEL', 'ENERGIA',
+    'AGUA', 'INTERNET', 'TELEFONE', 'MARKETING', 'IMPOSTOS', 'OUTROS',
+  ]).default('OUTROS'),
+  description: z.string().trim().min(1, 'Descrição é obrigatória'),
+  amount: z.coerce.number().min(0.01, 'Valor deve ser maior que 0'),
+  expenseDate: z.string().optional(),
+  observations: z.string().trim().optional(),
+});
+
+export type CreateExpenseFormData = z.infer<typeof createExpenseSchema>;
