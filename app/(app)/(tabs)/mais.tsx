@@ -51,7 +51,7 @@ export default function MaisScreen() {
       title: 'Clientes',
       icon: 'people-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Clientes'),
+      action: () => router.push('/clientes'),
     },
     {
       id: 'producao',
@@ -65,7 +65,7 @@ export default function MaisScreen() {
       title: 'Estoque',
       icon: 'cube-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Estoque'),
+      action: () => router.push('/catalogo/materiais'),
     },
     {
       id: 'pagamentos',

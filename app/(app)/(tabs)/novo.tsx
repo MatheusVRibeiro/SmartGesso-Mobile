@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { colors, spacing, typography } from '../../../src/theme';
@@ -45,7 +46,13 @@ const QUICK_ACTIONS = [
 ];
 
 export default function NovoScreen() {
+  const router = useRouter();
+
   const handleAction = (action: typeof QUICK_ACTIONS[number]) => {
+    if (action.id === 'cliente') {
+      router.push('/clientes/novo');
+      return;
+    }
     Alert.alert(
       'Módulo em desenvolvimento',
       `A funcionalidade "${action.title}" ainda está em desenvolvimento. Em breve disponível!`,
