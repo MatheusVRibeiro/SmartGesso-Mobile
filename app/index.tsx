@@ -1,24 +1,22 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, Text, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../src/context/AuthContext';
-import { colors } from '../src/constants/colors';
+import { useSessionStore } from '../src/store/useSessionStore';
+import { colors } from '../src/theme/colors';
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const sessionStatus = useSessionStore((s) => s.sessionStatus);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/(app)/(tabs)');
-      } else {
-        router.replace('/(auth)/login');
-      }
+    if (sessionStatus === 'authenticated') {
+      router.replace('/(app)/(tabs)');
+    } else if (sessionStatus === 'unauthenticated') {
+      router.replace('/(auth)/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [sessionStatus, router]);
 
-  if (isLoading) {
+  if (sessionStatus === 'initializing') {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={colors.primary} />
