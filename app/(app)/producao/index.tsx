@@ -12,25 +12,15 @@ import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
-import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
+import { productionOrdersService } from '../../../src/services/api/productionOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, sizes, spacing, typography } from '../../../src/theme';
-import type { ServiceOrder, ServiceOrderStatus } from '../../../src/types/serviceOrder';
+import type { ProductionOrder, ProductionOrderStatus } from '../../../src/types/serviceOrder';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const SERVICE_ORDER_STATUS_BADGE: Record<
-  ServiceOrderStatus,
-  { variant: StatusBadgeVariant; label: string }
-> = {
-  PENDENTE: { variant: 'expired', label: 'Pendente' },
-  EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento' },
-  CONCLUIDA: { variant: 'active', label: 'Concluída' },
-  CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
-};
-
 /**
- * A API real retorna array puro em GET /service-orders (Prisma findMany),
+ * A API real retorna array puro em GET /production-orders (Prisma findMany),
  * enquanto o tipo declarado é { data, total }. Normaliza ambos os formatos.
  */
 function toArray<T>(result: unknown): T[] {
@@ -41,26 +31,38 @@ function toArray<T>(result: unknown): T[] {
   return [];
 }
 
-function formatDate(dateStr: string): string {
+const PRODUCTION_STATUS_BADGE: Record<
+  ProductionOrderStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  PENDENTE: { variant: 'expired', label: 'Pendente' },
+  EM_PRODUCAO: { variant: 'warning', label: 'Em produção' },
+  CONCLUIDA: { variant: 'active', label: 'Concluída' },
+  CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
+};
+
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleDateString('pt-BR');
 }
 
-// ─── Card de ordem de serviço ───────────────────────────────────────────────
+// ─── Card de ordem de produção ──────────────────────────────────────────────
 
-interface ServiceOrderCardProps {
-  order: ServiceOrder;
+interface ProductionOrderCardProps {
+  order: ProductionOrder;
   onPress: () => void;
 }
 
-function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
-  const badge = SERVICE_ORDER_STATUS_BADGE[order.status];
+function ProductionOrderCard({ order, onPress }: ProductionOrderCardProps) {
+  const badge = PRODUCTION_STATUS_BADGE[order.status];
 
   return (
     <AppCard shadow="light" style={styles.card}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Ver ordem de serviço ${order.code}`}
+        accessibilityLabel={`Ver ordem de produção ${order.code}`}
         onPress={onPress}
         style={({ pressed }) => [
           styles.cardPressable,
@@ -69,7 +71,7 @@ function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle} numberOfLines={1}>
-            OS #{order.code}
+            PO #{order.code}
           </Text>
           <StatusBadge status={badge.variant} label={badge.label} size="sm" />
         </View>
@@ -82,20 +84,27 @@ function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
             accessibilityElementsHidden
           />
           <Text style={styles.cardText} numberOfLines={1}>
-            {order.client?.name ?? 'Cliente não informado'}
+            {order.responsiblePerson?.trim() || 'Responsável não informado'}
           </Text>
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.cardDate}>
-            {order.scheduledDate
-              ? formatDate(order.scheduledDate)
-              : formatDate(order.createdAt)}
-          </Text>
-          {order.materials && order.materials.length > 0 ? (
-            <Text style={styles.cardMaterials}>
-              {order.materials.length}{' '}
-              {order.materials.length === 1 ? 'material' : 'materiais'}
+          <View style={styles.cardRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={sizes.icon.sm}
+              color={colors.textSecondary}
+              accessibilityElementsHidden
+            />
+            <Text style={styles.cardDate}>
+              {order.dueDate
+                ? `Prazo: ${formatDate(order.dueDate)}`
+                : 'Sem prazo definido'}
+            </Text>
+          </View>
+          {order.items && order.items.length > 0 ? (
+            <Text style={styles.cardItems}>
+              {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
             </Text>
           ) : null}
         </View>
@@ -106,7 +115,7 @@ function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
 
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
-export default function ServicosScreen() {
+export default function ProducaoScreen() {
   const router = useRouter();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
 
@@ -118,47 +127,47 @@ export default function ServicosScreen() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['company', companyId, 'service-orders'],
-    queryFn: () => serviceOrdersService.list(),
-    select: (result) => toArray<ServiceOrder>(result),
+    queryKey: ['company', companyId, 'production-orders'],
+    queryFn: () => productionOrdersService.list(),
+    select: (result) => toArray<ProductionOrder>(result),
     enabled: Boolean(companyId),
   });
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Serviços', headerShown: false }} />
+      <Stack.Screen options={{ title: 'Produção', headerShown: false }} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Serviços</Text>
+        <Text style={styles.title}>Produção</Text>
         <AppButton
           title="+"
           size="md"
-          accessibilityLabel="Nova ordem de serviço"
-          onPress={() => router.push('/servicos/novo')}
+          accessibilityLabel="Nova ordem de produção"
+          onPress={() => router.push('/producao/novo')}
           style={styles.addButton}
         />
       </View>
 
       {isLoading ? (
-        <LoadingState text="Carregando ordens de serviço..." />
+        <LoadingState text="Carregando ordens de produção..." />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : orders && orders.length === 0 ? (
         <EmptyState
-          title="Nenhuma ordem de serviço"
-          description="Comece criando sua primeira ordem de serviço para um cliente"
-          icon="hammer-outline"
-          actionLabel="Nova ordem de serviço"
-          onAction={() => router.push('/servicos/novo')}
+          title="Nenhuma ordem de produção"
+          description="Comece criando sua primeira ordem de produção"
+          icon="layers-outline"
+          actionLabel="Nova ordem"
+          onAction={() => router.push('/producao/novo')}
         />
       ) : (
         <FlatList
           data={orders ?? []}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <ServiceOrderCard
+            <ProductionOrderCard
               order={item}
-              onPress={() => router.push(`/servicos/${item.id}`)}
+              onPress={() => router.push(`/producao/${item.id}`)}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -236,8 +245,9 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
     color: colors.textLight,
   },
-  cardMaterials: {
+  cardItems: {
     fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
     color: colors.textSecondary,
   },
 });

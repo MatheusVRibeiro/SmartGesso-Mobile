@@ -58,7 +58,7 @@ export default function MaisScreen() {
       title: 'Produção',
       icon: 'layers-outline',
       section: 'Operação',
-      action: () => handleModuleNotImplemented('Produção'),
+      action: () => router.push('/producao'),
     },
     {
       id: 'estoque',
