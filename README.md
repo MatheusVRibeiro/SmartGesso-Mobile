@@ -453,6 +453,19 @@ eas build --clear-cache
 
 ---
 
+## Fluxo Orçamento → Serviço
+
+O fluxo principal do SmartGesso Mobile:
+1. Gesseiro cria orçamento (wizard 8 etapas: cliente, local, medição, tipo de serviço, materiais, valores, prazo, pagamento)
+2. Gesseiro envia ao cliente
+3. Cliente aprova (notificação push) ou rejeita
+4. Ao aprovar, serviço é criado automaticamente com dados reaproveitados do orçamento
+5. Gesseiro agenda e executa o serviço (etapas, checklist, fotos)
+6. Registra pagamentos e despesas vinculados ao serviço
+7. Conclui e visualiza resultado financeiro
+
+---
+
 ## Documentação Adicional
 
 A documentação completa do projeto está organizada na pasta `docs/`:

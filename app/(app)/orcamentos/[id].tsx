@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,6 +86,7 @@ export default function DetalheOrcamentoScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const quoteId = Array.isArray(params.id) ? params.id[0] : params.id;
 
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [confirmApproveVisible, setConfirmApproveVisible] = useState(false);
   const [approvedModalVisible, setApprovedModalVisible] = useState(false);
@@ -101,6 +102,12 @@ export default function DetalheOrcamentoScreen() {
     queryFn: () => quotesService.getById(quoteId as string),
     enabled: Boolean(companyId && quoteId),
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await quoteQuery.refetch();
+    setRefreshing(false);
+  };
 
   const generateVersionMutation = useMutation({
     mutationFn: () => quotesService.generateVersion(quoteId as string),
@@ -261,6 +268,13 @@ export default function DetalheOrcamentoScreen() {
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false}>
         <Stack.Screen options={{ title: 'Detalhe do orçamento', headerShown: true }} />
+        
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
 
         <View style={styles.header}>
           <Pressable

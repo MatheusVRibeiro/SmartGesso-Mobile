@@ -3,6 +3,7 @@ import {
   Linking,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -419,6 +420,7 @@ export default function DetalheOrdemServicoScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const orderId = Array.isArray(params.id) ? params.id[0] : params.id;
 
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [resultModalVisible, setResultModalVisible] = useState(false);
   // Pausa/atraso (V3 §35) — modal de motivo antes do PATCH de status.
@@ -448,6 +450,12 @@ export default function DetalheOrdemServicoScreen() {
     queryFn: () => serviceOrdersService.getById(orderId as string),
     enabled: Boolean(companyId && orderId),
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await orderQuery.refetch();
+    setRefreshing(false);
+  };
 
   const statusMutation = useMutation({
     mutationFn: (transition: StatusTransition) =>
@@ -960,6 +968,13 @@ export default function DetalheOrdemServicoScreen() {
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard={false} scrollRef={scrollRef}>
         <Stack.Screen options={{ title: 'Detalhe da ordem de serviço', headerShown: true }} />
+        
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
 
         <View style={styles.header}>
           <Pressable

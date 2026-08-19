@@ -40,6 +40,14 @@ Skills obrigatórias para este projeto:
 
 ---
 
+## Regras V3
+
+- Limpar cache do TanStack Query ao trocar de empresa (queryClient.clear()).
+- Respeitar o fluxo Orçamento → Serviço: não criar serviço manualmente sem orçamento aprovado.
+- Nunca reintroduzir "Obra" como fluxo principal (obras são sub-contexto dentro de orçamentos).
+
+---
+
 ## Codex + verboo-bridge
 
 **Codex é APENAS planejador/orquestrador — NUNCA implementa código diretamente.**

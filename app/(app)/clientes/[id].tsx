@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
@@ -72,6 +72,7 @@ export default function ClienteDetailScreen() {
   const clientId = params.id ?? '';
   const companyId = useSessionStore((s) => s.activeCompany?.company.id ?? null);
 
+  const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<{ type: AppSnackbarType; message: string } | null>(
     null
   );
@@ -88,6 +89,12 @@ export default function ClienteDetailScreen() {
     queryFn: () => clientsService.getById(clientId),
     enabled: Boolean(companyId && clientId),
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   const {
     control,
@@ -189,6 +196,13 @@ export default function ClienteDetailScreen() {
   return (
     <ScreenContainer scroll keyboard>
       <Stack.Screen options={{ title: 'Cliente' }} />
+      
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        tintColor={colors.primary}
+        colors={[colors.primary]}
+      />
 
       <View style={styles.header}>
         <View style={styles.headerText}>

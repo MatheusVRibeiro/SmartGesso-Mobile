@@ -13,10 +13,16 @@ import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
+import { inventoryService } from '../../../src/services/api/inventory';
 import { paymentsService } from '../../../src/services/api/payments';
+import { quotesService } from '../../../src/services/api/quotes';
+import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Expense, Payment, PaymentStatus } from '../../../src/types/finance';
+import type { QuoteSummary, QuoteStatus } from '../../../src/types/quote';
+import type { ServiceOrder, ServiceOrderStatus } from '../../../src/types/serviceOrder';
+import type { MaterialItem } from '../../../src/types/catalog';
 import { formatCurrency } from '../../../src/utils/format';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -42,6 +48,32 @@ const PAYMENT_STATUS_BADGE: Record<
   PENDENTE: { variant: 'expired', label: 'Pendente' },
   CONFIRMADO: { variant: 'active', label: 'Confirmado' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
+};
+
+const QUOTE_STATUS_BADGE: Record<
+  QuoteStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  RASCUNHO: { variant: 'info', label: 'Rascunho' },
+  PRONTO_PARA_ENVIAR: { variant: 'info', label: 'Pronto p/ enviar' },
+  ENVIADO: { variant: 'warning', label: 'Enviado' },
+  AGUARDANDO_APROVACAO: { variant: 'warning', label: 'Aguardando' },
+  APROVADO: { variant: 'active', label: 'Aprovado' },
+  REJEITADO: { variant: 'cancelled', label: 'Rejeitado' },
+  VENCIDO: { variant: 'expired', label: 'Vencido' },
+  CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
+};
+
+const SERVICE_ORDER_STATUS_BADGE: Record<
+  ServiceOrderStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  PENDENTE: { variant: 'warning', label: 'Pendente' },
+  EM_DESLOCAMENTO: { variant: 'info', label: 'Deslocamento' },
+  EM_ANDAMENTO: { variant: 'active', label: 'Em andamento' },
+  PAUSADA: { variant: 'suspended', label: 'Pausada' },
+  CONCLUIDA: { variant: 'active', label: 'Concluída' },
+  CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
 };
 
 function pluralize(count: number, singular: string, plural: string): string {
@@ -107,14 +139,20 @@ export default function RelatoriosScreen() {
   } = useQuery({
     queryKey: ['relatorios', companyId],
     queryFn: async () => {
-      // Busca pagamentos e despesas em paralelo.
-      const [paymentsResult, expensesResult] = await Promise.all([
+      // Busca pagamentos, despesas, orçamentos, ordens de serviço e estoque em paralelo.
+      const [paymentsResult, expensesResult, quotesResult, serviceOrdersResult, inventoryMaterialsResult] = await Promise.all([
         paymentsService.list(),
         expensesService.list(),
+        quotesService.list(),
+        serviceOrdersService.list(),
+        inventoryService.listMaterials(),
       ]);
       return {
         payments: toArray<Payment>(paymentsResult),
         expenses: toArray<Expense>(expensesResult),
+        quotes: toArray<QuoteSummary>(quotesResult),
+        serviceOrders: toArray<ServiceOrder>(serviceOrdersResult.data),
+        inventoryMaterials: toArray<MaterialItem>(inventoryMaterialsResult),
       };
     },
     enabled: Boolean(companyId),
@@ -142,7 +180,11 @@ export default function RelatoriosScreen() {
 
   const payments = data?.payments ?? [];
   const expenses = data?.expenses ?? [];
+  const quotes = data?.quotes ?? [];
+  const serviceOrders = data?.serviceOrders ?? [];
+  const inventoryMaterials = data?.inventoryMaterials ?? [];
 
+  // Processamento de pagamentos e despesas (existente)
   const pendingPayments = payments.filter((p) => p.status === 'PENDENTE');
   const confirmedPayments = payments.filter((p) => p.status === 'CONFIRMADO');
 
@@ -150,6 +192,25 @@ export default function RelatoriosScreen() {
   const received = confirmedPayments.reduce((sum, p) => sum + p.amount, 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const balance = received - totalExpenses;
+
+  // Processamento de orçamentos (V3 §64)
+  const approvedQuotes = quotes.filter((q) => q.status === 'APROVADO');
+  const pendingQuotes = quotes.filter((q) => 
+    q.status === 'ENVIADO' || q.status === 'AGUARDANDO_APROVACAO'
+  );
+  const rejectedQuotes = quotes.filter((q) => q.status === 'REJEITADO');
+  const expiredQuotes = quotes.filter((q) => q.status === 'VENCIDO');
+
+  // Processamento de ordens de serviço (V3 §64)
+  const inProgressServiceOrders = serviceOrders.filter((so) => 
+    so.status === 'EM_ANDAMENTO' || so.status === 'EM_DESLOCAMENTO'
+  );
+  const completedServiceOrders = serviceOrders.filter((so) => so.status === 'CONCLUIDA');
+
+  // Processamento de estoque (V3 §64) - itens com estoque baixo
+  const lowStockMaterials = inventoryMaterials.filter((m) => 
+    m.minStockQty && m.stockQty != null && m.stockQty < m.minStockQty
+  );
 
   // Últimos 5 registros por data de criação.
   const recentPayments = [...payments]
@@ -160,7 +221,15 @@ export default function RelatoriosScreen() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  const hasData = payments.length > 0 || expenses.length > 0;
+  const recentQuotes = [...quotes]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  const recentServiceOrders = [...serviceOrders]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  const hasData = payments.length > 0 || expenses.length > 0 || quotes.length > 0 || serviceOrders.length > 0 || inventoryMaterials.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -319,6 +388,185 @@ export default function RelatoriosScreen() {
                 )}
               </AppCard>
             </View>
+
+            {/* Orçamentos (V3 §64) */}
+            {quotes.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Orçamentos</Text>
+              <Text style={styles.sectionSubtitle}>Resumo de orçamentos</Text>
+
+              {/* Cards de resumo de orçamentos */}
+              <View style={styles.metricsGrid}>
+                <SummaryCard
+                  title="Total"
+                  value={String(quotes.length)}
+                  subtitle="Orçamentos registrados"
+                  icon="document-text-outline"
+                  iconBackground={colors.infoSoft}
+                  iconColor={colors.info}
+                />
+                <SummaryCard
+                  title="Aprovados"
+                  value={String(approvedQuotes.length)}
+                  subtitle="Orçamentos aprovados"
+                  icon="checkmark-circle-outline"
+                  iconBackground={colors.successSoft}
+                  iconColor={colors.success}
+                  valueColor={colors.success}
+                />
+                <SummaryCard
+                  title="Pendentes"
+                  value={String(pendingQuotes.length)}
+                  subtitle="Aguardando aprovação"
+                  icon="time-outline"
+                  iconBackground={colors.warningSoft}
+                  iconColor={colors.warning}
+                  valueColor={colors.warning}
+                />
+                <SummaryCard
+                  title="Rejeitados"
+                  value={String(rejectedQuotes.length)}
+                  subtitle="Orçamentos rejeitados"
+                  icon="close-circle-outline"
+                  iconBackground={colors.dangerSoft}
+                  iconColor={colors.danger}
+                  valueColor={colors.danger}
+                />
+              </View>
+
+              {/* Últimos orçamentos */}
+              <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+                {recentQuotes.length === 0 ? (
+                  <Text style={styles.emptyText}>Nenhum orçamento registrado</Text>
+                ) : (
+                  recentQuotes.map((quote, index, array) => {
+                    const badge = QUOTE_STATUS_BADGE[quote.status];
+                    return (
+                      <View
+                        key={quote.id}
+                        style={[
+                          styles.listItem,
+                          index < array.length - 1 && styles.listItemBorder,
+                        ]}
+                      >
+                        <View style={styles.listItemContent}>
+                          <Text style={styles.listItemTitle} numberOfLines={1}>
+                            {`#${quote.quoteNumber} - ${quote.client?.name ?? 'Cliente'}`}
+                          </Text>
+                          <Text style={styles.listItemValue}>
+                            {formatCurrency(quote.total)}
+                          </Text>
+                        </View>
+                        <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+                      </View>
+                    );
+                  })
+                )}
+              </AppCard>
+            </View>
+            )}
+
+            {/* Ordens de Serviço (V3 §64) */}
+            {serviceOrders.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Serviços</Text>
+              <Text style={styles.sectionSubtitle}>Resumo de ordens de serviço</Text>
+
+              {/* Cards de resumo de serviços */}
+              <View style={styles.metricsGrid}>
+                <SummaryCard
+                  title="Total"
+                  value={String(serviceOrders.length)}
+                  subtitle="Ordens de serviço"
+                  icon="hammer-outline"
+                  iconBackground={colors.infoSoft}
+                  iconColor={colors.info}
+                />
+                <SummaryCard
+                  title="Em andamento"
+                  value={String(inProgressServiceOrders.length)}
+                  subtitle="Serviços ativos"
+                  icon="play-circle-outline"
+                  iconBackground={colors.warningSoft}
+                  iconColor={colors.warning}
+                  valueColor={colors.warning}
+                />
+                <SummaryCard
+                  title="Concluídos"
+                  value={String(completedServiceOrders.length)}
+                  subtitle="Serviços finalizados"
+                  icon="checkmark-done-outline"
+                  iconBackground={colors.successSoft}
+                  iconColor={colors.success}
+                  valueColor={colors.success}
+                />
+              </View>
+
+              {/* Últimos serviços */}
+              <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+                {recentServiceOrders.length === 0 ? (
+                  <Text style={styles.emptyText}>Nenhuma ordem de serviço registrada</Text>
+                ) : (
+                  recentServiceOrders.map((serviceOrder, index, array) => {
+                    const badge = SERVICE_ORDER_STATUS_BADGE[serviceOrder.status];
+                    return (
+                      <View
+                        key={serviceOrder.id}
+                        style={[
+                          styles.listItem,
+                          index < array.length - 1 && styles.listItemBorder,
+                        ]}
+                      >
+                        <View style={styles.listItemContent}>
+                          <Text style={styles.listItemTitle} numberOfLines={1}>
+                            {`OS #${serviceOrder.code} - ${serviceOrder.client?.name ?? 'Cliente'}`}
+                          </Text>
+                          <Text style={styles.listItemValue}>
+                            {serviceOrder.saleValue ? formatCurrency(serviceOrder.saleValue) : 'Sem valor'}
+                          </Text>
+                        </View>
+                        <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+                      </View>
+                    );
+                  })
+                )}
+              </AppCard>
+            </View>
+            )}
+
+            {/* Estoque (V3 §64) */}
+            {inventoryMaterials.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Estoque</Text>
+              <Text style={styles.sectionSubtitle}>Materiais com estoque baixo</Text>
+
+              <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+                {lowStockMaterials.length === 0 ? (
+                  <Text style={styles.emptyText}>Todos os materiais com estoque adequado</Text>
+                ) : (
+                  lowStockMaterials.slice(0, 5).map((material, index, array) => (
+                    <View
+                      key={material.id}
+                      style={[
+                        styles.listItem,
+                        index < array.length - 1 && styles.listItemBorder,
+                      ]}
+                    >
+                      <View style={styles.listItemContent}>
+                        <Text style={styles.listItemTitle} numberOfLines={1}>
+                          {material.name}
+                        </Text>
+                        <Text style={styles.listItemValue}>
+                          {`Estoque: ${material.stockQty ?? 0} | Mínimo: ${material.minStockQty ?? 0}`}
+                        </Text>
+                      </View>
+                      <StatusBadge status="warning" label="Estoque baixo" size="sm" />
+                    </View>
+                  ))
+                )}
+              </AppCard>
+            </View>
+            )}
           </>
         )}
       </ScrollView>
