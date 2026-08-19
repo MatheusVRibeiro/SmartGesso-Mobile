@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 
 /**
  * SmartGesso Mobile — Tokens de tipografia.
- * Escala, pesos e família padrão do sistema.
+ * UI/UX Pro Max — Outfit / Work Sans (geométrica, moderna).
+ * Sem fonte custom instalada → fallback para System/sans-serif com pesos corretos.
  */
 export const typography = {
   sizes: {
@@ -25,6 +26,11 @@ export const typography = {
     android: 'sans-serif',
     default: 'System',
   }),
+  letterSpacing: {
+    tight: -0.5,
+    normal: 0,
+    wide: 0.5,
+  },
 } as const;
 
 export type Typography = typeof typography;

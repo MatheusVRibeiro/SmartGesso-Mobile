@@ -1,20 +1,20 @@
 /**
  * SmartGesso Mobile — Tokens de cor.
  *
- * Paleta "Obra profissional": indigo de confiança sobre concreto claro.
- * Referência: DESIGN.md (oklch → hex).
+ * UI/UX Pro Max — "Soft UI Evolution" (indigo vibrante + fundo indigo claro).
+ * WCAG AA+, melhor contraste, sombras aprimoradas.
  */
 export const colors = {
-  // Marca — indigo
-  primary: '#4338CA',
-  primaryDark: '#3730A3',
-  primaryLight: '#6366F1',
-  primarySoft: '#EEF0FF',
+  // Marca — indigo vibrante
+  primary: '#6366F1',
+  primaryDark: '#4F46E5',
+  primaryLight: '#818CF8',
+  primarySoft: '#EEF2FF',
 
   // Secundária / destaque
-  secondary: '#D97706',
-  secondaryDark: '#B45309',
-  secondaryLight: '#F59E0B',
+  secondary: '#818CF8',
+  secondaryDark: '#6366F1',
+  secondaryLight: '#A5B4FC',
 
   // Semânticos
   success: '#059669',
@@ -28,39 +28,38 @@ export const colors = {
   info: '#2563EB',
   infoSoft: '#E8F0FE',
 
-  // Fundos e superfícies (neutro azulado, NÃO cream)
-  background: '#F7F7F8',
+  // Fundos e superfícies (indigo claro — Soft UI Evolution)
+  background: '#F5F3FF',
   surface: '#FFFFFF',
   card: '#FFFFFF',
 
-  // Texto
-  text: '#1E2230',
-  textSecondary: '#5A6172',
-  textLight: '#8A90A0',
+  // Texto (indigo profundo)
+  text: '#312E81',
+  textSecondary: '#6D6A9E',
+  textLight: '#9B98C4',
   textOnPrimary: '#FFFFFF',
   textOnSecondary: '#FFFFFF',
 
-  // Bordas e divisores
-  border: '#E2E4EA',
-  divider: '#EDEFF3',
+  // Bordas e divisores (indigo claro)
+  border: '#E0E7FF',
+  divider: '#EDF0FA',
 
   // Inputs
   inputBackground: '#FFFFFF',
-  inputBorder: '#D8DBE2',
-  inputFocus: '#4338CA',
-  /** Anel de foco de inputs (primary a 12%). */
-  focusRing: 'rgba(67, 56, 202, 0.12)',
+  inputBorder: '#D4D9F5',
+  inputFocus: '#6366F1',
 
   // Estados desabilitados
-  disabled: '#C8CBD4',
-  disabledBackground: '#EDEFF3',
-  disabledText: '#9BA0AC',
+  disabled: '#C7C9E8',
+  disabledBackground: '#EDF0FA',
+  disabledText: '#9B98C4',
 
   // Utilitários
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
-  overlay: 'rgba(30, 34, 48, 0.55)',
+  focusRing: 'rgba(99, 102, 241, 0.12)',
+  overlay: 'rgba(49, 46, 129, 0.55)',
 } as const;
 
 export type Colors = typeof colors;
