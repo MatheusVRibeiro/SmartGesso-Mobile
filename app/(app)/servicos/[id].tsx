@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,10 +25,13 @@ import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
+import { expensesService } from '../../../src/services/api/expenses';
+import { paymentsService } from '../../../src/services/api/payments';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
+import type { Expense } from '../../../src/types/finance';
 import type {
   RegisterServiceOrderResultInput,
   ServiceOrder,
@@ -101,6 +112,42 @@ function getStatusTransitions(status: ServiceOrderStatus): StatusTransition[] {
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString('pt-BR');
+}
+
+/** dd/mm — datas de prazo do serviço (V3 central operacional). */
+function formatDayMonth(dateStr?: string | null): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+/** Dias inteiros entre hoje e a data-alvo — negativo = passado. */
+function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+}
+
+/** Badge de prazo: faltam X dias (warning) / atrasado X dias (danger) / concluído. */
+function getPrazoBadge(
+  order: ServiceOrder,
+  referenceDate: string | null,
+): { variant: StatusBadgeVariant; label: string } | null {
+  if (!referenceDate) return null;
+  if (order.status === 'CONCLUIDA') {
+    return { variant: 'active', label: 'Concluído' };
+  }
+  if (order.status === 'CANCELADA') return null;
+  const days = daysUntil(referenceDate);
+  if (days > 0) {
+    return { variant: 'warning', label: `Faltam ${days} ${days === 1 ? 'dia' : 'dias'}` };
+  }
+  if (days === 0) return { variant: 'warning', label: 'Hoje' };
+  const late = Math.abs(days);
+  return { variant: 'expired', label: `Atrasado ${late} ${late === 1 ? 'dia' : 'dias'}` };
 }
 
 // ─── Modal de registro de resultado ─────────────────────────────────────────
@@ -198,6 +245,11 @@ export default function DetalheOrdemServicoScreen() {
     message: string;
   } | null>(null);
 
+  // Scroll programático para os atalhos "Atualizar status" / "Ver checklist".
+  const scrollRef = useRef<ScrollView>(null);
+  const statusSectionY = useRef(0);
+  const checklistSectionY = useRef(0);
+
   const orderQuery = useQuery({
     queryKey: ['company', companyId, 'service-orders', orderId],
     queryFn: () => serviceOrdersService.getById(orderId as string),
@@ -272,6 +324,20 @@ export default function DetalheOrdemServicoScreen() {
     enabled: Boolean(companyId && orderQuery.data?.clientId),
   });
 
+  // Financeiro (V3) — pagamentos da empresa; recebido = soma CONFIRMADO do cliente.
+  const paymentsQuery = useQuery({
+    queryKey: ['company', companyId, 'payments'],
+    queryFn: () => paymentsService.list(),
+    enabled: Boolean(companyId),
+  });
+
+  // Custos (V3) — despesas da empresa; vinculadas = serviceOrderId === ordem.
+  const expensesQuery = useQuery({
+    queryKey: ['company', companyId, 'expenses'],
+    queryFn: () => expensesService.list(),
+    enabled: Boolean(companyId),
+  });
+
   const registerResultMutation = useMutation({
     mutationFn: (data: RegisterServiceOrderResultInput) =>
       serviceOrdersService.registerResult(orderId as string, data),
@@ -314,6 +380,126 @@ export default function DetalheOrdemServicoScreen() {
 
   const order = orderQuery.data;
   const statusBadge = order ? SERVICE_ORDER_STATUS_BADGE[order.status] : null;
+
+  // ─── Central operacional (V3): prazo, financeiro, custos, atalhos ────────
+
+  /** Campos de prazo que a API ainda não expõe na ServiceOrder (forward-compatible). */
+  type ServiceOrderPrazoFields = ServiceOrder & {
+    startedDate?: string | null;
+    endDate?: string | null;
+    deadlineDate?: string | null;
+  };
+  const prazoFields = order as ServiceOrderPrazoFields | undefined;
+  const startedDate = prazoFields?.startedDate ?? null;
+  const deliveryDate =
+    prazoFields?.endDate ?? prazoFields?.deadlineDate ?? null;
+  // Contagem regressiva usa a entrega prevista quando houver; senão, o início.
+  const prazoReferenceDate = deliveryDate ?? order?.scheduledDate ?? null;
+  const prazoBadge = order ? getPrazoBadge(order, prazoReferenceDate) : null;
+
+  // Financeiro — recebido = soma de pagamentos CONFIRMADO do cliente
+  // (parcelas confirmadas quando o pagamento é parcelado).
+  const clientPayments = order
+    ? (paymentsQuery.data?.data ?? []).filter(
+        (payment) => payment.clientId === order.clientId,
+      )
+    : [];
+  const receivedTotal = clientPayments.reduce((sum, payment) => {
+    if (payment.installments && payment.installments.length > 0) {
+      return (
+        sum +
+        payment.installments
+          .filter((installment) => installment.status === 'CONFIRMADO')
+          .reduce((s, installment) => s + installment.amount, 0)
+      );
+    }
+    return payment.status === 'CONFIRMADO' ? sum + payment.amount : sum;
+  }, 0);
+  const contractedValue = order?.saleValue ?? null;
+  const toReceiveValue =
+    contractedValue != null ? contractedValue - receivedTotal : null;
+
+  // Custos — despesas vinculadas ao serviço (Expense ainda não tem
+  // serviceOrderId na API; filtro forward-compatible).
+  const linkedExpenses = order
+    ? (expensesQuery.data?.data ?? []).filter(
+        (expense) =>
+          (expense as Expense & { serviceOrderId?: string | null })
+            .serviceOrderId === order.id,
+      )
+    : [];
+  const expensesTotal = linkedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+  function scrollToSection(y: number) {
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - spacing.md), animated: true });
+  }
+
+  // Atalhos (V3) — grid de ações rápidas da central operacional.
+  const shortcuts = order
+    ? [
+        {
+          key: 'pagamento',
+          label: 'Registrar pagamento',
+          icon: 'card-outline' as const,
+          color: colors.success,
+          backgroundColor: colors.successSoft,
+          onPress: () =>
+            router.push({
+              pathname: '/pagamentos/novo',
+              params: { clientId: order.clientId },
+            }),
+        },
+        {
+          key: 'despesa',
+          label: 'Adicionar despesa',
+          icon: 'receipt-outline' as const,
+          color: colors.warning,
+          backgroundColor: colors.warningSoft,
+          onPress: () =>
+            router.push({
+              pathname: '/despesas/novo',
+              params: { serviceOrderId: order.id },
+            }),
+        },
+        {
+          key: 'foto',
+          label: 'Adicionar foto',
+          icon: 'camera-outline' as const,
+          color: colors.primary,
+          backgroundColor: colors.primarySoft,
+          onPress: () =>
+            setSnackbar({
+              type: 'info',
+              message: 'Registro de fotos disponível em breve',
+            }),
+        },
+        {
+          key: 'status',
+          label: 'Atualizar status',
+          icon: 'swap-horizontal-outline' as const,
+          color: colors.info,
+          backgroundColor: colors.infoSoft,
+          onPress: () => scrollToSection(statusSectionY.current),
+        },
+        {
+          key: 'agenda',
+          label: 'Ver agenda',
+          icon: 'calendar-outline' as const,
+          color: colors.primary,
+          backgroundColor: colors.primarySoft,
+          onPress: () =>
+            setSnackbar({ type: 'info', message: 'Agenda disponível em breve' }),
+        },
+        {
+          key: 'checklist',
+          label: 'Ver checklist',
+          icon: 'checkbox-outline' as const,
+          color: colors.success,
+          backgroundColor: colors.successSoft,
+          onPress: () => scrollToSection(checklistSectionY.current),
+        },
+      ]
+    : [];
 
   // Cliente completo (telefone/WhatsApp/endereço) — ações rápidas
   const client = clientQuery.data;
@@ -389,7 +575,7 @@ export default function DetalheOrdemServicoScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenContainer scroll padding keyboard={false}>
+      <ScreenContainer scroll padding keyboard={false} scrollRef={scrollRef}>
         <Stack.Screen options={{ title: 'Detalhe da ordem de serviço', headerShown: true }} />
 
         <View style={styles.header}>
@@ -508,6 +694,135 @@ export default function DetalheOrdemServicoScreen() {
               )}
             </AppCard>
 
+            {/* ── Central operacional (V3): Prazo ─────────────────────────── */}
+            <Text style={styles.sectionLabel}>Prazo</Text>
+            <AppCard shadow="light" style={styles.prazoCard}>
+              <View style={styles.prazoRow}>
+                <View style={styles.prazoItem}>
+                  <Text style={styles.prazoLabel}>Início previsto</Text>
+                  <Text style={styles.prazoValue}>
+                    {formatDayMonth(order.scheduledDate)}
+                  </Text>
+                </View>
+                <View style={styles.prazoItem}>
+                  <Text style={styles.prazoLabel}>Entrega prevista</Text>
+                  <Text style={styles.prazoValue}>
+                    {formatDayMonth(deliveryDate)}
+                  </Text>
+                </View>
+                {startedDate ? (
+                  <View style={styles.prazoItem}>
+                    <Text style={styles.prazoLabel}>Início real</Text>
+                    <Text style={styles.prazoValue}>
+                      {formatDayMonth(startedDate)}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              {prazoBadge && (
+                <View style={styles.prazoBadgeWrap}>
+                  <StatusBadge
+                    status={prazoBadge.variant}
+                    label={prazoBadge.label}
+                    size="sm"
+                  />
+                </View>
+              )}
+            </AppCard>
+
+            {/* ── Central operacional (V3): Financeiro ────────────────────── */}
+            <Text style={styles.sectionLabel}>Financeiro</Text>
+            <AppCard shadow="light" style={styles.financeiroCard}>
+              <View style={styles.financeiroRow}>
+                <View style={styles.financeiroItem}>
+                  <Text style={styles.financeiroLabel}>Contratado</Text>
+                  <Text style={styles.financeiroValue}>
+                    {formatCurrency(contractedValue)}
+                  </Text>
+                </View>
+                <View style={styles.financeiroItem}>
+                  <Text style={styles.financeiroLabel}>Recebido</Text>
+                  <Text style={styles.financeiroValueSemibold}>
+                    {formatCurrency(receivedTotal)}
+                  </Text>
+                </View>
+                <View style={styles.financeiroItem}>
+                  <Text style={styles.financeiroLabel}>A receber</Text>
+                  <Text
+                    style={[
+                      styles.financeiroValueSemibold,
+                      toReceiveValue != null && {
+                        color: toReceiveValue > 0 ? colors.warning : colors.success,
+                      },
+                    ]}
+                  >
+                    {formatCurrency(toReceiveValue)}
+                  </Text>
+                </View>
+              </View>
+              {paymentsQuery.isLoading && (
+                <Text style={styles.financeiroHint}>Carregando pagamentos...</Text>
+              )}
+            </AppCard>
+
+            {/* ── Central operacional (V3): Custos ────────────────────────── */}
+            <Text style={styles.sectionLabel}>Custos</Text>
+            <AppCard shadow="light" style={styles.custosCard}>
+              <View style={styles.custosRow}>
+                <View style={styles.custosIcon}>
+                  <Ionicons
+                    name="receipt-outline"
+                    size={sizes.icon.md}
+                    color={colors.warning}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <View style={styles.custosInfo}>
+                  <Text style={styles.custosLabel}>Despesas vinculadas</Text>
+                  <Text style={styles.custosValue}>
+                    {formatCurrency(expensesTotal)}
+                  </Text>
+                </View>
+              </View>
+              {expensesTotal === 0 && (
+                <Text style={styles.custosHint}>
+                  Nenhuma despesa vinculada a este serviço
+                </Text>
+              )}
+            </AppCard>
+
+            {/* ── Central operacional (V3): Atalhos ───────────────────────── */}
+            <Text style={styles.sectionLabel}>Atalhos</Text>
+            <View style={styles.shortcutsGrid}>
+              {shortcuts.map((shortcut) => (
+                <Pressable
+                  key={shortcut.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={shortcut.label}
+                  onPress={shortcut.onPress}
+                  style={({ pressed }) => [
+                    styles.shortcutItem,
+                    pressed && styles.shortcutItemPressed,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.shortcutIcon,
+                      { backgroundColor: shortcut.backgroundColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={shortcut.icon}
+                      size={sizes.icon.md}
+                      color={shortcut.color}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <Text style={styles.shortcutLabel}>{shortcut.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
             <Text style={styles.sectionLabel}>Ações rápidas</Text>
             <View style={styles.quickActions}>
               <Pressable
@@ -571,7 +886,14 @@ export default function DetalheOrdemServicoScreen() {
               </Pressable>
             </View>
 
-            <Text style={styles.sectionLabel}>Status</Text>
+            <Text
+              style={styles.sectionLabel}
+              onLayout={(event) => {
+                statusSectionY.current = event.nativeEvent.layout.y;
+              }}
+            >
+              Status
+            </Text>
             <AppCard shadow="light" style={styles.statusCard}>
               {order.status === 'CANCELADA' ? (
                 <Text style={styles.statusCancelledText}>
@@ -640,7 +962,14 @@ export default function DetalheOrdemServicoScreen() {
               )}
             </AppCard>
 
-            <Text style={styles.sectionLabel}>Checklist de execução</Text>
+            <Text
+              style={styles.sectionLabel}
+              onLayout={(event) => {
+                checklistSectionY.current = event.nativeEvent.layout.y;
+              }}
+            >
+              Checklist de execução
+            </Text>
             <AppCard shadow="light" style={styles.checklistCard}>
               {CHECKLIST_ITEMS.map((item) => {
                 const checked = order.checklist?.[item] === true;
@@ -993,6 +1322,130 @@ const styles = StyleSheet.create({
   },
   resultCtaButton: {
     marginBottom: spacing.lg,
+  },
+  // Central operacional (V3) — Prazo / Financeiro / Custos / Atalhos
+  prazoCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  prazoRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  prazoItem: {
+    flex: 1,
+  },
+  prazoLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  prazoValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  prazoBadgeWrap: {
+    marginTop: spacing.md,
+    alignItems: 'flex-start',
+  },
+  financeiroCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  financeiroRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  financeiroItem: {
+    flex: 1,
+  },
+  financeiroLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  financeiroValue: {
+    fontSize: typography.sizes.md,
+    color: colors.text,
+  },
+  financeiroValueSemibold: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  financeiroHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: spacing.sm,
+  },
+  custosCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  custosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  custosIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.warningSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  custosInfo: {
+    flex: 1,
+  },
+  custosLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  custosValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  custosHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
+  },
+  shortcutsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  shortcutItem: {
+    width: '48%',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  shortcutItemPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  shortcutIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shortcutLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+    textAlign: 'center',
   },
   // Ações rápidas (rota / ligar / WhatsApp)
   quickActions: {

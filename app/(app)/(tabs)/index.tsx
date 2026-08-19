@@ -44,10 +44,16 @@ const getQuoteStatusBadge = (status: string): { variant: StatusBadgeVariant; lab
   switch (status) {
     case 'ENVIADO':
       return { variant: 'warning', label: 'Enviado' };
+    case 'AGUARDANDO_APROVACAO':
+      return { variant: 'warning', label: 'Aguardando aprovação' };
     case 'APROVADO':
       return { variant: 'active', label: 'Aprovado' };
+    case 'PRONTO_PARA_ENVIAR':
+      return { variant: 'info', label: 'Pronto para enviar' };
     case 'RASCUNHO':
       return { variant: 'expired', label: 'Rascunho' };
+    case 'VENCIDO':
+      return { variant: 'expired', label: 'Vencido' };
     default:
       return { variant: 'cancelled', label: status };
   }

@@ -32,3 +32,11 @@ export function formatNumber(value?: number | null): string {
   }
   return numberFormatter.format(value);
 }
+
+/**
+ * Formata o número do orçamento como código comercial (ORC + 5 dígitos).
+ * Ex.: 125 → "ORC-00125" · 3 → "ORC-00003"
+ */
+export function formatQuoteCode(quoteNumber: number): string {
+  return `ORC-${String(quoteNumber).padStart(5, '0')}`;
+}

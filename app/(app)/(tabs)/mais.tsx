@@ -55,6 +55,13 @@ export default function MaisScreen() {
       action: () => router.push('/clientes'),
     },
     {
+      id: 'agenda',
+      title: 'Agenda',
+      icon: 'calendar-outline',
+      section: 'Operação',
+      action: () => router.push('/agenda'),
+    },
+    {
       id: 'orcamentos',
       title: 'Orçamentos',
       icon: 'document-text-outline',

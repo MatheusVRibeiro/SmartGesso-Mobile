@@ -1,6 +1,14 @@
 // ─── Orçamentos (Fase 4) ───────────────────────────────────────────────────
 
-export type QuoteStatus = 'RASCUNHO' | 'ENVIADO' | 'APROVADO' | 'REJEITADO' | 'CANCELADO';
+export type QuoteStatus =
+  | 'RASCUNHO'
+  | 'PRONTO_PARA_ENVIAR'
+  | 'ENVIADO'
+  | 'AGUARDANDO_APROVACAO'
+  | 'APROVADO'
+  | 'REJEITADO'
+  | 'VENCIDO'
+  | 'CANCELADO';
 
 export type QuotePaymentMethod =
   | 'AVISTA'
@@ -31,6 +39,10 @@ export interface QuoteSummary {
   total: number;
   paymentMethod: QuotePaymentMethod;
   createdAt: string;
+  /** Data agendada para visita técnica (V3 — Agenda). */
+  visitDate?: string | null;
+  /** Data agendada para medição (V3 — Agenda). */
+  measurementDate?: string | null;
   client?: { id: string; name: string };
   work?: { id: string; name: string };
 }
@@ -51,9 +63,33 @@ export interface Quote {
   observations?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Marcado quando o orçamento aprovado vira ordem de serviço (V3). */
+  convertedAt?: string | null;
   client?: { id: string; name: string; document?: string | null };
   work?: { id: string; name: string };
   items: QuoteItemSummary[];
+  /** Timeline de eventos (criação, versões, aprovação, rejeição...). */
+  history?: QuoteHistoryItem[];
+}
+
+/** Evento do histórico do orçamento (QuoteHistory). */
+export interface QuoteHistoryItem {
+  id: string;
+  status: QuoteStatus;
+  changedAt: string;
+  note?: string | null;
+}
+
+/** Resposta de POST /quotes/:id/convert-to-service (V3). */
+export interface ConvertToServiceResult {
+  serviceOrderId: string;
+  code: number;
+  status: string;
+  clientId: string;
+  workId?: string | null;
+  scheduledDate?: string | null;
+  saleValue: number;
+  observations?: string | null;
 }
 
 /** Endereço/local onde o serviço será realizado (contexto do orçamento). */

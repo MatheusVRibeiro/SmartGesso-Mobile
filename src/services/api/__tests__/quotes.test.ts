@@ -84,6 +84,66 @@ describe('quotesService', () => {
     expect(result.version).toBe(2);
   });
 
+  it('approve chama POST /quotes/:id/approve', async () => {
+    mockClient.post.mockResolvedValue({ data: { ...mockQuote, status: 'APROVADO' } });
+
+    const result = await quotesService.approve('q-1');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/approve');
+    expect(result.status).toBe('APROVADO');
+  });
+
+  it('reject chama POST /quotes/:id/reject com a nota', async () => {
+    mockClient.post.mockResolvedValue({ data: { ...mockQuote, status: 'REJEITADO' } });
+
+    const result = await quotesService.reject('q-1', 'Cliente pediu desconto');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/reject', {
+      note: 'Cliente pediu desconto',
+    });
+    expect(result.status).toBe('REJEITADO');
+  });
+
+  it('reject envia nota undefined quando omitida', async () => {
+    mockClient.post.mockResolvedValue({ data: { ...mockQuote, status: 'REJEITADO' } });
+
+    await quotesService.reject('q-1');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/reject', {
+      note: undefined,
+    });
+  });
+
+  it('duplicate chama POST /quotes/:id/duplicate e retorna o novo orçamento', async () => {
+    const duplicated = { ...mockQuote, id: 'q-2', quoteNumber: 2, status: 'RASCUNHO' };
+    mockClient.post.mockResolvedValue({ data: duplicated });
+
+    const result = await quotesService.duplicate('q-1');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/duplicate');
+    expect(result.id).toBe('q-2');
+    expect(result.status).toBe('RASCUNHO');
+  });
+
+  it('convertToService chama POST /quotes/:id/convert-to-service', async () => {
+    const converted = {
+      serviceOrderId: 'os-1',
+      code: 1,
+      status: 'PENDENTE',
+      clientId: 'cli-1',
+      workId: null,
+      scheduledDate: null,
+      saleValue: 1500,
+      observations: null,
+    };
+    mockClient.post.mockResolvedValue({ data: converted });
+
+    const result = await quotesService.convertToService('q-1');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/convert-to-service');
+    expect(result.serviceOrderId).toBe('os-1');
+  });
+
   it('getPdf chama GET /quotes/:id/pdf com responseType blob', async () => {
     mockClient.get.mockResolvedValue({ data: {} as Blob });
 

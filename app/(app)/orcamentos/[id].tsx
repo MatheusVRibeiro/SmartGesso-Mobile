@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { AppInput } from '../../../src/components/ui/AppInput';
 import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
 import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
@@ -18,8 +19,8 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { quotesService } from '../../../src/services/api/quotes';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
-import { formatCurrency, formatNumber } from '../../../src/utils/format';
+import { colors, radius, shadows, sizes, spacing, typography } from '../../../src/theme';
+import { formatCurrency, formatNumber, formatQuoteCode } from '../../../src/utils/format';
 import type { QuoteStatus } from '../../../src/types/quote';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -29,9 +30,12 @@ const QUOTE_STATUS_BADGE: Record<
   { variant: StatusBadgeVariant; label: string }
 > = {
   RASCUNHO: { variant: 'expired', label: 'Rascunho' },
+  PRONTO_PARA_ENVIAR: { variant: 'info', label: 'Pronto para enviar' },
   ENVIADO: { variant: 'warning', label: 'Enviado' },
+  AGUARDANDO_APROVACAO: { variant: 'warning', label: 'Aguardando aprovação' },
   APROVADO: { variant: 'active', label: 'Aprovado' },
   REJEITADO: { variant: 'cancelled', label: 'Rejeitado' },
+  VENCIDO: { variant: 'expired', label: 'Vencido' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
 };
 
@@ -50,6 +54,10 @@ export default function DetalheOrcamentoScreen() {
   const quoteId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+  const [confirmApproveVisible, setConfirmApproveVisible] = useState(false);
+  const [approvedModalVisible, setApprovedModalVisible] = useState(false);
+  const [rejectVisible, setRejectVisible] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
     message: string;
@@ -86,6 +94,71 @@ export default function DetalheOrcamentoScreen() {
     },
     onError: (error: unknown) => {
       setConfirmDeleteVisible(false);
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: () => quotesService.approve(quoteId as string),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes'],
+      });
+      setConfirmApproveVisible(false);
+      setSnackbar({ type: 'success', message: 'Orçamento aprovado com sucesso' });
+      setApprovedModalVisible(true);
+    },
+    onError: (error: unknown) => {
+      setConfirmApproveVisible(false);
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (note?: string) => quotesService.reject(quoteId as string, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes'],
+      });
+      setRejectVisible(false);
+      setRejectNote('');
+      setSnackbar({ type: 'success', message: 'Orçamento marcado como não aprovado' });
+    },
+    onError: (error: unknown) => {
+      setRejectVisible(false);
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: () => quotesService.duplicate(quoteId as string),
+    onSuccess: (duplicated) => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes'],
+      });
+      setSnackbar({ type: 'success', message: 'Orçamento duplicado com sucesso' });
+      router.push(`/orcamentos/${duplicated.id}`);
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: () => quotesService.convertToService(quoteId as string),
+    onSuccess: (converted) => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
+      setApprovedModalVisible(false);
+      setSnackbar({ type: 'success', message: 'Serviço criado a partir do orçamento' });
+      router.replace(`/servicos/${converted.serviceOrderId}`);
+    },
+    onError: (error: unknown) => {
+      setApprovedModalVisible(false);
       setSnackbar({ type: 'error', message: toApiError(error).message });
     },
   });
@@ -141,6 +214,11 @@ export default function DetalheOrcamentoScreen() {
 
   const quote = quoteQuery.data;
   const statusBadge = quote ? QUOTE_STATUS_BADGE[quote.status] : null;
+  const history = quote?.history ?? [];
+  const canApprove =
+    quote?.status === 'RASCUNHO' ||
+    quote?.status === 'ENVIADO' ||
+    quote?.status === 'AGUARDANDO_APROVACAO';
 
   return (
     <View style={styles.screen}>
@@ -297,7 +375,68 @@ export default function DetalheOrcamentoScreen() {
               </>
             )}
 
+            {history.length > 0 && (
+              <>
+                <Text style={styles.sectionLabel}>Histórico</Text>
+                <AppCard shadow="light" style={styles.historyCard}>
+                  {history.map((event, index) => (
+                    <View
+                      key={event.id}
+                      style={[
+                        styles.historyItem,
+                        index < history.length - 1 && styles.historyItemBorder,
+                      ]}
+                    >
+                      <View style={styles.historyDot} />
+                      <View style={styles.historyContent}>
+                        <View style={styles.historyHeader}>
+                          <Text style={styles.historyStatus}>
+                            {QUOTE_STATUS_BADGE[event.status]?.label ?? event.status}
+                          </Text>
+                          <Text style={styles.historyDate}>
+                            {formatDate(event.changedAt)}
+                          </Text>
+                        </View>
+                        {event.note ? (
+                          <Text style={styles.historyNote}>{event.note}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))}
+                </AppCard>
+              </>
+            )}
+
             <View style={styles.actions}>
+              {canApprove && (
+                <>
+                  <AppButton
+                    title="Aprovar orçamento"
+                    size="lg"
+                    accessibilityLabel="Aprovar orçamento"
+                    onPress={() => setConfirmApproveVisible(true)}
+                    style={styles.actionButton}
+                  />
+                  <AppButton
+                    title="Não aprovado"
+                    variant="secondary"
+                    size="lg"
+                    accessibilityLabel="Marcar orçamento como não aprovado"
+                    onPress={() => setRejectVisible(true)}
+                    style={styles.actionButton}
+                  />
+                </>
+              )}
+              <AppButton
+                title="Duplicar"
+                variant="secondary"
+                size="lg"
+                accessibilityLabel="Duplicar orçamento"
+                onPress={() => duplicateMutation.mutate()}
+                loading={duplicateMutation.isPending}
+                disabled={duplicateMutation.isPending}
+                style={styles.actionButton}
+              />
               <AppButton
                 title="Gerar PDF"
                 size="lg"
@@ -339,6 +478,113 @@ export default function DetalheOrcamentoScreen() {
         onConfirm={() => deleteMutation.mutate()}
         onCancel={() => setConfirmDeleteVisible(false)}
       />
+
+      <ConfirmDialog
+        visible={confirmApproveVisible}
+        title="Aprovar orçamento"
+        message={
+          quote
+            ? `O cliente aprovou este orçamento?\n\n${formatQuoteCode(
+                quote.quoteNumber
+              )} · ${quote.client?.name ?? 'Cliente não informado'}\n${formatCurrency(
+                quote.total
+              )}`
+            : 'O cliente aprovou este orçamento?'
+        }
+        confirmLabel="Aprovar"
+        cancelLabel="Cancelar"
+        loading={approveMutation.isPending}
+        onConfirm={() => approveMutation.mutate()}
+        onCancel={() => setConfirmApproveVisible(false)}
+      />
+
+      <Modal
+        visible={approvedModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setApprovedModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIcon}>
+              <Ionicons
+                name="checkmark-circle"
+                size={sizes.icon.xl}
+                color={colors.success}
+                accessibilityElementsHidden
+              />
+            </View>
+            <Text style={styles.modalTitle}>Orçamento aprovado!</Text>
+            <Text style={styles.modalMessage}>
+              Deseja iniciar o planejamento deste serviço? Cliente, itens e valores
+              serão reaproveitados do orçamento.
+            </Text>
+            <View style={styles.modalActions}>
+              <AppButton
+                title="Agora não"
+                variant="ghost"
+                size="sm"
+                onPress={() => setApprovedModalVisible(false)}
+                disabled={convertMutation.isPending}
+                style={styles.modalButton}
+              />
+              <AppButton
+                title="Criar serviço"
+                size="sm"
+                accessibilityLabel="Criar serviço a partir do orçamento"
+                onPress={() => convertMutation.mutate()}
+                loading={convertMutation.isPending}
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={rejectVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRejectVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Não aprovado</Text>
+            <Text style={styles.modalMessage}>
+              Registre o motivo (opcional) para o histórico do orçamento.
+            </Text>
+            <AppInput
+              label="Motivo"
+              value={rejectNote}
+              onChangeText={setRejectNote}
+              placeholder="Ex.: cliente pediu desconto"
+              multiline
+              numberOfLines={3}
+              maxLength={500}
+              accessibilityLabel="Motivo da não aprovação"
+              style={styles.rejectInput}
+            />
+            <View style={styles.modalActions}>
+              <AppButton
+                title="Cancelar"
+                variant="ghost"
+                size="sm"
+                onPress={() => setRejectVisible(false)}
+                disabled={rejectMutation.isPending}
+                style={styles.modalButton}
+              />
+              <AppButton
+                title="Confirmar"
+                variant="danger"
+                size="sm"
+                onPress={() => rejectMutation.mutate(rejectNote.trim() || undefined)}
+                loading={rejectMutation.isPending}
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {snackbar && (
         <AppSnackbar
@@ -522,6 +768,92 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
     lineHeight: typography.sizes.sm * 1.5,
+  },
+  historyCard: {
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  historyItem: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  historyItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  historyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    marginTop: 6,
+  },
+  historyContent: {
+    flex: 1,
+    gap: 2,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  historyStatus: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  historyDate: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+  },
+  historyNote: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing['2xl'],
+    ...shadows.medium,
+  },
+  modalIcon: {
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  modalMessage: {
+    fontSize: typography.sizes.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+  },
+  modalButton: {
+    flex: 1,
+  },
+  rejectInput: {
+    marginBottom: spacing.lg,
   },
   actions: {
     gap: spacing.sm,

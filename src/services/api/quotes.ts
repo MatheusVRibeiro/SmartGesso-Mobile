@@ -1,5 +1,11 @@
 import { getApiClient } from './client';
-import type { Quote, QuoteSummary, CreateQuoteInput, UpdateQuoteInput } from '../../types/quote';
+import type {
+  ConvertToServiceResult,
+  Quote,
+  QuoteSummary,
+  CreateQuoteInput,
+  UpdateQuoteInput,
+} from '../../types/quote';
 
 function api() {
   return getApiClient();
@@ -39,6 +45,32 @@ export const quotesService = {
   /** POST /quotes/:id/version — gera nova versão */
   async generateVersion(id: string): Promise<Quote> {
     const response = await api().post<Quote>(`/quotes/${id}/version`);
+    return response.data;
+  },
+
+  /** POST /quotes/:id/approve — aprova o orçamento (status APROVADO). */
+  async approve(id: string): Promise<Quote> {
+    const response = await api().post<Quote>(`/quotes/${id}/approve`);
+    return response.data;
+  },
+
+  /** POST /quotes/:id/reject — rejeita o orçamento, com nota opcional. */
+  async reject(id: string, note?: string): Promise<Quote> {
+    const response = await api().post<Quote>(`/quotes/${id}/reject`, { note });
+    return response.data;
+  },
+
+  /** POST /quotes/:id/duplicate — duplica o orçamento (novo RASCUNHO). */
+  async duplicate(id: string): Promise<Quote> {
+    const response = await api().post<Quote>(`/quotes/${id}/duplicate`);
+    return response.data;
+  },
+
+  /** POST /quotes/:id/convert-to-service — converte orçamento aprovado em OS. */
+  async convertToService(id: string): Promise<ConvertToServiceResult> {
+    const response = await api().post<ConvertToServiceResult>(
+      `/quotes/${id}/convert-to-service`
+    );
     return response.data;
   },
 

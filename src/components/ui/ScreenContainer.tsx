@@ -7,6 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, sizes, spacing } from '../../theme';
 
@@ -23,6 +24,8 @@ export interface ScreenContainerProps {
   style?: ViewStyle;
   contentContainerStyle?: ViewStyle;
   testID?: string;
+  /** Ref da ScrollView (scroll=true) — permite scroll programático (ex.: atalhos). */
+  scrollRef?: React.RefObject<ScrollViewType | null>;
 }
 
 function ScreenContainer({
@@ -35,12 +38,14 @@ function ScreenContainer({
   style,
   contentContainerStyle,
   testID,
+  scrollRef,
 }: ScreenContainerProps) {
   const paddingValue =
     typeof padding === 'number' ? padding : padding ? sizes.screenPadding : 0;
 
   const content = scroll ? (
     <ScrollView
+      ref={scrollRef}
       contentContainerStyle={[
         styles.scrollContent,
         { padding: paddingValue },

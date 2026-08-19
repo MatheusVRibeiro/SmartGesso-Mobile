@@ -25,9 +25,12 @@ const QUOTE_STATUS_BADGE: Record<
   { variant: StatusBadgeVariant; label: string }
 > = {
   RASCUNHO: { variant: 'expired', label: 'Rascunho' },
+  PRONTO_PARA_ENVIAR: { variant: 'info', label: 'Pronto para enviar' },
   ENVIADO: { variant: 'warning', label: 'Enviado' },
+  AGUARDANDO_APROVACAO: { variant: 'warning', label: 'Aguardando aprovação' },
   APROVADO: { variant: 'active', label: 'Aprovado' },
   REJEITADO: { variant: 'cancelled', label: 'Rejeitado' },
+  VENCIDO: { variant: 'expired', label: 'Vencido' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
 };
 
