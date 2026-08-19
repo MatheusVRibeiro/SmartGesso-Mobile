@@ -3,8 +3,15 @@ import { Text, StyleSheet, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScreenContainer, PasswordInput, AppButton, AppSnackbar } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  ScreenContainer,
+  PasswordInput,
+  AppButton,
+  AppSnackbar,
+  AppCard,
+} from '../../src/components/ui';
+import { colors, radius, sizes, spacing, typography } from '../../src/theme';
 import { acceptInvitationSchema, type AcceptInvitationFormData } from '../../src/validation/schemas';
 import { authService } from '../../src/services/api/auth';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
@@ -88,6 +95,14 @@ export default function AcceptInvitationScreen() {
     return (
       <ScreenContainer scroll padding>
         <View style={styles.errorContainer}>
+          <View style={styles.errorCircle}>
+            <Ionicons
+              name="alert-circle"
+              size={sizes.icon.xl}
+              color={colors.danger}
+              accessibilityElementsHidden
+            />
+          </View>
           <Text style={styles.errorTitle}>Convite inválido</Text>
           <Text style={styles.errorSubtitle}>
             O link de convite é inválido ou expirou.
@@ -96,6 +111,7 @@ export default function AcceptInvitationScreen() {
             title="Voltar para o login"
             onPress={() => router.replace('/(auth)/login')}
             accessibilityLabel="Voltar para o login"
+            style={styles.errorButton}
           />
         </View>
       </ScreenContainer>
@@ -104,15 +120,30 @@ export default function AcceptInvitationScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenContainer scroll padding>
+      <ScreenContainer scroll padding keyboard>
         <View style={styles.header}>
-          <Text style={styles.title}>Aceitar convite</Text>
-          <Text style={styles.subtitle}>
-            Defina sua senha para acessar o sistema
-          </Text>
+          <View style={styles.logoCircle}>
+            <Ionicons
+              name="business-outline"
+              size={sizes.icon.xl}
+              color={colors.textOnPrimary}
+              accessibilityElementsHidden
+            />
+          </View>
+          <Text style={styles.logo}>SmartGesso</Text>
+          <Text style={styles.subtitle}>Aceite seu convite</Text>
         </View>
 
-        <View style={styles.form}>
+        <AppCard
+          padding={spacing['2xl']}
+          radius={radius.xl}
+          shadow="medium"
+          style={styles.card}
+        >
+          <Text style={styles.cardDescription}>
+            Defina sua senha para acessar o sistema
+          </Text>
+
           <Controller
             control={control}
             name="password"
@@ -147,13 +178,14 @@ export default function AcceptInvitationScreen() {
 
           <AppButton
             title="Criar senha e acessar"
+            size="lg"
             loading={loading}
             disabled={loading}
             accessibilityLabel="Criar senha e acessar o sistema"
             onPress={handleSubmit(onSubmit)}
             style={styles.submitButton}
           />
-        </View>
+        </AppCard>
       </ScreenContainer>
 
       <AppSnackbar
@@ -168,25 +200,43 @@ export default function AcceptInvitationScreen() {
 
 const styles = StyleSheet.create({
   header: {
+    alignItems: 'center',
     marginTop: spacing['4xl'],
     marginBottom: spacing['3xl'],
   },
-  title: {
-    fontSize: typography.sizes.xl,
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    fontSize: typography.sizes['3xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
-    lineHeight: 24,
   },
-  form: {
-    flex: 1,
+  card: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
+  },
+  cardDescription: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   submitButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   errorContainer: {
     flex: 1,
@@ -194,10 +244,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing['3xl'],
   },
+  errorCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
   errorTitle: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: colors.danger,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   errorSubtitle: {
@@ -206,5 +265,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing['2xl'],
     lineHeight: 24,
+  },
+  errorButton: {
+    minWidth: 200,
   },
 });

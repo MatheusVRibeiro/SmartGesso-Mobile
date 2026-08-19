@@ -37,6 +37,10 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('pt-BR');
 }
 
+function canStart(status: ServiceOrderStatus): boolean {
+  return status === 'PENDENTE';
+}
+
 function canComplete(status: ServiceOrderStatus): boolean {
   return status === 'PENDENTE' || status === 'EM_ANDAMENTO';
 }
@@ -60,6 +64,22 @@ export default function DetalheOrdemServicoScreen() {
     queryKey: ['company', companyId, 'service-orders', orderId],
     queryFn: () => serviceOrdersService.getById(orderId as string),
     enabled: Boolean(companyId && orderId),
+  });
+
+  const startMutation = useMutation({
+    mutationFn: () =>
+      serviceOrdersService.update(orderId as string, {
+        status: 'EM_ANDAMENTO',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
+      setSnackbar({ type: 'success', message: 'Serviço iniciado com sucesso' });
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
   });
 
   const completeMutation = useMutation({
@@ -123,6 +143,17 @@ export default function DetalheOrdemServicoScreen() {
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>Detalhe da OS</Text>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Excluir ordem de serviço"
+              onPress={() => setConfirmDeleteVisible(true)}
+              hitSlop={8}
+              style={styles.headerAction}
+            >
+              <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+            </Pressable>
+          </View>
         </View>
 
         {orderQuery.isLoading ? (
@@ -142,73 +173,103 @@ export default function DetalheOrdemServicoScreen() {
                 )}
               </View>
 
+              <View style={styles.divider} />
+
               <View style={styles.orderRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.orderText}>
-                  {order.client?.name ?? 'Cliente não informado'}
-                </Text>
+                <View style={styles.rowIcon}>
+                  <Ionicons
+                    name="person-outline"
+                    size={sizes.icon.sm}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowLabel}>Cliente</Text>
+                  <Text style={styles.rowValue}>
+                    {order.client?.name ?? 'Cliente não informado'}
+                  </Text>
+                </View>
               </View>
 
               {order.work && (
                 <View style={styles.orderRow}>
-                  <Ionicons
-                    name="construct-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.orderText}>{order.work.name}</Text>
+                  <View style={styles.rowIcon}>
+                    <Ionicons
+                      name="construct-outline"
+                      size={sizes.icon.sm}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Obra</Text>
+                    <Text style={styles.rowValue}>{order.work.name}</Text>
+                  </View>
                 </View>
               )}
 
               <View style={styles.orderRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.orderText}>
-                  {order.scheduledDate
-                    ? `Agendada: ${formatDate(order.scheduledDate)}`
-                    : `Criada: ${formatDate(order.createdAt)}`}
-                </Text>
+                <View style={styles.rowIcon}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={sizes.icon.sm}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowLabel}>Data</Text>
+                  <Text style={styles.rowValue}>
+                    {order.scheduledDate
+                      ? `Agendada: ${formatDate(order.scheduledDate)}`
+                      : `Criada: ${formatDate(order.createdAt)}`}
+                  </Text>
+                </View>
               </View>
 
               {order.completedDate && (
                 <View style={styles.orderRow}>
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.orderText}>
-                    Concluída: {formatDate(order.completedDate)}
-                  </Text>
+                  <View style={styles.rowIcon}>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={sizes.icon.sm}
+                      color={colors.success}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Conclusão</Text>
+                    <Text style={styles.rowValue}>
+                      {formatDate(order.completedDate)}
+                    </Text>
+                  </View>
                 </View>
               )}
             </AppCard>
 
-            <Text style={styles.sectionLabel}>Materiais</Text>
+            <Text style={styles.sectionLabel}>Materiais usados</Text>
             {!order.materials || order.materials.length === 0 ? (
               <Text style={styles.emptyText}>Nenhum material adicionado</Text>
             ) : (
               order.materials.map((material) => (
                 <AppCard key={material.id} shadow="light" style={styles.materialCard}>
-                  <View style={styles.materialHeader}>
+                  <View style={styles.materialIcon}>
+                    <Ionicons
+                      name="cube-outline"
+                      size={sizes.icon.md}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.materialInfo}>
                     <Text style={styles.materialName} numberOfLines={2}>
                       {material.materialName}
                     </Text>
-                    <Text style={styles.materialQuantity}>
-                      {formatNumber(material.quantity)} {material.unit}
-                    </Text>
                   </View>
+                  <Text style={styles.materialQuantity}>
+                    {formatNumber(material.quantity)} {material.unit}
+                  </Text>
                 </AppCard>
               ))
             )}
@@ -222,27 +283,33 @@ export default function DetalheOrdemServicoScreen() {
               </>
             ) : null}
 
-            <View style={styles.actions}>
-              {canComplete(order.status) && (
-                <AppButton
-                  title="Concluir"
-                  size="md"
-                  accessibilityLabel="Concluir ordem de serviço"
-                  onPress={() => completeMutation.mutate()}
-                  loading={completeMutation.isPending}
-                  disabled={completeMutation.isPending}
-                  style={styles.actionButton}
-                />
-              )}
-              <AppButton
-                title="Excluir"
-                variant="danger"
-                size="md"
-                accessibilityLabel="Excluir ordem de serviço"
-                onPress={() => setConfirmDeleteVisible(true)}
-                style={styles.actionButton}
-              />
-            </View>
+            {(canStart(order.status) || canComplete(order.status)) && (
+              <View style={styles.actions}>
+                {canStart(order.status) && (
+                  <AppButton
+                    title="Iniciar serviço"
+                    variant="outline"
+                    size="md"
+                    accessibilityLabel="Iniciar ordem de serviço"
+                    onPress={() => startMutation.mutate()}
+                    loading={startMutation.isPending}
+                    disabled={startMutation.isPending}
+                    style={styles.actionButton}
+                  />
+                )}
+                {canComplete(order.status) && (
+                  <AppButton
+                    title="Concluir"
+                    size="md"
+                    accessibilityLabel="Concluir ordem de serviço"
+                    onPress={() => completeMutation.mutate()}
+                    loading={completeMutation.isPending}
+                    disabled={completeMutation.isPending}
+                    style={styles.actionButton}
+                  />
+                )}
+              </View>
+            )}
           </>
         ) : null}
       </ScreenContainer>
@@ -288,9 +355,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   orderCard: {
     padding: spacing.md,
@@ -300,23 +378,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   orderNumber: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
   },
   orderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
-  orderText: {
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowInfo: {
     flex: 1,
-    fontSize: typography.sizes.sm,
+  },
+  rowLabel: {
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  rowValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -331,17 +430,24 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   materialCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  materialHeader: {
-    flexDirection: 'row',
+  materialIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    justifyContent: 'center',
+  },
+  materialInfo: {
+    flex: 1,
   },
   materialName: {
-    flex: 1,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     color: colors.text,

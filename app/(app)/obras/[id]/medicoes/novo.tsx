@@ -230,7 +230,10 @@ export default function NovaMedicaoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Nova medição</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Nova medição</Text>
+            <Text style={styles.subtitle}>Cadastre as dimensões do ambiente.</Text>
+          </View>
         </View>
 
         <Controller
@@ -269,7 +272,7 @@ export default function NovaMedicaoScreen() {
             name="length"
             render={({ field, fieldState }) => (
               <AppInput
-                label="Comprimento"
+                label="Comprimento (m)"
                 value={field.value == null ? '' : String(field.value)}
                 onChangeText={(text) => field.onChange(numericOrUndefined(text))}
                 placeholder="0,00"
@@ -285,7 +288,7 @@ export default function NovaMedicaoScreen() {
             name="width"
             render={({ field, fieldState }) => (
               <AppInput
-                label="Largura"
+                label="Largura (m)"
                 value={field.value == null ? '' : String(field.value)}
                 onChangeText={(text) => field.onChange(numericOrUndefined(text))}
                 placeholder="0,00"
@@ -303,48 +306,48 @@ export default function NovaMedicaoScreen() {
           name="ceilingHeight"
           render={({ field, fieldState }) => (
             <AppInput
-              label="Pé-direito (altura)"
+              label="Altura (m)"
               value={field.value == null ? '' : String(field.value)}
               onChangeText={(text) => field.onChange(numericOrUndefined(text))}
               placeholder="Ex.: 2,80"
               keyboardType="decimal-pad"
               error={fieldState.error?.message}
-              accessibilityLabel="Pé-direito em metros"
+              accessibilityLabel="Altura em metros"
             />
           )}
         />
 
         {/* Feedback em tempo real — a API é a autoridade final */}
         <AppCard style={styles.feedbackCard}>
-          <View style={styles.feedbackHeader}>
-            <Ionicons
-              name="calculator-outline"
-              size={sizes.icon.md}
-              color={colors.primary}
-              accessibilityElementsHidden
-            />
-            <Text style={styles.feedbackTitle}>Área e perímetro estimados</Text>
-          </View>
           {hasDimensions ? (
-            <>
-              <View style={styles.feedbackRow}>
+            <View style={styles.feedbackRow}>
+              <View style={styles.feedbackItem}>
                 <Text style={styles.feedbackLabel}>Área</Text>
                 <Text style={styles.feedbackValue}>
                   {formatNumber(estimatedArea as number)} m²
                 </Text>
               </View>
-              <View style={styles.feedbackRow}>
+              <View style={styles.feedbackDivider} />
+              <View style={styles.feedbackItem}>
                 <Text style={styles.feedbackLabel}>Perímetro</Text>
                 <Text style={styles.feedbackValue}>
                   {formatNumber(estimatedPerimeter as number)} m
                 </Text>
               </View>
-            </>
+            </View>
           ) : (
-            <Text style={styles.feedbackHint}>
-              Informe comprimento e largura para ver a área e o perímetro
-              estimados.
-            </Text>
+            <View style={styles.feedbackEmpty}>
+              <Ionicons
+                name="calculator-outline"
+                size={sizes.icon.md}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.feedbackHint}>
+                Informe comprimento e largura para ver a área e o perímetro
+                estimados.
+              </Text>
+            </View>
           )}
           <Text style={styles.feedbackNote}>
             Valores calculados automaticamente pela API ao salvar.
@@ -499,18 +502,27 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
   backButton: {
-    width: sizes.touchTarget,
-    height: sizes.touchTarget,
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
     justifyContent: 'center',
-    marginLeft: -spacing.sm,
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -557,32 +569,36 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  feedbackTitle: {
-    flex: 1,
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
   feedbackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  feedbackItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  feedbackDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: colors.divider,
   },
   feedbackLabel: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
   feedbackValue: {
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
+  feedbackEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   feedbackHint: {
+    flex: 1,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
@@ -609,7 +625,7 @@ const styles = StyleSheet.create({
   observationsLabel: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.text,
+    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   observationsInput: {

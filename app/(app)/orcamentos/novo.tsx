@@ -27,8 +27,8 @@ import { clientsService } from '../../../src/services/api/clients';
 import { worksService } from '../../../src/services/api/works';
 import { quotesService } from '../../../src/services/api/quotes';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
-import { formatCurrency } from '../../../src/utils/format';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
+import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type { Client } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
 import type { QuoteItemType, QuotePaymentMethod } from '../../../src/types/quote';
@@ -372,6 +372,17 @@ export default function NovoOrcamentoScreen() {
     }, 0);
   }, [watchedItems]);
 
+  // Observa desconto e margem para o TOTAL em tempo real
+  const watchedDiscount = useWatch({ control, name: 'discount' });
+  const watchedMargin = useWatch({ control, name: 'marginPct' });
+
+  const quoteTotal = useMemo(() => {
+    const subtotal = itemsTotal;
+    const discount = parseFloat(String(watchedDiscount)) || 0;
+    const marginPct = parseFloat(String(watchedMargin)) || 0;
+    return subtotal - discount + (subtotal * marginPct) / 100;
+  }, [itemsTotal, watchedDiscount, watchedMargin]);
+
   const clientsQuery = useQuery({
     queryKey: ['company', companyId, 'clients'],
     queryFn: () => clientsService.list(),
@@ -442,7 +453,10 @@ export default function NovoOrcamentoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Novo orçamento</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Novo orçamento</Text>
+            <Text style={styles.subtitle}>Preencha os dados e adicione itens</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Cliente</Text>
@@ -455,37 +469,42 @@ export default function NovoOrcamentoScreen() {
             );
             return (
               <>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Selecionar cliente"
-                  onPress={() => setClientModalVisible(true)}
-                  style={[
-                    styles.selectorField,
-                    fieldState.error != null && styles.selectorFieldError,
-                  ]}
-                >
-                  <Ionicons
-                    name="person-outline"
-                    size={sizes.icon.md}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text
-                    style={[
-                      styles.selectorText,
-                      field.value === '' && styles.selectorPlaceholder,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedClient?.name ?? 'Selecione um cliente'}
-                  </Text>
-                  <Ionicons
-                    name="chevron-down"
-                    size={sizes.icon.md}
-                    color={colors.textLight}
-                    accessibilityElementsHidden
-                  />
-                </Pressable>
+                <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
+                  <View style={styles.clientCardContent}>
+                    <View style={styles.clientIcon}>
+                      <Ionicons
+                        name="person-outline"
+                        size={sizes.icon.md}
+                        color={colors.primary}
+                        accessibilityElementsHidden
+                      />
+                    </View>
+                    <View style={styles.clientInfo}>
+                      <Text style={styles.clientLabel}>Cliente</Text>
+                      <Text
+                        style={[
+                          styles.clientName,
+                          field.value === '' && styles.selectorPlaceholder,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {selectedClient?.name ?? 'Selecione um cliente'}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Trocar cliente"
+                      onPress={() => setClientModalVisible(true)}
+                      hitSlop={8}
+                      style={({ pressed }) => [
+                        styles.clientChangeButton,
+                        pressed && styles.clientChangeButtonPressed,
+                      ]}
+                    >
+                      <Text style={styles.clientChangeText}>Trocar</Text>
+                    </Pressable>
+                  </View>
+                </AppCard>
                 {fieldState.error ? (
                   <Text style={styles.fieldError}>
                     {fieldState.error.message}
@@ -664,63 +683,90 @@ export default function NovoOrcamentoScreen() {
                 )}
               />
             </View>
+
+            <View style={styles.itemSubtotalRow}>
+              <Text style={styles.itemSubtotalLabel}>
+                {formatNumber(parseFloat(String(watchedItems?.[index]?.quantity)) || 0)} ×{' '}
+                {formatCurrency(parseFloat(String(watchedItems?.[index]?.unitPrice)) || 0)}
+              </Text>
+              <Text style={styles.itemSubtotalValue}>
+                {formatCurrency(
+                  (parseFloat(String(watchedItems?.[index]?.quantity)) || 0) *
+                    (parseFloat(String(watchedItems?.[index]?.unitPrice)) || 0),
+                )}
+              </Text>
+            </View>
           </AppCard>
         ))}
 
-        <AppButton
-          title="+ Adicionar item"
-          variant="outline"
-          size="md"
-          accessibilityLabel="Adicionar novo item"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Adicionar item ao orçamento"
           onPress={addItem}
-          style={styles.addButton}
-        />
-
-        {itemsTotal > 0 && (
-          <AppCard shadow="light" style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal (estimativa)</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(itemsTotal)}</Text>
-            </View>
-          </AppCard>
-        )}
-
-        <Text style={styles.sectionLabel}>Desconto e Margem</Text>
-        <View style={styles.itemRow}>
-          <Controller
-            control={control}
-            name="discount"
-            render={({ field: discountField }) => (
-              <View style={styles.itemFieldHalf}>
-                <AppInput
-                  label="Desconto (R$)"
-                  value={discountField.value == null ? '' : String(discountField.value)}
-                  onChangeText={(text) => discountField.onChange(text)}
-                  placeholder="0,00"
-                  keyboardType="decimal-pad"
-                  accessibilityLabel="Desconto"
-                />
-              </View>
-            )}
+          style={({ pressed }) => [
+            styles.addItemButton,
+            pressed && styles.addItemButtonPressed,
+          ]}
+        >
+          <Ionicons
+            name="add"
+            size={sizes.icon.md}
+            color={colors.primary}
+            accessibilityElementsHidden
           />
+          <Text style={styles.addItemText}>Adicionar item</Text>
+        </Pressable>
 
-          <Controller
-            control={control}
-            name="marginPct"
-            render={({ field: marginField }) => (
-              <View style={styles.itemFieldHalf}>
-                <AppInput
-                  label="Margem (%)"
-                  value={marginField.value == null ? '' : String(marginField.value)}
-                  onChangeText={(text) => marginField.onChange(text)}
-                  placeholder="0"
-                  keyboardType="decimal-pad"
-                  accessibilityLabel="Margem percentual"
-                />
-              </View>
-            )}
-          />
-        </View>
+        <Text style={styles.sectionLabel}>Totais</Text>
+        <AppCard shadow="light" style={styles.summaryCard}>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(itemsTotal)}</Text>
+          </View>
+
+          <View style={styles.summaryFieldsRow}>
+            <Controller
+              control={control}
+              name="discount"
+              render={({ field: discountField }) => (
+                <View style={styles.itemFieldHalf}>
+                  <AppInput
+                    label="Desconto (R$)"
+                    value={discountField.value == null ? '' : String(discountField.value)}
+                    onChangeText={(text) => discountField.onChange(text)}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    accessibilityLabel="Desconto"
+                    style={styles.summaryInput}
+                  />
+                </View>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="marginPct"
+              render={({ field: marginField }) => (
+                <View style={styles.itemFieldHalf}>
+                  <AppInput
+                    label="Margem (%)"
+                    value={marginField.value == null ? '' : String(marginField.value)}
+                    onChangeText={(text) => marginField.onChange(text)}
+                    placeholder="0"
+                    keyboardType="decimal-pad"
+                    accessibilityLabel="Margem percentual"
+                    style={styles.summaryInput}
+                  />
+                </View>
+              )}
+            />
+          </View>
+
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>TOTAL</Text>
+            <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>
+          </View>
+        </AppCard>
 
         <Text style={styles.sectionLabel}>Forma de pagamento</Text>
         <Controller
@@ -774,7 +820,7 @@ export default function NovoOrcamentoScreen() {
         />
 
         <AppButton
-          title="Salvar"
+          title="Salvar orçamento"
           size="lg"
           accessibilityLabel="Salvar orçamento"
           onPress={handleSubmit(onSubmit)}
@@ -840,10 +886,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerText: {
+    flex: 1,
+  },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -852,19 +906,61 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
+  clientCard: {
+    padding: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  clientCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  clientIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clientInfo: {
+    flex: 1,
+  },
+  clientLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  clientName: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  clientChangeButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  clientChangeButtonPressed: {
+    opacity: 0.7,
+  },
+  clientChangeText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
   selectorField: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.inputBackground,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: sizes.buttonHeight.sm / 2,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     height: sizes.inputHeight,
     gap: spacing.sm,
-  },
-  selectorFieldError: {
-    borderColor: colors.error,
   },
   selectorText: {
     flex: 1,
@@ -906,7 +1002,7 @@ const styles = StyleSheet.create({
   itemTypeChip: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
@@ -920,7 +1016,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   itemTypeChipTextSelected: {
-    color: colors.background,
+    color: colors.textOnPrimary,
   },
   itemRow: {
     flexDirection: 'row',
@@ -932,9 +1028,44 @@ const styles = StyleSheet.create({
   itemFieldSmall: {
     width: 60,
   },
-  addButton: {
+  itemSubtotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  itemSubtotalLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  itemSubtotalValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  addItemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  addItemButtonPressed: {
+    opacity: 0.7,
+  },
+  addItemText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
   },
   summaryCard: {
     padding: spacing.md,
@@ -944,6 +1075,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  summaryFieldsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  summaryInput: {
+    marginBottom: spacing.xs,
   },
   summaryLabel: {
     fontSize: typography.sizes.sm,
@@ -955,6 +1095,23 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.bold,
     color: colors.primary,
   },
+  totalRow: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginBottom: 0,
+  },
+  totalLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  totalValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
   paymentRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -963,7 +1120,7 @@ const styles = StyleSheet.create({
   paymentChip: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
@@ -977,7 +1134,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   paymentChipTextSelected: {
-    color: colors.background,
+    color: colors.textOnPrimary,
   },
   saveButton: {
     marginTop: spacing.xl,

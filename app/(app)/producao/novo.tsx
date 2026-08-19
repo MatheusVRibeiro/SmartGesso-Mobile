@@ -27,7 +27,7 @@ import { clientsService } from '../../../src/services/api/clients';
 import { worksService } from '../../../src/services/api/works';
 import { productionOrdersService } from '../../../src/services/api/productionOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Client } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
 import { z } from 'zod';
@@ -142,11 +142,11 @@ function ClientPickerModal({
                 accessibilityLabel={`Selecionar cliente ${item.name}`}
                 onPress={() => onSelect(item.id)}
                 style={({ pressed }) => [
-                  styles.clientOption,
-                  pressed && styles.clientOptionPressed,
+                  styles.option,
+                  pressed && styles.optionPressed,
                 ]}
               >
-                <View style={styles.clientOptionIcon}>
+                <View style={styles.optionIcon}>
                   <Ionicons
                     name="person-outline"
                     size={sizes.icon.md}
@@ -154,12 +154,12 @@ function ClientPickerModal({
                     accessibilityElementsHidden
                   />
                 </View>
-                <View style={styles.clientOptionInfo}>
-                  <Text style={styles.clientOptionName} numberOfLines={1}>
+                <View style={styles.optionInfo}>
+                  <Text style={styles.optionName} numberOfLines={1}>
                     {item.name}
                   </Text>
                   {item.document ? (
-                    <Text style={styles.clientOptionMeta} numberOfLines={1}>
+                    <Text style={styles.optionMeta} numberOfLines={1}>
                       {item.document}
                     </Text>
                   ) : null}
@@ -268,11 +268,11 @@ function WorkPickerModal({
                 accessibilityLabel={`Selecionar obra ${item.name}`}
                 onPress={() => onSelect(item.id)}
                 style={({ pressed }) => [
-                  styles.clientOption,
-                  pressed && styles.clientOptionPressed,
+                  styles.option,
+                  pressed && styles.optionPressed,
                 ]}
               >
-                <View style={styles.clientOptionIcon}>
+                <View style={styles.optionIcon}>
                   <Ionicons
                     name="construct-outline"
                     size={sizes.icon.md}
@@ -280,12 +280,12 @@ function WorkPickerModal({
                     accessibilityElementsHidden
                   />
                 </View>
-                <View style={styles.clientOptionInfo}>
-                  <Text style={styles.clientOptionName} numberOfLines={1}>
+                <View style={styles.optionInfo}>
+                  <Text style={styles.optionName} numberOfLines={1}>
                     {item.name}
                   </Text>
                   {item.client?.name ? (
-                    <Text style={styles.clientOptionMeta} numberOfLines={1}>
+                    <Text style={styles.optionMeta} numberOfLines={1}>
                       {item.client.name}
                     </Text>
                   ) : null}
@@ -405,7 +405,10 @@ export default function NovaOrdemProducaoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Nova ordem de produção</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Nova ordem de produção</Text>
+            <Text style={styles.subtitle}>Preencha os dados para criar a ordem</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Cliente (opcional)</Text>
@@ -421,14 +424,16 @@ export default function NovaOrdemProducaoScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Selecionar cliente"
                 onPress={() => setClientModalVisible(true)}
-                style={styles.selectorField}
+                style={styles.selectorCard}
               >
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.md}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
+                <View style={styles.selectorIcon}>
+                  <Ionicons
+                    name="person-outline"
+                    size={sizes.icon.md}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
                 <Text
                   style={[
                     styles.selectorText,
@@ -462,14 +467,16 @@ export default function NovaOrdemProducaoScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Selecionar obra"
                 onPress={() => setWorkModalVisible(true)}
-                style={styles.selectorField}
+                style={styles.selectorCard}
               >
-                <Ionicons
-                  name="construct-outline"
-                  size={sizes.icon.md}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
+                <View style={styles.selectorIcon}>
+                  <Ionicons
+                    name="construct-outline"
+                    size={sizes.icon.md}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
                 <Text
                   style={[
                     styles.selectorText,
@@ -496,13 +503,21 @@ export default function NovaOrdemProducaoScreen() {
           name="dueDate"
           render={({ field, fieldState }) => (
             <AppInput
-              label="Prazo (data de entrega)"
+              label="Data prevista"
               value={field.value ?? ''}
               onChangeText={field.onChange}
               placeholder="AAAA-MM-DD"
               helper="Formato: AAAA-MM-DD (opcional)"
               error={fieldState.error?.message}
-              accessibilityLabel="Prazo da ordem de produção"
+              accessibilityLabel="Data prevista da ordem de produção"
+              leftAccessory={
+                <Ionicons
+                  name="calendar-outline"
+                  size={sizes.icon.md}
+                  color={colors.textLight}
+                  accessibilityElementsHidden
+                />
+              }
             />
           )}
         />
@@ -518,6 +533,14 @@ export default function NovaOrdemProducaoScreen() {
               placeholder="Nome do responsável (opcional)"
               error={fieldState.error?.message}
               accessibilityLabel="Responsável pela ordem de produção"
+              leftAccessory={
+                <Ionicons
+                  name="person-outline"
+                  size={sizes.icon.md}
+                  color={colors.textLight}
+                  accessibilityElementsHidden
+                />
+              }
             />
           )}
         />
@@ -537,7 +560,7 @@ export default function NovaOrdemProducaoScreen() {
                   <Ionicons
                     name="trash-outline"
                     size={sizes.icon.sm}
-                    color={colors.error}
+                    color={colors.danger}
                   />
                 </Pressable>
               )}
@@ -617,6 +640,7 @@ export default function NovaOrdemProducaoScreen() {
               value={field.value ?? ''}
               onChangeText={field.onChange}
               placeholder="Observações adicionais (opcional)"
+              multiline
               accessibilityLabel="Observações"
             />
           )}
@@ -689,10 +713,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerText: {
+    flex: 1,
+  },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -701,16 +733,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  selectorField: {
+  selectorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: sizes.buttonHeight.sm / 2,
-    paddingHorizontal: spacing.md,
-    height: sizes.inputHeight,
-    gap: spacing.sm,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  selectorIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectorText: {
     flex: 1,
@@ -786,35 +826,37 @@ const styles = StyleSheet.create({
     padding: sizes.screenPadding,
     paddingBottom: spacing['3xl'],
   },
-  clientOption: {
+  option: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: spacing.sm,
-    marginBottom: spacing.xs,
-    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  clientOptionPressed: {
+  optionPressed: {
     opacity: 0.7,
   },
-  clientOptionIcon: {
+  optionIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  clientOptionInfo: {
+  optionInfo: {
     flex: 1,
   },
-  clientOptionName: {
+  optionName: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     color: colors.text,
   },
-  clientOptionMeta: {
+  optionMeta: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
     marginTop: 2,

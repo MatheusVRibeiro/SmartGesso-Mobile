@@ -116,6 +116,8 @@ export default function MateriaisScreen() {
     );
   }
 
+  const itemCount = result?.items.length ?? 0;
+
   return (
     <ScreenContainer scroll keyboard={false}>
       <Stack.Screen options={{ title: 'Materiais', headerShown: true }} />
@@ -130,7 +132,14 @@ export default function MateriaisScreen() {
         >
           <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>Materiais Calculados</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Materiais</Text>
+          <Text style={styles.subtitle}>
+            {itemCount > 0
+              ? `${itemCount} ${itemCount === 1 ? 'material calculado' : 'materiais calculados'}`
+              : 'Cálculo de materiais para a obra'}
+          </Text>
+        </View>
       </View>
 
       {measurementsQuery.isLoading ? (
@@ -226,18 +235,27 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   backButton: {
-    width: sizes.touchTarget,
-    height: sizes.touchTarget,
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
     justifyContent: 'center',
-    marginLeft: -spacing.sm,
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   compositionCard: {
     marginBottom: spacing.lg,

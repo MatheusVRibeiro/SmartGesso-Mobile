@@ -32,6 +32,10 @@ export interface AppInputProps {
   leftAccessory?: React.ReactNode;
   /** Elemento renderizado à direita do campo (ex.: toggle de senha). */
   rightAccessory?: React.ReactNode;
+  /** Habilita campo de múltiplas linhas (ex.: observações). */
+  multiline?: boolean;
+  /** Número de linhas visíveis quando `multiline` (default: 3). */
+  numberOfLines?: number;
   style?: ViewStyle;
   inputStyle?: ViewStyle;
   testID?: string;
@@ -57,6 +61,8 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
     accessibilityLabel,
     leftAccessory,
     rightAccessory,
+    multiline = false,
+    numberOfLines = 3,
     style,
     inputStyle,
     testID,
@@ -89,6 +95,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
             editable === false && styles.inputDisabled,
             leftAccessory != null && styles.inputWithLeftAccessory,
             rightAccessory != null && styles.inputWithAccessory,
+            multiline && styles.inputMultiline,
             inputStyle,
           ]}
           value={value}
@@ -107,6 +114,8 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
           onBlur={() => setFocused(false)}
           accessibilityLabel={accessibilityLabel ?? label}
           accessibilityState={{ disabled: !editable }}
+          multiline={multiline}
+          numberOfLines={multiline ? numberOfLines : undefined}
         />
         {rightAccessory != null ? (
           <View style={styles.accessory}>{rightAccessory}</View>
@@ -175,6 +184,13 @@ const styles = StyleSheet.create({
   },
   inputWithAccessory: {
     paddingRight: 48,
+  },
+  inputMultiline: {
+    height: 'auto',
+    minHeight: 96,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    textAlignVertical: 'top',
   },
   accessory: {
     position: 'absolute',

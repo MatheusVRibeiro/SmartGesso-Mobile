@@ -110,7 +110,7 @@ export default function MaisScreen() {
       title: 'Relatórios',
       icon: 'bar-chart-outline',
       section: 'Relatórios',
-      action: () => handleModuleNotImplemented('Relatórios'),
+      action: () => router.push('/relatorios'),
     },
 
     // Configuração

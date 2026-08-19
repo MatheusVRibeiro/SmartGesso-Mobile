@@ -18,7 +18,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { quotesService } from '../../../src/services/api/quotes';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type { QuoteStatus } from '../../../src/types/quote';
 
@@ -101,7 +101,7 @@ export default function DetalheOrcamentoScreen() {
         try {
           const base64Data = (reader.result as string).split(',')[1];
           const fileName = `orcamento_${quoteQuery.data?.quoteNumber}_v${quoteQuery.data?.version}.pdf`;
-          
+
           // Use new expo-file-system API
           const cacheDir = Paths.cache;
           const file = new File(cacheDir, fileName);
@@ -157,7 +157,30 @@ export default function DetalheOrcamentoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Detalhe do orçamento</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {quote ? `#${quote.quoteNumber} v${quote.version}` : 'Detalhe do orçamento'}
+          </Text>
+          {statusBadge && (
+            <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Gerar e compartilhar PDF"
+            onPress={handleSharePdf}
+            disabled={!quote}
+            style={({ pressed }) => [
+              styles.pdfButton,
+              pressed && styles.pdfButtonPressed,
+              !quote && styles.pdfButtonDisabled,
+            ]}
+          >
+            <Ionicons
+              name="download-outline"
+              size={sizes.icon.md}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+          </Pressable>
         </View>
 
         {quoteQuery.isLoading ? (
@@ -169,48 +192,50 @@ export default function DetalheOrcamentoScreen() {
           />
         ) : quote ? (
           <>
-            <AppCard shadow="light" style={styles.quoteCard}>
-              <View style={styles.quoteHeader}>
-                <Text style={styles.quoteNumber}>
-                  #{quote.quoteNumber} v{quote.version}
-                </Text>
-                {statusBadge && (
-                  <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
-                )}
-              </View>
-
-              <View style={styles.quoteRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.quoteText}>
-                  {quote.client?.name ?? 'Cliente não informado'}
-                </Text>
-              </View>
-
-              {quote.work && (
-                <View style={styles.quoteRow}>
+            <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
+              <View style={styles.clientContent}>
+                <View style={styles.clientIcon}>
                   <Ionicons
-                    name="construct-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
+                    name="person-outline"
+                    size={sizes.icon.md}
+                    color={colors.primary}
                     accessibilityElementsHidden
                   />
-                  <Text style={styles.quoteText}>{quote.work.name}</Text>
                 </View>
-              )}
+                <View style={styles.clientInfo}>
+                  <Text style={styles.clientName} numberOfLines={1}>
+                    {quote.client?.name ?? 'Cliente não informado'}
+                  </Text>
+                  {quote.client?.document ? (
+                    <Text style={styles.clientContact} numberOfLines={1}>
+                      {quote.client.document}
+                    </Text>
+                  ) : null}
 
-              <View style={styles.quoteRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.quoteText}>{formatDate(quote.createdAt)}</Text>
+                  {quote.work && (
+                    <View style={styles.clientRow}>
+                      <Ionicons
+                        name="construct-outline"
+                        size={sizes.icon.sm}
+                        color={colors.textSecondary}
+                        accessibilityElementsHidden
+                      />
+                      <Text style={styles.clientRowText} numberOfLines={1}>
+                        {quote.work.name}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.clientRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={sizes.icon.sm}
+                      color={colors.textSecondary}
+                      accessibilityElementsHidden
+                    />
+                    <Text style={styles.clientRowText}>{formatDate(quote.createdAt)}</Text>
+                  </View>
+                </View>
               </View>
             </AppCard>
 
@@ -228,11 +253,9 @@ export default function DetalheOrcamentoScreen() {
                   </View>
                   <View style={styles.itemMeta}>
                     <Text style={styles.itemQuantity}>
-                      {formatNumber(item.quantity)} {item.unit}
+                      {formatNumber(item.quantity)} × {formatCurrency(item.unitPrice)}
                     </Text>
-                    <Text style={styles.itemUnitPrice}>
-                      {formatCurrency(item.unitPrice)}/{item.unit}
-                    </Text>
+                    <Text style={styles.itemUnitPrice}>{item.unit}</Text>
                   </View>
                 </AppCard>
               ))
@@ -260,7 +283,7 @@ export default function DetalheOrcamentoScreen() {
                 </View>
               )}
               <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalLabel}>TOTAL</Text>
                 <Text style={styles.totalValue}>{formatCurrency(quote.total)}</Text>
               </View>
             </AppCard>
@@ -276,9 +299,16 @@ export default function DetalheOrcamentoScreen() {
 
             <View style={styles.actions}>
               <AppButton
-                title="Gerar versão"
-                variant="outline"
-                size="md"
+                title="Gerar PDF"
+                size="lg"
+                accessibilityLabel="Gerar e compartilhar PDF"
+                onPress={handleSharePdf}
+                style={styles.actionButton}
+              />
+              <AppButton
+                title="Nova versão"
+                variant="secondary"
+                size="lg"
                 accessibilityLabel="Gerar nova versão do orçamento"
                 onPress={() => generateVersionMutation.mutate()}
                 loading={generateVersionMutation.isPending}
@@ -286,17 +316,9 @@ export default function DetalheOrcamentoScreen() {
                 style={styles.actionButton}
               />
               <AppButton
-                title="PDF"
-                variant="outline"
-                size="md"
-                accessibilityLabel="Gerar e compartilhar PDF"
-                onPress={handleSharePdf}
-                style={styles.actionButton}
-              />
-              <AppButton
                 title="Excluir"
                 variant="danger"
-                size="md"
+                size="lg"
                 accessibilityLabel="Excluir orçamento"
                 onPress={() => setConfirmDeleteVisible(true)}
                 style={styles.actionButton}
@@ -347,32 +369,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
-  quoteCard: {
+  pdfButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pdfButtonPressed: {
+    opacity: 0.8,
+  },
+  pdfButtonDisabled: {
+    opacity: 0.5,
+  },
+  clientCard: {
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-  quoteHeader: {
+  clientContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  quoteNumber: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+  clientIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clientInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  clientName: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  quoteRow: {
+  clientContact: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  clientRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
   },
-  quoteText: {
+  clientRowText: {
     flex: 1,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
@@ -459,8 +510,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   totalValue: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
   obsCard: {

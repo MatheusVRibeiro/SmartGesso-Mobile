@@ -24,7 +24,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { productionOrdersService } from '../../../src/services/api/productionOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatNumber } from '../../../src/utils/format';
 import type {
   ProductionOrderItem,
@@ -110,10 +110,22 @@ function RegisterProductionModal({
 
         <View style={styles.modalBody}>
           <AppCard shadow="light" style={styles.modalItemCard}>
-            <Text style={styles.modalItemName}>{item?.productName}</Text>
-            <Text style={styles.modalItemMeta}>
-              Meta: {formatNumber(item?.quantity)} {item?.unit}
-            </Text>
+            <View style={styles.modalItemHeader}>
+              <View style={styles.modalItemIcon}>
+                <Ionicons
+                  name="cube-outline"
+                  size={sizes.icon.md}
+                  color={colors.primary}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <View style={styles.modalItemInfo}>
+                <Text style={styles.modalItemName}>{item?.productName}</Text>
+                <Text style={styles.modalItemMeta}>
+                  Meta: {formatNumber(item?.quantity)} {item?.unit}
+                </Text>
+              </View>
+            </View>
           </AppCard>
 
           <AppInput
@@ -253,6 +265,17 @@ export default function DetalheOrdemProducaoScreen() {
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>Detalhe da ordem</Text>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Excluir ordem de produção"
+              onPress={() => setConfirmDeleteVisible(true)}
+              hitSlop={8}
+              style={styles.headerAction}
+            >
+              <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+            </Pressable>
+          </View>
         </View>
 
         {orderQuery.isLoading ? (
@@ -276,67 +299,94 @@ export default function DetalheOrdemProducaoScreen() {
                 )}
               </View>
 
+              <View style={styles.divider} />
+
               <View style={styles.orderRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.orderText}>
-                  {order.responsiblePerson?.trim() || 'Responsável não informado'}
-                </Text>
+                <View style={styles.rowIcon}>
+                  <Ionicons
+                    name="person-outline"
+                    size={sizes.icon.sm}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowLabel}>Responsável</Text>
+                  <Text style={styles.rowValue}>
+                    {order.responsiblePerson?.trim() || 'Responsável não informado'}
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.orderRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.orderText}>
-                  {order.dueDate
-                    ? `Prazo: ${formatDate(order.dueDate)}`
-                    : 'Sem prazo definido'}
-                </Text>
+                <View style={styles.rowIcon}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={sizes.icon.sm}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowLabel}>Data prevista</Text>
+                  <Text style={styles.rowValue}>
+                    {order.dueDate
+                      ? formatDate(order.dueDate)
+                      : 'Sem prazo definido'}
+                  </Text>
+                </View>
               </View>
 
               {order.client && (
                 <View style={styles.orderRow}>
-                  <Ionicons
-                    name="business-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.orderText}>{order.client.name}</Text>
+                  <View style={styles.rowIcon}>
+                    <Ionicons
+                      name="business-outline"
+                      size={sizes.icon.sm}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Cliente</Text>
+                    <Text style={styles.rowValue}>{order.client.name}</Text>
+                  </View>
                 </View>
               )}
 
               {order.work && (
                 <View style={styles.orderRow}>
-                  <Ionicons
-                    name="construct-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.orderText}>{order.work.name}</Text>
+                  <View style={styles.rowIcon}>
+                    <Ionicons
+                      name="construct-outline"
+                      size={sizes.icon.sm}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Obra</Text>
+                    <Text style={styles.rowValue}>{order.work.name}</Text>
+                  </View>
                 </View>
               )}
 
               {order.completedDate && (
                 <View style={styles.orderRow}>
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.orderText}>
-                    Concluída em: {formatDate(order.completedDate)}
-                  </Text>
+                  <View style={styles.rowIcon}>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={sizes.icon.sm}
+                      color={colors.success}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Conclusão</Text>
+                    <Text style={styles.rowValue}>
+                      {formatDate(order.completedDate)}
+                    </Text>
+                  </View>
                 </View>
               )}
             </AppCard>
@@ -353,23 +403,33 @@ export default function DetalheOrdemProducaoScreen() {
                 return (
                   <AppCard key={item.id} shadow="light" style={styles.itemCard}>
                     <View style={styles.itemHeader}>
-                      <Text style={styles.itemName} numberOfLines={2}>
-                        {item.productName}
-                      </Text>
+                      <View style={styles.itemIcon}>
+                        <Ionicons
+                          name="cube-outline"
+                          size={sizes.icon.md}
+                          color={colors.primary}
+                          accessibilityElementsHidden
+                        />
+                      </View>
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemName} numberOfLines={2}>
+                          {item.productName}
+                        </Text>
+                        <View style={styles.itemMeta}>
+                          <Text style={styles.itemQuantity}>
+                            Meta: {formatNumber(item.quantity)} {item.unit}
+                          </Text>
+                          <Text style={styles.itemProgress}>
+                            Produzido: {formatNumber(item.producedQty)} · Desperdício:{' '}
+                            {formatNumber(item.wastedQty)}
+                          </Text>
+                        </View>
+                      </View>
                       <StatusBadge
                         status={itemBadge.variant}
                         label={itemBadge.label}
                         size="sm"
                       />
-                    </View>
-                    <View style={styles.itemMeta}>
-                      <Text style={styles.itemQuantity}>
-                        Meta: {formatNumber(item.quantity)} {item.unit}
-                      </Text>
-                      <Text style={styles.itemProgress}>
-                        Produzido: {formatNumber(item.producedQty)} · Desperdício:{' '}
-                        {formatNumber(item.wastedQty)}
-                      </Text>
                     </View>
                     {isOpen && (
                       <AppButton
@@ -395,8 +455,8 @@ export default function DetalheOrdemProducaoScreen() {
               </>
             ) : null}
 
-            <View style={styles.actions}>
-              {isOpen && (
+            {isOpen && (
+              <View style={styles.actions}>
                 <AppButton
                   title="Concluir ordem"
                   size="md"
@@ -406,16 +466,8 @@ export default function DetalheOrdemProducaoScreen() {
                   disabled={completeMutation.isPending}
                   style={styles.actionButton}
                 />
-              )}
-              <AppButton
-                title="Excluir"
-                variant="danger"
-                size="md"
-                accessibilityLabel="Excluir ordem de produção"
-                onPress={() => setConfirmDeleteVisible(true)}
-                style={styles.actionButton}
-              />
-            </View>
+              </View>
+            )}
           </>
         ) : null}
       </ScreenContainer>
@@ -475,9 +527,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   orderCard: {
     padding: spacing.md,
@@ -487,23 +550,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   orderCode: {
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
   },
   orderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
-  orderText: {
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowInfo: {
     flex: 1,
-    fontSize: typography.sizes.sm,
+  },
+  rowLabel: {
+    fontSize: typography.sizes.xs,
     color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  rowValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -524,15 +608,25 @@ const styles = StyleSheet.create({
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    justifyContent: 'space-between',
     gap: spacing.md,
     marginBottom: spacing.xs,
   },
-  itemName: {
+  itemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemInfo: {
     flex: 1,
+  },
+  itemName: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     color: colors.text,
+    marginBottom: 2,
   },
   itemMeta: {
     gap: 2,
@@ -595,6 +689,22 @@ const styles = StyleSheet.create({
   modalItemCard: {
     padding: spacing.md,
     marginBottom: spacing.lg,
+  },
+  modalItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  modalItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalItemInfo: {
+    flex: 1,
   },
   modalItemName: {
     fontSize: typography.sizes.md,

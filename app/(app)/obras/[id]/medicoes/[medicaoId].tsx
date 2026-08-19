@@ -22,6 +22,8 @@ import { ConfirmDialog } from '../../../../../src/components/ui/ConfirmDialog';
 import { ErrorState } from '../../../../../src/components/ui/ErrorState';
 import { LoadingState } from '../../../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../../../src/components/ui/ScreenContainer';
+import { StatusBadge } from '../../../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../../../src/services/api/client';
 import { measurementsService } from '../../../../../src/services/api/measurements';
 import { useSessionStore } from '../../../../../src/store/useSessionStore';
@@ -49,6 +51,18 @@ const APPLICATION_TYPE_OPTIONS: {
   { value: 'OUTRO', label: 'Outro' },
 ];
 
+const APPLICATION_TYPE_BADGE: Record<
+  MeasurementApplicationType,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  DRYWALL: { variant: 'active', label: 'Drywall' },
+  FORRO: { variant: 'warning', label: 'Forro' },
+  PAREDE: { variant: 'active', label: 'Parede' },
+  SANCA: { variant: 'expired', label: 'Sanca' },
+  REBAIXAMENTO: { variant: 'warning', label: 'Rebaixamento' },
+  OUTRO: { variant: 'cancelled', label: 'Outro' },
+};
+
 /** Campos numéricos opcionais: string vazia vira undefined (não coercer '' → 0). */
 function numericOrUndefined(text: string): string | undefined {
   const trimmed = text.trim();
@@ -56,7 +70,8 @@ function numericOrUndefined(text: string): string | undefined {
 }
 
 /** Formata número com vírgula decimal (pt-BR). Ex.: 12.5 → "12,5". */
-function formatNumber(value: number): string {
+function formatNumber(value: number | null | undefined): string {
+  if (value == null) return '—';
   const rounded = Math.round(value * 100) / 100;
   const [intPart, decPart] = String(rounded).split('.');
   return decPart ? `${intPart},${decPart}` : intPart;
@@ -147,7 +162,7 @@ function ToggleRow({
 
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
-export default function EditarMedicaoScreen() {
+export default function MedicaoDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
@@ -157,6 +172,7 @@ export default function EditarMedicaoScreen() {
     ? params.medicaoId[0]
     : params.medicaoId;
 
+  const [editing, setEditing] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
@@ -273,10 +289,15 @@ export default function EditarMedicaoScreen() {
     );
   }
 
+  const measurement = measurementQuery.data;
+  const badge = measurement
+    ? APPLICATION_TYPE_BADGE[measurement.applicationType]
+    : null;
+
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Editar medição', headerShown: true }} />
+        <Stack.Screen options={{ title: 'Medição', headerShown: true }} />
 
         <View style={styles.header}>
           <Pressable
@@ -288,7 +309,18 @@ export default function EditarMedicaoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Editar medição</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {editing ? 'Editar medição' : 'Medição'}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Excluir medição"
+            onPress={() => setConfirmDeleteVisible(true)}
+            hitSlop={8}
+            style={styles.headerAction}
+          >
+            <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+          </Pressable>
         </View>
 
         {measurementQuery.isLoading ? (
@@ -298,267 +330,355 @@ export default function EditarMedicaoScreen() {
             message={toApiError(measurementQuery.error).message}
             onRetry={measurementQuery.refetch}
           />
-        ) : (
-          <>
-            <Controller
-              control={control}
-              name="environmentName"
-              render={({ field, fieldState }) => (
-                <AppInput
-                  label="Nome do ambiente"
-                  required
-                  value={field.value}
-                  onChangeText={field.onChange}
-                  placeholder="Ex.: Sala de estar"
-                  error={fieldState.error?.message}
-                  accessibilityLabel="Nome do ambiente"
-                />
-              )}
-            />
-
-            <Text style={styles.sectionLabel}>Tipo de aplicação</Text>
-            <Controller
-              control={control}
-              name="applicationType"
-              render={({ field }) => (
-                <ApplicationTypeSelector
-                  value={field.value ?? 'DRYWALL'}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-
-            <Text style={styles.sectionLabel}>Dimensões (m)</Text>
-
-            <View style={styles.row}>
+        ) : measurement ? (
+          editing ? (
+            <>
               <Controller
                 control={control}
-                name="length"
+                name="environmentName"
                 render={({ field, fieldState }) => (
                   <AppInput
-                    label="Comprimento"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={(text) => field.onChange(numericOrUndefined(text))}
-                    placeholder="0,00"
-                    keyboardType="decimal-pad"
+                    label="Nome do ambiente"
+                    required
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    placeholder="Ex.: Sala de estar"
                     error={fieldState.error?.message}
-                    accessibilityLabel="Comprimento em metros"
-                    style={styles.rowField}
+                    accessibilityLabel="Nome do ambiente"
                   />
                 )}
               />
+
+              <Text style={styles.sectionLabel}>Tipo de aplicação</Text>
               <Controller
                 control={control}
-                name="width"
-                render={({ field, fieldState }) => (
-                  <AppInput
-                    label="Largura"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={(text) => field.onChange(numericOrUndefined(text))}
-                    placeholder="0,00"
-                    keyboardType="decimal-pad"
-                    error={fieldState.error?.message}
-                    accessibilityLabel="Largura em metros"
-                    style={styles.rowField}
+                name="applicationType"
+                render={({ field }) => (
+                  <ApplicationTypeSelector
+                    value={field.value ?? 'DRYWALL'}
+                    onChange={field.onChange}
                   />
                 )}
               />
-            </View>
 
-            <Controller
-              control={control}
-              name="ceilingHeight"
-              render={({ field, fieldState }) => (
-                <AppInput
-                  label="Pé-direito (altura)"
-                  value={field.value == null ? '' : String(field.value)}
-                  onChangeText={(text) => field.onChange(numericOrUndefined(text))}
-                  placeholder="Ex.: 2,80"
-                  keyboardType="decimal-pad"
-                  error={fieldState.error?.message}
-                  accessibilityLabel="Pé-direito em metros"
-                />
-              )}
-            />
+              <Text style={styles.sectionLabel}>Dimensões (m)</Text>
 
-            {/* Feedback em tempo real — a API é a autoridade final */}
-            <AppCard style={styles.feedbackCard}>
-              <View style={styles.feedbackHeader}>
-                <Ionicons
-                  name="calculator-outline"
-                  size={sizes.icon.md}
-                  color={colors.primary}
-                  accessibilityElementsHidden
+              <View style={styles.row}>
+                <Controller
+                  control={control}
+                  name="length"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Comprimento (m)"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={(text) => field.onChange(numericOrUndefined(text))}
+                      placeholder="0,00"
+                      keyboardType="decimal-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Comprimento em metros"
+                      style={styles.rowField}
+                    />
+                  )}
                 />
-                <Text style={styles.feedbackTitle}>Área e perímetro estimados</Text>
+                <Controller
+                  control={control}
+                  name="width"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Largura (m)"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={(text) => field.onChange(numericOrUndefined(text))}
+                      placeholder="0,00"
+                      keyboardType="decimal-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Largura em metros"
+                      style={styles.rowField}
+                    />
+                  )}
+                />
               </View>
-              {hasDimensions ? (
-                <>
+
+              <Controller
+                control={control}
+                name="ceilingHeight"
+                render={({ field, fieldState }) => (
+                  <AppInput
+                    label="Altura (m)"
+                    value={field.value == null ? '' : String(field.value)}
+                    onChangeText={(text) => field.onChange(numericOrUndefined(text))}
+                    placeholder="Ex.: 2,80"
+                    keyboardType="decimal-pad"
+                    error={fieldState.error?.message}
+                    accessibilityLabel="Altura em metros"
+                  />
+                )}
+              />
+
+              {/* Feedback em tempo real — a API é a autoridade final */}
+              <AppCard style={styles.feedbackCard}>
+                {hasDimensions ? (
                   <View style={styles.feedbackRow}>
-                    <Text style={styles.feedbackLabel}>Área</Text>
-                    <Text style={styles.feedbackValue}>
-                      {formatNumber(estimatedArea as number)} m²
+                    <View style={styles.feedbackItem}>
+                      <Text style={styles.feedbackLabel}>Área</Text>
+                      <Text style={styles.feedbackValue}>
+                        {formatNumber(estimatedArea as number)} m²
+                      </Text>
+                    </View>
+                    <View style={styles.feedbackDivider} />
+                    <View style={styles.feedbackItem}>
+                      <Text style={styles.feedbackLabel}>Perímetro</Text>
+                      <Text style={styles.feedbackValue}>
+                        {formatNumber(estimatedPerimeter as number)} m
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.feedbackEmpty}>
+                    <Ionicons
+                      name="calculator-outline"
+                      size={sizes.icon.md}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                    <Text style={styles.feedbackHint}>
+                      Informe comprimento e largura para ver a área e o
+                      perímetro estimados.
                     </Text>
                   </View>
-                  <View style={styles.feedbackRow}>
-                    <Text style={styles.feedbackLabel}>Perímetro</Text>
-                    <Text style={styles.feedbackValue}>
-                      {formatNumber(estimatedPerimeter as number)} m
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.feedbackHint}>
-                  Informe comprimento e largura para ver a área e o perímetro
-                  estimados.
+                )}
+                <Text style={styles.feedbackNote}>
+                  Valores calculados automaticamente pela API ao salvar.
                 </Text>
-              )}
-              <Text style={styles.feedbackNote}>
-                Valores calculados automaticamente pela API ao salvar.
-              </Text>
-            </AppCard>
+              </AppCard>
 
-            <Text style={styles.sectionLabel}>Aberturas e pontos</Text>
+              <Text style={styles.sectionLabel}>Aberturas e pontos</Text>
 
-            <View style={styles.row}>
-              <Controller
-                control={control}
-                name="doors"
-                render={({ field, fieldState }) => (
-                  <AppInput
-                    label="Portas"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={field.onChange}
-                    placeholder="0"
-                    keyboardType="number-pad"
-                    error={fieldState.error?.message}
-                    accessibilityLabel="Quantidade de portas"
-                    style={styles.rowField}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="windows"
-                render={({ field, fieldState }) => (
-                  <AppInput
-                    label="Janelas"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={field.onChange}
-                    placeholder="0"
-                    keyboardType="number-pad"
-                    error={fieldState.error?.message}
-                    accessibilityLabel="Quantidade de janelas"
-                    style={styles.rowField}
-                  />
-                )}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <Controller
-                control={control}
-                name="cutouts"
-                render={({ field, fieldState }) => (
-                  <AppInput
-                    label="Recortes"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={field.onChange}
-                    placeholder="0"
-                    keyboardType="number-pad"
-                    error={fieldState.error?.message}
-                    accessibilityLabel="Quantidade de recortes"
-                    style={styles.rowField}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="fixtures"
-                render={({ field, fieldState }) => (
-                  <AppInput
-                    label="Pontos de luz"
-                    value={field.value == null ? '' : String(field.value)}
-                    onChangeText={field.onChange}
-                    placeholder="0"
-                    keyboardType="number-pad"
-                    error={fieldState.error?.message}
-                    accessibilityLabel="Quantidade de pontos de luz"
-                    style={styles.rowField}
-                  />
-                )}
-              />
-            </View>
-
-            <Text style={styles.sectionLabel}>Detalhes</Text>
-
-            <Controller
-              control={control}
-              name="hasCove"
-              render={({ field }) => (
-                <ToggleRow
-                  label="Sanca"
-                  value={field.value ?? false}
-                  onChange={field.onChange}
-                  accessibilityLabel="Possui sanca"
+              <View style={styles.row}>
+                <Controller
+                  control={control}
+                  name="doors"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Portas"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={field.onChange}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Quantidade de portas"
+                      style={styles.rowField}
+                    />
+                  )}
                 />
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="hasDropCeiling"
-              render={({ field }) => (
-                <ToggleRow
-                  label="Forro rebaixado"
-                  value={field.value ?? false}
-                  onChange={field.onChange}
-                  accessibilityLabel="Possui forro rebaixado"
+                <Controller
+                  control={control}
+                  name="windows"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Janelas"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={field.onChange}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Quantidade de janelas"
+                      style={styles.rowField}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
 
-            <Controller
-              control={control}
-              name="observations"
-              render={({ field }) => (
-                <>
-                  <Text style={styles.observationsLabel}>Observações</Text>
-                  <TextInput
-                    value={field.value ?? ''}
-                    onChangeText={field.onChange}
-                    placeholder="Anotações sobre o ambiente (opcional)"
-                    placeholderTextColor={colors.textLight}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    style={styles.observationsInput}
-                    accessibilityLabel="Observações"
+              <View style={styles.row}>
+                <Controller
+                  control={control}
+                  name="cutouts"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Recortes"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={field.onChange}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Quantidade de recortes"
+                      style={styles.rowField}
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="fixtures"
+                  render={({ field, fieldState }) => (
+                    <AppInput
+                      label="Pontos de luz"
+                      value={field.value == null ? '' : String(field.value)}
+                      onChangeText={field.onChange}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                      error={fieldState.error?.message}
+                      accessibilityLabel="Quantidade de pontos de luz"
+                      style={styles.rowField}
+                    />
+                  )}
+                />
+              </View>
+
+              <Text style={styles.sectionLabel}>Detalhes</Text>
+
+              <Controller
+                control={control}
+                name="hasCove"
+                render={({ field }) => (
+                  <ToggleRow
+                    label="Sanca"
+                    value={field.value ?? false}
+                    onChange={field.onChange}
+                    accessibilityLabel="Possui sanca"
                   />
-                </>
-              )}
-            />
+                )}
+              />
 
-            <AppButton
-              title="Salvar alterações"
-              size="lg"
-              loading={updateMutation.isPending}
-              onPress={handleSubmit(onSubmit)}
-              accessibilityLabel="Salvar alterações"
-              style={styles.submitButton}
-            />
+              <Controller
+                control={control}
+                name="hasDropCeiling"
+                render={({ field }) => (
+                  <ToggleRow
+                    label="Forro rebaixado"
+                    value={field.value ?? false}
+                    onChange={field.onChange}
+                    accessibilityLabel="Possui forro rebaixado"
+                  />
+                )}
+              />
 
-            <AppButton
-              title="Excluir medição"
-              size="lg"
-              variant="danger"
-              loading={deleteMutation.isPending}
-              onPress={() => setConfirmDeleteVisible(true)}
-              accessibilityLabel="Excluir medição"
-              style={styles.deleteButton}
-            />
-          </>
-        )}
+              <Controller
+                control={control}
+                name="observations"
+                render={({ field }) => (
+                  <>
+                    <Text style={styles.observationsLabel}>Observações</Text>
+                    <TextInput
+                      value={field.value ?? ''}
+                      onChangeText={field.onChange}
+                      placeholder="Anotações sobre o ambiente (opcional)"
+                      placeholderTextColor={colors.textLight}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                      style={styles.observationsInput}
+                      accessibilityLabel="Observações"
+                    />
+                  </>
+                )}
+              />
+
+              <AppButton
+                title="Salvar alterações"
+                size="lg"
+                loading={updateMutation.isPending}
+                onPress={handleSubmit(onSubmit)}
+                accessibilityLabel="Salvar alterações"
+                style={styles.submitButton}
+              />
+
+              <AppButton
+                title="Cancelar"
+                size="lg"
+                variant="ghost"
+                disabled={updateMutation.isPending}
+                onPress={() => setEditing(false)}
+                accessibilityLabel="Cancelar edição"
+                style={styles.cancelButton}
+              />
+            </>
+          ) : (
+            <>
+              <AppCard shadow="light" style={styles.infoCard}>
+                <View style={styles.infoHeader}>
+                  <Text style={styles.infoTitle} numberOfLines={2}>
+                    {measurement.environmentName}
+                  </Text>
+                  {badge && (
+                    <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+                  )}
+                </View>
+
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Área</Text>
+                    <Text style={styles.statValue}>
+                      {formatNumber(measurement.area)} m²
+                    </Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Perímetro</Text>
+                    <Text style={styles.statValue}>
+                      {formatNumber(measurement.perimeter)} m
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Dimensões</Text>
+                  <Text style={styles.fieldValue}>
+                    {measurement.length != null && measurement.width != null
+                      ? `${formatNumber(measurement.length)} × ${formatNumber(measurement.width)} m`
+                      : '—'}
+                  </Text>
+                </View>
+
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Altura</Text>
+                  <Text style={styles.fieldValue}>
+                    {formatNumber(measurement.ceilingHeight)} m
+                  </Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Aberturas e pontos</Text>
+                  <Text style={styles.fieldValue}>
+                    {measurement.doors} porta{measurement.doors === 1 ? '' : 's'} ·{' '}
+                    {measurement.windows} janela{measurement.windows === 1 ? '' : 's'} ·{' '}
+                    {measurement.cutouts} recorte{measurement.cutouts === 1 ? '' : 's'} ·{' '}
+                    {measurement.fixtures} ponto{measurement.fixtures === 1 ? '' : 's'} de luz
+                  </Text>
+                </View>
+
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Detalhes</Text>
+                  <Text style={styles.fieldValue}>
+                    Sanca: {measurement.hasCove ? 'Sim' : 'Não'} · Forro
+                    rebaixado: {measurement.hasDropCeiling ? 'Sim' : 'Não'}
+                  </Text>
+                </View>
+
+                {measurement.observations ? (
+                  <>
+                    <View style={styles.divider} />
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Observações</Text>
+                      <Text style={styles.fieldValue}>{measurement.observations}</Text>
+                    </View>
+                  </>
+                ) : null}
+              </AppCard>
+
+              <AppButton
+                title="Editar medição"
+                size="lg"
+                variant="outline"
+                onPress={() => setEditing(true)}
+                accessibilityLabel="Editar medição"
+                style={styles.editButton}
+              />
+            </>
+          )
+        ) : null}
       </ScreenContainer>
 
       <ConfirmDialog
@@ -590,18 +710,84 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   backButton: {
-    width: sizes.touchTarget,
-    height: sizes.touchTarget,
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
     justifyContent: 'center',
-    marginLeft: -spacing.sm,
+    alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoCard: {
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  infoTitle: {
+    flex: 1,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: colors.divider,
+  },
+  statLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  statValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  field: {
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  fieldValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  editButton: {
+    marginBottom: spacing['3xl'],
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -648,32 +834,36 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  feedbackTitle: {
-    flex: 1,
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
   feedbackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  feedbackItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  feedbackDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: colors.divider,
   },
   feedbackLabel: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
   feedbackValue: {
-    fontSize: typography.sizes.md,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
+  feedbackEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   feedbackHint: {
+    flex: 1,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
@@ -700,7 +890,7 @@ const styles = StyleSheet.create({
   observationsLabel: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.text,
+    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   observationsInput: {
@@ -718,8 +908,8 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: spacing.sm,
   },
-  deleteButton: {
-    marginTop: spacing.md,
+  cancelButton: {
+    marginTop: spacing.sm,
     marginBottom: spacing['3xl'],
   },
 });

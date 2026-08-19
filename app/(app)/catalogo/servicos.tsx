@@ -117,6 +117,14 @@ export default function CatalogServicesScreen() {
           placeholder="Buscar serviços..."
           accessibilityLabel="Buscar serviços"
           style={styles.searchInput}
+          leftAccessory={
+            <Ionicons
+              name="search"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          }
           rightAccessory={
             search ? (
               <Pressable
@@ -192,27 +200,40 @@ function ServiceCard({ service }: { service: ServiceItem }) {
   const isActive = service.status === 'ACTIVE';
 
   return (
-    <AppCard shadow="light" style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardName} numberOfLines={1}>
-          {service.name}
-        </Text>
-        <StatusBadge
-          status={isActive ? 'active' : 'cancelled'}
-          label={isActive ? 'Ativo' : 'Inativo'}
-          size="sm"
-        />
-      </View>
+    <AppCard shadow="light" radius={radius.lg} style={styles.card}>
+      <View style={styles.cardContent}>
+        <View style={styles.cardIcon}>
+          <Ionicons
+            name="construct-outline"
+            size={sizes.icon.md}
+            color={colors.primary}
+            accessibilityElementsHidden
+          />
+        </View>
 
-      {service.description ? (
-        <Text style={styles.cardDescription} numberOfLines={2}>
-          {service.description}
-        </Text>
-      ) : null}
+        <View style={styles.cardInfo}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardName} numberOfLines={1}>
+              {service.name}
+            </Text>
+            <StatusBadge
+              status={isActive ? 'active' : 'cancelled'}
+              label={isActive ? 'Ativo' : 'Inativo'}
+              size="sm"
+            />
+          </View>
 
-      <View style={styles.cardMeta}>
-        <Text style={styles.cardPrice}>{formatCurrency(service.price)}</Text>
-        <Text style={styles.cardUnit}>{service.unit}</Text>
+          {service.description ? (
+            <Text style={styles.cardDescription} numberOfLines={2}>
+              {service.description}
+            </Text>
+          ) : null}
+
+          <View style={styles.cardMeta}>
+            <Text style={styles.cardPrice}>{formatCurrency(service.price)}</Text>
+            <Text style={styles.cardUnit}>{service.unit}</Text>
+          </View>
+        </View>
       </View>
     </AppCard>
   );
@@ -228,7 +249,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -261,11 +282,28 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.lg,
   },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   cardName: {
     flex: 1,
@@ -274,19 +312,18 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   cardDescription: {
-    marginTop: spacing.xs,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
   cardMeta: {
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: spacing.sm,
   },
   cardPrice: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
   cardUnit: {

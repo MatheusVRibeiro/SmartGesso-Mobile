@@ -1,5 +1,12 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +21,7 @@ import type { StatusBadgeVariant } from '../../../../../src/components/ui/Status
 import { toApiError } from '../../../../../src/services/api/client';
 import { measurementsService } from '../../../../../src/services/api/measurements';
 import { useSessionStore } from '../../../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../../../src/theme';
 import type {
   Measurement,
   MeasurementApplicationType,
@@ -66,7 +73,7 @@ function MeasurementCard({
   const badge = APPLICATION_TYPE_BADGE[measurement.applicationType];
 
   return (
-    <AppCard shadow="light" style={styles.card}>
+    <AppCard shadow="light" radius={radius.md} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver medição ${measurement.environmentName}`}
@@ -76,61 +83,66 @@ function MeasurementCard({
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {measurement.environmentName}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
-
-        {measurement.length != null && measurement.width != null ? (
-          <View style={styles.cardRow}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
             <Ionicons
               name="resize-outline"
-              size={sizes.icon.sm}
-              color={colors.textSecondary}
+              size={sizes.icon.md}
+              color={colors.primary}
               accessibilityElementsHidden
             />
-            <Text style={styles.cardText}>
-              {formatNumber(measurement.length)} × {formatNumber(measurement.width)} m
-            </Text>
           </View>
-        ) : null}
 
-        <View style={styles.cardRow}>
-          <Ionicons
-            name="square-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
-            accessibilityElementsHidden
-          />
-          <Text style={styles.cardText}>
-            Área: {formatNumber(measurement.area)} m²
-          </Text>
-        </View>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {measurement.environmentName}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
 
-        <View style={styles.cardRow}>
-          <Ionicons
-            name="git-compare-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
-            accessibilityElementsHidden
-          />
-          <Text style={styles.cardText}>
-            Perímetro: {formatNumber(measurement.perimeter)} m
-          </Text>
-        </View>
+            {measurement.length != null && measurement.width != null ? (
+              <View style={styles.cardRow}>
+                <Ionicons
+                  name="swap-horizontal-outline"
+                  size={sizes.icon.sm}
+                  color={colors.textSecondary}
+                  accessibilityElementsHidden
+                />
+                <Text style={styles.cardText}>
+                  {formatNumber(measurement.length)} × {formatNumber(measurement.width)} m
+                </Text>
+              </View>
+            ) : null}
 
-        <View style={styles.cardMetaRow}>
-          <Text style={styles.cardMeta} numberOfLines={1}>
-            {measurement.doors} porta{measurement.doors === 1 ? '' : 's'} ·{' '}
-            {measurement.windows} janela{measurement.windows === 1 ? '' : 's'} ·{' '}
-            {measurement.cutouts} recorte{measurement.cutouts === 1 ? '' : 's'} ·{' '}
-            {measurement.fixtures} ponto{measurement.fixtures === 1 ? '' : 's'} de luz
-          </Text>
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="square-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardValue}>
+                Área: {formatNumber(measurement.area)} m²
+              </Text>
+            </View>
+
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="git-compare-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardValue}>
+                Perímetro: {formatNumber(measurement.perimeter)} m
+              </Text>
+            </View>
+          </View>
+
           <Ionicons
             name="chevron-forward"
-            size={sizes.icon.sm}
+            size={sizes.icon.md}
             color={colors.textLight}
             accessibilityElementsHidden
           />
@@ -167,23 +179,15 @@ export default function MedicoesListScreen() {
       <Stack.Screen options={{ title: 'Medições', headerShown: true }} />
 
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Voltar"
-          onPress={() => router.back()}
-          hitSlop={8}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
-        </Pressable>
         <Text style={styles.title}>Medições</Text>
-        <AppButton
-          title="+"
-          size="md"
-          accessibilityLabel="Nova medição"
+        <TouchableOpacity
           onPress={() => router.push(`/obras/${workId}/medicoes/novo`)}
+          accessibilityRole="button"
+          accessibilityLabel="Nova medição"
           style={styles.addButton}
-        />
+        >
+          <Ionicons name="add" size={sizes.icon.lg} color={colors.white} accessibilityElementsHidden />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.materialsWrapper}>
@@ -202,9 +206,9 @@ export default function MedicoesListScreen() {
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : measurements && measurements.length === 0 ? (
         <EmptyState
-          title="Nenhuma medição cadastrada"
-          description="Cadastre a primeira medição desta obra"
-          icon="cube-outline"
+          title="Nenhuma medição"
+          description="Adicione medições para calcular materiais"
+          icon="resize-outline"
           actionLabel="Nova medição"
           onAction={() => router.push(`/obras/${workId}/medicoes/novo`)}
         />
@@ -240,22 +244,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  backButton: {
-    width: sizes.touchTarget,
-    height: sizes.touchTarget,
-    justifyContent: 'center',
-    marginLeft: -spacing.sm,
-  },
   title: {
-    flex: 1,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginLeft: spacing.sm,
   },
   addButton: {
-    minWidth: sizes.touchTarget,
-    paddingHorizontal: 0,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   materialsWrapper: {
     paddingHorizontal: sizes.screenPadding,
@@ -274,6 +274,23 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -297,18 +314,10 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-  },
-  cardMeta: {
+  cardValue: {
     flex: 1,
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
 });

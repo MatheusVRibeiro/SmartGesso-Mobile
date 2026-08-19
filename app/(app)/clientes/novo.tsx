@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.text,
+    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   typeRow: {

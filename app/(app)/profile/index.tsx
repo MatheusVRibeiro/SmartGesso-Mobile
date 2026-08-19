@@ -1,14 +1,28 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppButton } from '../../../src/components/ui/AppButton';
+import { AppCard } from '../../../src/components/ui/AppCard';
+import { StatusBadge } from '../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
 import { queryClient } from '../../../src/lib/queryClient';
-import { colors, spacing, typography, radius } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { config } from '../../../src/constants/config';
+import type { CompanyMemberStatus } from '../../../src/types/company';
+
+const MEMBER_STATUS_BADGE: Record<
+  CompanyMemberStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  ACTIVE: { variant: 'active', label: 'Acesso ativo' },
+  INVITED: { variant: 'warning', label: 'Convite pendente' },
+  INACTIVE: { variant: 'cancelled', label: 'Acesso inativo' },
+  BLOCKED: { variant: 'suspended', label: 'Acesso bloqueado' },
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -26,118 +40,169 @@ export default function ProfileScreen() {
     Linking.openURL('mailto:suporte@smartgesso.com.br');
   };
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+  const getInitial = (name: string): string => {
+    const first = name.trim().charAt(0);
+    return first ? first.toUpperCase() : '?';
   };
 
+  const memberBadge = activeCompany
+    ? MEMBER_STATUS_BADGE[activeCompany.member.status]
+    : null;
+
   return (
-    <ScreenContainer scroll>
-      <View style={styles.container}>
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {currentUser?.name ? getInitials(currentUser.name) : '?'}
-            </Text>
-          </View>
-        </View>
-
-        {/* User Info */}
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>
-            {currentUser?.name || 'Usuário'}
-          </Text>
-          <Text style={styles.userEmail}>
-            {currentUser?.email || 'email@exemplo.com'}
+    <ScreenContainer scroll padding>
+      {/* Avatar */}
+      <View style={styles.avatarContainer}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {currentUser?.name ? getInitial(currentUser.name) : '?'}
           </Text>
         </View>
+      </View>
 
-        {/* Active Company */}
-        {activeCompany && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Empresa ativa</Text>
-            <View style={styles.companyCard}>
+      {/* User Info */}
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>
+          {currentUser?.name || 'Usuário'}
+        </Text>
+        <Text style={styles.userEmail}>
+          {currentUser?.email || 'email@exemplo.com'}
+        </Text>
+      </View>
+
+      {/* Empresa / Papel */}
+      {activeCompany && (
+        <AppCard shadow="light" style={styles.infoCard}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardIcon}>
               <Ionicons
-                name="business"
-                size={24}
+                name="business-outline"
+                size={sizes.icon.md}
                 color={colors.primary}
                 accessibilityElementsHidden
               />
-              <View style={styles.companyInfo}>
-                <Text style={styles.companyName}>
-                  {activeCompany.company.tradeName}
-                </Text>
-                <Text style={styles.companyDocument}>
-                  {activeCompany.company.document}
-                </Text>
-              </View>
             </View>
+            <View style={styles.cardHeaderInfo}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {activeCompany.company.tradeName}
+              </Text>
+              <Text style={styles.cardSubtitle} numberOfLines={1}>
+                {activeCompany.company.document}
+              </Text>
+            </View>
+            {memberBadge && (
+              <StatusBadge
+                status={memberBadge.variant}
+                label={memberBadge.label}
+                size="sm"
+              />
+            )}
           </View>
-        )}
 
-        {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informações do app</Text>
+          <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nome</Text>
-            <Text style={styles.infoValue}>{config.appName}</Text>
+            <View style={styles.infoRowIcon}>
+              <Ionicons
+                name="person-circle-outline"
+                size={sizes.icon.sm}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+            </View>
+            <Text style={styles.infoLabel}>Papel</Text>
+            <Text style={styles.infoValue}>
+              {activeCompany.member.isOwner ? 'Proprietário' : 'Membro'}
+            </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Versão</Text>
-            <Text style={styles.infoValue}>{config.appVersion}</Text>
+            <View style={styles.infoRowIcon}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={sizes.icon.sm}
+                color={colors.primary}
+                accessibilityElementsHidden
+              />
+            </View>
+            <Text style={styles.infoLabel}>Acesso</Text>
+            <Text style={styles.infoValue}>
+              {memberBadge?.label ?? activeCompany.member.status}
+            </Text>
           </View>
+        </AppCard>
+      )}
+
+      {/* App Info */}
+      <Text style={styles.sectionLabel}>Sobre o app</Text>
+      <AppCard shadow="light" style={styles.infoCard}>
+        <View style={styles.infoRow}>
+          <View style={styles.infoRowIcon}>
+            <Ionicons
+              name="apps-outline"
+              size={sizes.icon.sm}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+          </View>
+          <Text style={styles.infoLabel}>Nome</Text>
+          <Text style={styles.infoValue}>{config.appName}</Text>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionsSection}>
-          <AppButton
-            title="Suporte"
-            variant="outline"
-            onPress={handleSupport}
-            style={styles.actionButton}
-            accessibilityLabel="Entrar em contato com o suporte"
-          />
-
-          <AppButton
-            title="Sair"
-            variant="danger"
-            onPress={handleLogout}
-            style={styles.actionButton}
-            accessibilityLabel="Sair da conta"
-          />
+        <View style={styles.infoRow}>
+          <View style={styles.infoRowIcon}>
+            <Ionicons
+              name="information-circle-outline"
+              size={sizes.icon.sm}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+          </View>
+          <Text style={styles.infoLabel}>Versão</Text>
+          <Text style={styles.infoValue}>{config.appVersion}</Text>
         </View>
+      </AppCard>
+
+      {/* Actions */}
+      <View style={styles.actionsSection}>
+        <AppButton
+          title="Suporte"
+          variant="outline"
+          onPress={handleSupport}
+          style={styles.actionButton}
+          accessibilityLabel="Entrar em contato com o suporte"
+        />
+
+        <AppButton
+          title="Sair"
+          variant="danger"
+          onPress={handleLogout}
+          style={styles.actionButton}
+          accessibilityLabel="Sair da conta"
+        />
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-  },
   avatarContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.primary,
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
-    color: colors.textOnPrimary,
+    color: colors.primary,
   },
   userInfo: {
     alignItems: 'center',
@@ -155,50 +220,57 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     textAlign: 'center',
   },
-  section: {
-    marginBottom: spacing.xl,
+  infoCard: {
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  sectionTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  companyCard: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: spacing.md,
   },
-  companyInfo: {
-    marginLeft: spacing.md,
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardHeaderInfo: {
     flex: 1,
   },
-  companyName: {
+  cardTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  companyDocument: {
+  cardSubtitle: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  },
+  infoRowIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   infoLabel: {
+    flex: 1,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
@@ -207,9 +279,17 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
     color: colors.text,
   },
+  sectionLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   actionsSection: {
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     gap: spacing.md,
+    paddingBottom: spacing['3xl'],
   },
   actionButton: {
     width: '100%',

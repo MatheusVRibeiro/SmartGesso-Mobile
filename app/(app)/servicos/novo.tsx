@@ -27,7 +27,7 @@ import { clientsService } from '../../../src/services/api/clients';
 import { worksService } from '../../../src/services/api/works';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Client } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
 import { z } from 'zod';
@@ -403,7 +403,10 @@ export default function NovaOrdemServicoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Nova ordem de serviço</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Nova ordem de serviço</Text>
+            <Text style={styles.subtitle}>Preencha os dados para criar a OS</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Cliente</Text>
@@ -421,16 +424,18 @@ export default function NovaOrdemServicoScreen() {
                   accessibilityLabel="Selecionar cliente"
                   onPress={() => setClientModalVisible(true)}
                   style={[
-                    styles.selectorField,
-                    fieldState.error != null && styles.selectorFieldError,
+                    styles.selectorCard,
+                    fieldState.error != null && styles.selectorCardError,
                   ]}
                 >
-                  <Ionicons
-                    name="person-outline"
-                    size={sizes.icon.md}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
+                  <View style={styles.selectorIcon}>
+                    <Ionicons
+                      name="person-outline"
+                      size={sizes.icon.md}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
                   <Text
                     style={[
                       styles.selectorText,
@@ -472,16 +477,18 @@ export default function NovaOrdemServicoScreen() {
                   accessibilityLabel="Selecionar obra"
                   onPress={() => setWorkModalVisible(true)}
                   style={[
-                    styles.selectorField,
-                    fieldState.error != null && styles.selectorFieldError,
+                    styles.selectorCard,
+                    fieldState.error != null && styles.selectorCardError,
                   ]}
                 >
-                  <Ionicons
-                    name="construct-outline"
-                    size={sizes.icon.md}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
+                  <View style={styles.selectorIcon}>
+                    <Ionicons
+                      name="construct-outline"
+                      size={sizes.icon.md}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
                   <Text
                     style={[
                       styles.selectorText,
@@ -520,6 +527,14 @@ export default function NovaOrdemServicoScreen() {
               placeholder="AAAA-MM-DD (opcional)"
               autoCapitalize="none"
               accessibilityLabel="Data agendada"
+              leftAccessory={
+                <Ionicons
+                  name="calendar-outline"
+                  size={sizes.icon.md}
+                  color={colors.textLight}
+                  accessibilityElementsHidden
+                />
+              }
             />
           )}
         />
@@ -543,7 +558,7 @@ export default function NovaOrdemServicoScreen() {
                   <Ionicons
                     name="trash-outline"
                     size={sizes.icon.sm}
-                    color={colors.error}
+                    color={colors.danger}
                   />
                 </Pressable>
               </View>
@@ -623,13 +638,14 @@ export default function NovaOrdemServicoScreen() {
               value={obsField.value ?? ''}
               onChangeText={obsField.onChange}
               placeholder="Observações adicionais (opcional)"
+              multiline
               accessibilityLabel="Observações"
             />
           )}
         />
 
         <AppButton
-          title="Salvar"
+          title="Salvar OS"
           size="lg"
           accessibilityLabel="Salvar ordem de serviço"
           onPress={handleSubmit(onSubmit)}
@@ -695,10 +711,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerText: {
+    flex: 1,
+  },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -707,19 +731,27 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  selectorField: {
+  selectorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: sizes.buttonHeight.sm / 2,
-    paddingHorizontal: spacing.md,
-    height: sizes.inputHeight,
-    gap: spacing.sm,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.xs,
   },
-  selectorFieldError: {
-    borderColor: colors.error,
+  selectorCardError: {
+    borderColor: colors.danger,
+  },
+  selectorIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectorText: {
     flex: 1,
@@ -731,8 +763,9 @@ const styles = StyleSheet.create({
   },
   fieldError: {
     fontSize: typography.sizes.xs,
-    color: colors.error,
+    color: colors.danger,
     marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   emptyText: {
     fontSize: typography.sizes.sm,
@@ -809,9 +842,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: spacing.sm,
-    marginBottom: spacing.xs,
-    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   optionPressed: {
     opacity: 0.7,
@@ -819,8 +854,8 @@ const styles = StyleSheet.create({
   optionIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,

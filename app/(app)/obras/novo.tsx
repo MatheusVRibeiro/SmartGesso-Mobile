@@ -25,7 +25,7 @@ import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { worksService } from '../../../src/services/api/works';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Client } from '../../../src/types/client';
 import type { WorkStatus } from '../../../src/types/work';
 import { z } from 'zod';
@@ -297,7 +297,10 @@ export default function NovaObraScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Nova obra</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Nova obra</Text>
+            <Text style={styles.subtitle}>Cadastre os dados da obra.</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Cliente</Text>
@@ -564,6 +567,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   backButton: {
@@ -572,10 +576,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: -spacing.sm,
   },
+  headerText: {
+    flex: 1,
+  },
   title: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -592,7 +604,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.inputBackground,
     borderWidth: 1,
     borderColor: colors.inputBorder,
-    borderRadius: 8,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: sizes.inputHeight,
     marginBottom: spacing.lg,
@@ -624,7 +636,7 @@ const styles = StyleSheet.create({
   statusChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 999,
+    borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
@@ -683,7 +695,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -693,8 +705,8 @@ const styles = StyleSheet.create({
   clientOptionIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight + '20',
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
