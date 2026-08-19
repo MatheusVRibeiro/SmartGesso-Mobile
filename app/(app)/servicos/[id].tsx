@@ -28,6 +28,7 @@ import { clientsService } from '../../../src/services/api/clients';
 import { expensesService } from '../../../src/services/api/expenses';
 import { paymentsService } from '../../../src/services/api/payments';
 import { productionOrdersService } from '../../../src/services/api/productionOrders';
+import { quotesService } from '../../../src/services/api/quotes';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { PermissionGate } from '../../../src/components/domain/PermissionGate';
@@ -925,6 +926,14 @@ export default function DetalheOrdemServicoScreen() {
   const profitColor =
     profit > 0 ? colors.success : profit < 0 ? colors.danger : colors.text;
 
+  // Orçamento de origem (planejado × realizado — V3 §48)
+  const { data: originQuote } = useQuery({
+    queryKey: ['company', companyId, 'quotes', order?.quoteId],
+    queryFn: () => quotesService.getById(order!.quoteId!),
+    enabled: Boolean(companyId && order?.quoteId),
+  });
+  const quoteTotal = originQuote?.total != null ? Number(originQuote.total) : null;
+
   // Índice do status atual no timeline expandido (para o stepper)
   const currentStepIndex = order
     ? SERVICE_ORDER_STATUS_STEPS.findIndex((s) => s.status === order.status)
@@ -1743,6 +1752,53 @@ export default function DetalheOrdemServicoScreen() {
                   />
                 )}
               </PermissionGate>
+            )}
+
+            {showResultSection && order.quoteId && (
+              <Text style={styles.sectionLabel}>Planejado × Realizado</Text>
+            )}
+            {showResultSection && order.quoteId && (
+              <AppCard shadow="light" style={styles.resultCard}>
+                <View style={styles.resultRow}>
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultLabel}>Custo previsto</Text>
+                    <Text style={styles.resultValue}>
+                      {formatCurrency(quoteTotal ?? 0)}
+                    </Text>
+                  </View>
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultLabel}>Custo realizado</Text>
+                    <Text style={styles.resultValueSemibold}>
+                      {formatCurrency(cost ?? 0)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.resultProfitRow}>
+                  <Text style={styles.resultLabel}>Desvio de custo</Text>
+                  <Text
+                    style={[
+                      styles.profitValue,
+                      { color: cost !== null && quoteTotal ? (cost > quoteTotal ? colors.danger : colors.success) : colors.text },
+                    ]}
+                  >
+                    {cost !== null && quoteTotal
+                      ? `${cost > quoteTotal ? '+' : ''}${formatCurrency(cost - quoteTotal)}`
+                      : '—'}
+                  </Text>
+                </View>
+                {order.completedDate && order.scheduledDate ? (
+                  <>
+                    <View style={styles.divider} />
+                    <View style={styles.resultProfitRow}>
+                      <Text style={styles.resultLabel}>Prazo previsto × realizado</Text>
+                      <Text style={styles.resultValueSemibold}>
+                        {formatDayMonth(order.scheduledDate)} → {formatDayMonth(order.completedDate)}
+                      </Text>
+                    </View>
+                  </>
+                ) : null}
+              </AppCard>
             )}
           </>
         ) : null}
