@@ -29,7 +29,13 @@ export interface ServiceOrder {
   saleValue?: number | null;
   profit?: number | null;
   observations?: string | null;
+  /** Motivo da pausa/atraso (V3 §35): motivo + observação + data em texto livre. */
+  pauseReason?: string | null;
   checklist?: Record<string, boolean> | null;
+  /** Etapas do serviço (V3 §33) — timeline interativa: `{ 'medicao': true, ... }`. */
+  etapas?: Record<string, boolean> | null;
+  /** Produção opcional (V3 §44) — se o serviço exige ordem de produção. */
+  needsProduction?: boolean | null;
   createdAt: string;
   updatedAt: string;
   client?: { id: string; name: string };
@@ -71,7 +77,10 @@ export interface CreateServiceOrderInput {
 export type UpdateServiceOrderInput = Partial<Omit<CreateServiceOrderInput, 'clientId' | 'workId'>> & {
   status?: ServiceOrderStatus;
   completedDate?: string;
+  pauseReason?: string;
   checklist?: Record<string, boolean>;
+  etapas?: Record<string, boolean>;
+  needsProduction?: boolean;
 };
 
 // ─── Ordens de Produção (Fase 5) ──────────────────────────────────────────

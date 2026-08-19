@@ -27,13 +27,15 @@ import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { expensesService } from '../../../src/services/api/expenses';
 import { paymentsService } from '../../../src/services/api/payments';
+import { productionOrdersService } from '../../../src/services/api/productionOrders';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '../../../src/types/permissions';
-import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
+import { borders, colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type {
+  ProductionOrder,
   RegisterServiceOrderResultInput,
   ServiceOrder,
   ServiceOrderStatus,
@@ -73,6 +75,18 @@ const CHECKLIST_ITEMS = [
   'Placas instaladas',
   'Acabamento',
   'Limpeza',
+] as const;
+
+/** Etapas do serviço (V3 §33) — timeline interativa; nem todo serviço usa todas. */
+const SERVICE_ORDER_ETAPAS = [
+  { key: 'medicao', label: 'Medição' },
+  { key: 'producao', label: 'Produção' },
+  { key: 'separacao', label: 'Separação de material' },
+  { key: 'transporte', label: 'Transporte' },
+  { key: 'instalacao', label: 'Instalação' },
+  { key: 'acabamento', label: 'Acabamento' },
+  { key: 'retorno', label: 'Retorno' },
+  { key: 'entrega', label: 'Entrega' },
 ] as const;
 
 /** Slots de fotos (antes/durante/depois) — estrutura visual sem câmera. */
@@ -152,6 +166,18 @@ function getPrazoBadge(
 }
 
 // ─── Modal de registro de resultado ─────────────────────────────────────────
+
+/**
+ * A API real retorna array puro em GET /production-orders (Prisma findMany),
+ * enquanto o tipo declarado é { data, total }. Normaliza ambos os formatos.
+ */
+function toArray<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[];
+  if (result && typeof result === 'object' && 'data' in result) {
+    return (result as { data: T[] }).data;
+  }
+  return [];
+}
 
 interface RegisterResultModalProps {
   visible: boolean;
@@ -318,6 +344,82 @@ export default function DetalheOrdemServicoScreen() {
     },
   });
 
+  // Etapas do serviço (V3 §33) — timeline interativa com optimistic update.
+  const etapasMutation = useMutation({
+    mutationFn: (etapas: Record<string, boolean>) =>
+      serviceOrdersService.updateEtapas(orderId as string, etapas),
+    onMutate: async (etapas) => {
+      await queryClient.cancelQueries({
+        queryKey: ['company', companyId, 'service-orders', orderId],
+      });
+      const previous = queryClient.getQueryData<ServiceOrder>([
+        'company',
+        companyId,
+        'service-orders',
+        orderId,
+      ]);
+      if (previous) {
+        queryClient.setQueryData<ServiceOrder>(
+          ['company', companyId, 'service-orders', orderId],
+          { ...previous, etapas },
+        );
+      }
+      return { previous };
+    },
+    onError: (error: unknown, _etapas, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ['company', companyId, 'service-orders', orderId],
+          context.previous,
+        );
+      }
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
+    },
+  });
+
+  // Produção opcional (V3 §44) — Sim/Não persistido na OS com optimistic update.
+  const needsProductionMutation = useMutation({
+    mutationFn: (needsProduction: boolean) =>
+      serviceOrdersService.updateNeedsProduction(orderId as string, needsProduction),
+    onMutate: async (needsProduction) => {
+      await queryClient.cancelQueries({
+        queryKey: ['company', companyId, 'service-orders', orderId],
+      });
+      const previous = queryClient.getQueryData<ServiceOrder>([
+        'company',
+        companyId,
+        'service-orders',
+        orderId,
+      ]);
+      if (previous) {
+        queryClient.setQueryData<ServiceOrder>(
+          ['company', companyId, 'service-orders', orderId],
+          { ...previous, needsProduction },
+        );
+      }
+      return { previous };
+    },
+    onError: (error: unknown, _needsProduction, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ['company', companyId, 'service-orders', orderId],
+          context.previous,
+        );
+      }
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
+    },
+  });
+
   // Cliente completo (telefone/WhatsApp/endereço) para as ações rápidas.
   const clientQuery = useQuery({
     queryKey: ['company', companyId, 'clients', orderQuery.data?.clientId],
@@ -337,6 +439,13 @@ export default function DetalheOrdemServicoScreen() {
     queryKey: ['company', companyId, 'expenses'],
     queryFn: () => expensesService.list(),
     enabled: Boolean(companyId),
+  });
+
+  // Produção (V3 §44) — ordens de produção do cliente para vincular à OS.
+  const productionOrdersQuery = useQuery({
+    queryKey: ['company', companyId, 'production-orders'],
+    queryFn: () => productionOrdersService.list(),
+    enabled: Boolean(companyId && orderQuery.data?.needsProduction),
   });
 
   const registerResultMutation = useMutation({
@@ -554,6 +663,12 @@ export default function DetalheOrdemServicoScreen() {
     checklistMutation.mutate({ ...current, [item]: !current[item] });
   }
 
+  function toggleEtapa(key: string) {
+    if (!order) return;
+    const current = order.etapas ?? {};
+    etapasMutation.mutate({ ...current, [key]: !current[key] });
+  }
+
   // Resultado do serviço (custo × venda → lucro/margem)
   const hasResult = order != null && order.cost != null && order.saleValue != null;
   const showResultSection =
@@ -571,6 +686,22 @@ export default function DetalheOrdemServicoScreen() {
     ? SERVICE_ORDER_STATUS_STEPS.findIndex((s) => s.status === order.status)
     : -1;
   const statusTransitions = order ? getStatusTransitions(order.status) : [];
+
+  // Etapas (V3 §33) — primeira não concluída = atual (→), concluídas = ✓, demais = ○.
+  const etapas = order?.etapas ?? {};
+  const currentEtapaIndex = SERVICE_ORDER_ETAPAS.findIndex(
+    (etapa) => etapas[etapa.key] !== true,
+  );
+  const etapasConcluidas = SERVICE_ORDER_ETAPAS.filter(
+    (etapa) => etapas[etapa.key] === true,
+  ).length;
+
+  // Produção (V3 §44) — ordens de produção do cliente para vincular à OS.
+  const clientProductionOrders = order?.needsProduction
+    ? toArray<ProductionOrder>(productionOrdersQuery.data).filter(
+        (po) => po.clientId === order.clientId,
+      )
+    : [];
 
   return (
     <View style={styles.screen}>
@@ -959,6 +1090,182 @@ export default function DetalheOrdemServicoScreen() {
                       ))}
                     </View>
                   )}
+                </>
+              )}
+            </AppCard>
+
+            {/* ── Etapas do serviço (V3 §33): timeline interativa ───────── */}
+            <Text style={styles.sectionLabel}>Etapas</Text>
+            <AppCard shadow="light" style={styles.etapasCard}>
+              {SERVICE_ORDER_ETAPAS.map((etapa, index) => {
+                const done = etapas[etapa.key] === true;
+                const isCurrent = !done && currentEtapaIndex === index;
+                const iconName = done
+                  ? 'checkmark-circle'
+                  : isCurrent
+                    ? 'radio-button-on'
+                    : 'ellipse-outline';
+                const iconColor = done
+                  ? colors.success
+                  : isCurrent
+                    ? colors.primary
+                    : colors.textLight;
+                return (
+                  <Pressable
+                    key={etapa.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${etapa.label}${done ? ' concluída' : ''}`}
+                    accessibilityState={{ checked: done }}
+                    onPress={() => toggleEtapa(etapa.key)}
+                    disabled={etapasMutation.isPending}
+                    style={({ pressed }) => [
+                      styles.etapaRow,
+                      pressed && styles.etapaRowPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={iconName}
+                      size={sizes.icon.md}
+                      color={iconColor}
+                      accessibilityElementsHidden
+                    />
+                    <Text
+                      style={[
+                        styles.etapaLabel,
+                        done && styles.etapaLabelDone,
+                        isCurrent && styles.etapaLabelCurrent,
+                      ]}
+                    >
+                      {etapa.label}
+                    </Text>
+                    {done ? (
+                      <View style={[styles.etapaBadge, styles.etapaBadgeDone]}>
+                        <Text
+                          style={[styles.etapaBadgeText, styles.etapaBadgeTextDone]}
+                        >
+                          Concluída
+                        </Text>
+                      </View>
+                    ) : isCurrent ? (
+                      <View style={styles.etapaBadge}>
+                        <Text style={styles.etapaBadgeText}>Atual</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+              <Text style={styles.etapaHint}>
+                {etapasConcluidas} de {SERVICE_ORDER_ETAPAS.length} etapas
+                concluídas — toque para marcar
+              </Text>
+            </AppCard>
+
+            {/* ── Produção opcional (V3 §44) ─────────────────────────────── */}
+            <Text style={styles.sectionLabel}>Produção</Text>
+            <AppCard shadow="light" style={styles.producaoCard}>
+              <Text style={styles.producaoQuestion}>Produção necessária?</Text>
+              <View style={styles.producaoToggleRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Produção necessária: Sim"
+                  accessibilityState={{ selected: order.needsProduction === true }}
+                  onPress={() => needsProductionMutation.mutate(true)}
+                  disabled={needsProductionMutation.isPending}
+                  style={[
+                    styles.producaoToggleButton,
+                    order.needsProduction === true &&
+                      styles.producaoToggleButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.producaoToggleButtonText,
+                      order.needsProduction === true &&
+                        styles.producaoToggleButtonTextActive,
+                    ]}
+                  >
+                    Sim
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Produção necessária: Não"
+                  accessibilityState={{ selected: order.needsProduction === false }}
+                  onPress={() => needsProductionMutation.mutate(false)}
+                  disabled={needsProductionMutation.isPending}
+                  style={[
+                    styles.producaoToggleButton,
+                    order.needsProduction === false &&
+                      styles.producaoToggleButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.producaoToggleButtonText,
+                      order.needsProduction === false &&
+                        styles.producaoToggleButtonTextActive,
+                    ]}
+                  >
+                    Não
+                  </Text>
+                </Pressable>
+              </View>
+
+              {order.needsProduction === true && (
+                <>
+                  <View style={styles.divider} />
+                  {clientProductionOrders.length > 0 ? (
+                    <>
+                      <Text style={styles.producaoHint}>
+                        Ordens de produção do cliente
+                      </Text>
+                      {clientProductionOrders.slice(0, 3).map((po) => (
+                        <Pressable
+                          key={po.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Abrir ordem de produção ${po.code}`}
+                          onPress={() => router.push(`/producao/${po.id}`)}
+                          style={({ pressed }) => [
+                            styles.producaoLinkRow,
+                            pressed && styles.producaoLinkRowPressed,
+                          ]}
+                        >
+                          <Ionicons
+                            name="construct-outline"
+                            size={sizes.icon.md}
+                            color={colors.primary}
+                            accessibilityElementsHidden
+                          />
+                          <Text style={styles.producaoLinkLabel}>
+                            Ordem de produção #{po.code}
+                          </Text>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={sizes.icon.sm}
+                            color={colors.textLight}
+                            accessibilityElementsHidden
+                          />
+                        </Pressable>
+                      ))}
+                    </>
+                  ) : (
+                    <Text style={styles.producaoHint}>
+                      Nenhuma ordem de produção vinculada a este cliente
+                    </Text>
+                  )}
+                  <AppButton
+                    title="Criar ordem de produção"
+                    variant="outline"
+                    size="md"
+                    accessibilityLabel="Criar ordem de produção para este serviço"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/producao/novo',
+                        params: { serviceOrderId: order.id },
+                      })
+                    }
+                    style={styles.producaoCtaButton}
+                  />
                 </>
               )}
             </AppCard>
@@ -1550,6 +1857,121 @@ const styles = StyleSheet.create({
   checklistHint: {
     fontSize: typography.sizes.xs,
     color: colors.textLight,
+    marginTop: spacing.sm,
+  },
+  // Etapas do serviço (V3 §33) — timeline interativa
+  etapasCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  etapaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    minHeight: sizes.touchTarget,
+    borderRadius: radius.sm,
+  },
+  etapaRowPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  etapaLabel: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    color: colors.text,
+  },
+  etapaLabelDone: {
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  etapaLabelCurrent: {
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  etapaBadge: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  etapaBadgeDone: {
+    backgroundColor: colors.successSoft,
+  },
+  etapaBadgeText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  etapaBadgeTextDone: {
+    color: colors.success,
+  },
+  etapaHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: spacing.sm,
+  },
+  // Produção opcional (V3 §44) — Sim/Não + link para ordem de produção
+  producaoCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  producaoQuestion: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  producaoToggleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  producaoToggleButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: borders.width.thin,
+    borderColor: colors.border,
+    minHeight: sizes.touchTarget,
+  },
+  producaoToggleButtonActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  producaoToggleButtonText: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+  },
+  producaoToggleButtonTextActive: {
+    color: colors.primary,
+  },
+  producaoLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    minHeight: sizes.touchTarget,
+    borderRadius: radius.sm,
+  },
+  producaoLinkRowPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  producaoLinkLabel: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text,
+  },
+  producaoHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  producaoCtaButton: {
     marginTop: spacing.sm,
   },
   // Fotos (antes / durante / depois)

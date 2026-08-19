@@ -4,6 +4,7 @@ import {
   FlatList,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -34,7 +35,7 @@ import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
-import type { Client } from '../../../src/types/client';
+import type { Client, CreateClientInput } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
 import type { CreateQuoteInput, QuotePaymentMethod } from '../../../src/types/quote';
 import type {
@@ -298,6 +299,7 @@ interface ClientPickerModalProps {
   errorMessage: string;
   onRetry: () => void;
   onSelect: (clientId: string) => void;
+  onQuickCreate: () => void;
   onClose: () => void;
 }
 
@@ -309,6 +311,7 @@ function ClientPickerModal({
   errorMessage,
   onRetry,
   onSelect,
+  onQuickCreate,
   onClose,
 }: ClientPickerModalProps) {
   const [search, setSearch] = useState('');
@@ -347,68 +350,319 @@ function ClientPickerModal({
           />
         </View>
 
-        {isLoading ? (
-          <LoadingState text="Carregando clientes..." />
-        ) : isError ? (
-          <ErrorState message={errorMessage} onRetry={onRetry} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title={
-              search.trim()
-                ? 'Nenhum cliente encontrado'
-                : 'Nenhum cliente cadastrado'
-            }
-            description={
-              search.trim()
-                ? 'Tente buscar com outro termo'
-                : 'Cadastre um cliente antes de criar o orçamento'
-            }
-            icon="people-outline"
-          />
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.modalList}
-            renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Selecionar cliente ${item.name}`}
-                onPress={() => onSelect(item.id)}
-                style={({ pressed }) => [
-                  styles.clientOption,
-                  pressed && styles.clientOptionPressed,
-                ]}
-              >
-                <View style={styles.clientOptionIcon}>
+        <View style={styles.modalBody}>
+          {isLoading ? (
+            <LoadingState text="Carregando clientes..." />
+          ) : isError ? (
+            <ErrorState message={errorMessage} onRetry={onRetry} />
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              title={
+                search.trim()
+                  ? 'Nenhum cliente encontrado'
+                  : 'Nenhum cliente cadastrado'
+              }
+              description={
+                search.trim()
+                  ? 'Tente buscar com outro termo'
+                  : 'Cadastre um cliente rapidamente para continuar'
+              }
+              icon="people-outline"
+            />
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.modalList}
+              renderItem={({ item }) => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Selecionar cliente ${item.name}`}
+                  onPress={() => onSelect(item.id)}
+                  style={({ pressed }) => [
+                    styles.clientOption,
+                    pressed && styles.clientOptionPressed,
+                  ]}
+                >
+                  <View style={styles.clientOptionIcon}>
+                    <Ionicons
+                      name="person-outline"
+                      size={sizes.icon.md}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.clientOptionInfo}>
+                    <Text style={styles.clientOptionName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {item.document ? (
+                      <Text style={styles.clientOptionMeta} numberOfLines={1}>
+                        {item.document}
+                      </Text>
+                    ) : null}
+                  </View>
                   <Ionicons
-                    name="person-outline"
+                    name="chevron-forward"
                     size={sizes.icon.md}
-                    color={colors.primary}
+                    color={colors.textLight}
                     accessibilityElementsHidden
                   />
-                </View>
-                <View style={styles.clientOptionInfo}>
-                  <Text style={styles.clientOptionName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  {item.document ? (
-                    <Text style={styles.clientOptionMeta} numberOfLines={1}>
-                      {item.document}
-                    </Text>
-                  ) : null}
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={sizes.icon.md}
-                  color={colors.textLight}
-                  accessibilityElementsHidden
-                />
-              </Pressable>
-            )}
+                </Pressable>
+              )}
+            />
+          )}
+        </View>
+
+        <View style={styles.modalFooter}>
+          <AppButton
+            title="+ Novo cliente"
+            variant="outline"
+            size="md"
+            accessibilityLabel="Cadastrar novo cliente"
+            onPress={onQuickCreate}
           />
-        )}
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+// ─── Modal de cadastro rápido de cliente (V3 §12) ──────────────────────────
+
+interface QuickClientModalProps {
+  visible: boolean;
+  loading: boolean;
+  onSave: (data: CreateClientInput) => void;
+  onClose: () => void;
+}
+
+interface QuickClientErrors {
+  name?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+}
+
+/**
+ * Cadastro mínimo (nome/telefone/WhatsApp obrigatórios) sem abandonar o
+ * wizard — CPF/CNPJ, e-mail e endereço ficam opcionais (V3 §12).
+ */
+function QuickClientModal({ visible, loading, onSave, onClose }: QuickClientModalProps) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [document, setDocument] = useState('');
+  const [email, setEmail] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [errors, setErrors] = useState<QuickClientErrors>({});
+
+  // Reinicia o formulário sempre que o modal abre.
+  useEffect(() => {
+    if (!visible) return;
+    setName('');
+    setPhone('');
+    setWhatsapp('');
+    setDocument('');
+    setEmail('');
+    setStreet('');
+    setNumber('');
+    setNeighborhood('');
+    setCity('');
+    setState('');
+    setZipCode('');
+    setErrors({});
+  }, [visible]);
+
+  function handleSave() {
+    const nextErrors: QuickClientErrors = {};
+    if (!name.trim()) nextErrors.name = 'Nome é obrigatório';
+    if (!phone.trim()) nextErrors.phone = 'Telefone é obrigatório';
+    if (!whatsapp.trim()) nextErrors.whatsapp = 'WhatsApp é obrigatório';
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) {
+      nextErrors.email = 'E-mail inválido';
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    const address = { zipCode, street, number, neighborhood, city, state };
+    const hasAddress = Object.values(address).some((v) => v.trim() !== '');
+    onSave({
+      type: 'FISICA',
+      name: name.trim(),
+      phone: phone.trim(),
+      whatsapp: whatsapp.trim(),
+      document: document.trim() || undefined,
+      email: email.trim() || undefined,
+      ...(hasAddress
+        ? {
+            address: {
+              zipCode: zipCode.trim() || undefined,
+              street: street.trim() || undefined,
+              number: number.trim() || undefined,
+              neighborhood: neighborhood.trim() || undefined,
+              city: city.trim() || undefined,
+              state: state.trim() || undefined,
+            },
+          }
+        : {}),
+    });
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom']}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Novo cliente</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Fechar cadastro rápido de cliente"
+            onPress={onClose}
+            hitSlop={8}
+            style={styles.modalClose}
+          >
+            <Ionicons name="close" size={sizes.icon.lg} color={colors.text} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.quickForm}
+        >
+          <Text style={styles.quickFormHint}>
+            Cadastro mínimo para continuar — os demais campos podem ser
+            preenchidos depois.
+          </Text>
+
+          <AppInput
+            label="Nome"
+            required
+            value={name}
+            onChangeText={setName}
+            placeholder="Ex.: João da Silva"
+            error={errors.name}
+            accessibilityLabel="Nome do cliente"
+          />
+          <AppInput
+            label="Telefone"
+            required
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="(11) 99999-9999"
+            keyboardType="phone-pad"
+            error={errors.phone}
+            accessibilityLabel="Telefone do cliente"
+          />
+          <AppInput
+            label="WhatsApp"
+            required
+            value={whatsapp}
+            onChangeText={setWhatsapp}
+            placeholder="(11) 99999-9999"
+            keyboardType="phone-pad"
+            error={errors.whatsapp}
+            accessibilityLabel="WhatsApp do cliente"
+          />
+          <AppInput
+            label="CPF/CNPJ"
+            value={document}
+            onChangeText={setDocument}
+            placeholder="Opcional"
+            accessibilityLabel="CPF ou CNPJ do cliente"
+          />
+          <AppInput
+            label="E-mail"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Opcional"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email}
+            accessibilityLabel="E-mail do cliente"
+          />
+
+          <Text style={styles.quickFormSection}>Endereço (opcional)</Text>
+          <View style={styles.quickFormRow}>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="Rua"
+                value={street}
+                onChangeText={setStreet}
+                placeholder="Ex.: Rua das Flores"
+                accessibilityLabel="Rua do cliente"
+              />
+            </View>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="Número"
+                value={number}
+                onChangeText={setNumber}
+                placeholder="Ex.: 123"
+                accessibilityLabel="Número do endereço"
+              />
+            </View>
+          </View>
+          <View style={styles.quickFormRow}>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="Bairro"
+                value={neighborhood}
+                onChangeText={setNeighborhood}
+                placeholder="Opcional"
+                accessibilityLabel="Bairro do cliente"
+              />
+            </View>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="Cidade"
+                value={city}
+                onChangeText={setCity}
+                placeholder="Opcional"
+                accessibilityLabel="Cidade do cliente"
+              />
+            </View>
+          </View>
+          <View style={styles.quickFormRow}>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="UF"
+                value={state}
+                onChangeText={setState}
+                placeholder="SP"
+                maxLength={2}
+                autoCapitalize="characters"
+                accessibilityLabel="UF do cliente"
+              />
+            </View>
+            <View style={styles.quickFormFieldHalf}>
+              <AppInput
+                label="CEP"
+                value={zipCode}
+                onChangeText={setZipCode}
+                placeholder="00000-000"
+                keyboardType="number-pad"
+                maxLength={9}
+                accessibilityLabel="CEP do cliente"
+              />
+            </View>
+          </View>
+
+          <AppButton
+            title="Salvar cliente"
+            size="lg"
+            onPress={handleSave}
+            loading={loading}
+            disabled={loading}
+            accessibilityLabel="Salvar novo cliente"
+            style={styles.quickFormSubmit}
+          />
+        </ScrollView>
       </SafeAreaView>
     </Modal>
   );
@@ -618,6 +872,7 @@ export default function NovoOrcamentoScreen() {
   const [stepError, setStepError] = useState<string | null>(null);
   const [serviceErrors, setServiceErrors] = useState<ServiceErrors>({});
   const [clientModalVisible, setClientModalVisible] = useState(false);
+  const [quickClientVisible, setQuickClientVisible] = useState(false);
   const [workModalVisible, setWorkModalVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
@@ -800,6 +1055,22 @@ export default function NovoOrcamentoScreen() {
       });
       setSnackbar({ type: 'success', message: 'Orçamento criado com sucesso' });
       setTimeout(() => router.back(), 600);
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  // Cadastro rápido de cliente (V3 §12) — cria e já seleciona no wizard.
+  const createClientMutation = useMutation({
+    mutationFn: (data: CreateClientInput) => clientsService.create(data),
+    onSuccess: (client) => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'clients'],
+      });
+      handleSelectClient(client.id);
+      setQuickClientVisible(false);
+      setSnackbar({ type: 'success', message: 'Cliente cadastrado com sucesso' });
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
@@ -2088,7 +2359,15 @@ export default function NovoOrcamentoScreen() {
         errorMessage={clientsQuery.isError ? toApiError(clientsQuery.error).message : ''}
         onRetry={clientsQuery.refetch}
         onSelect={handleSelectClient}
+        onQuickCreate={() => setQuickClientVisible(true)}
         onClose={() => setClientModalVisible(false)}
+      />
+
+      <QuickClientModal
+        visible={quickClientVisible}
+        loading={createClientMutation.isPending}
+        onSave={(data) => createClientMutation.mutate(data)}
+        onClose={() => setQuickClientVisible(false)}
       />
 
       <WorkPickerModal
@@ -2672,5 +2951,41 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  modalBody: {
+    flex: 1,
+  },
+  modalFooter: {
+    padding: sizes.screenPadding,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  // Cadastro rápido de cliente (V3 §12)
+  quickForm: {
+    padding: sizes.screenPadding,
+    paddingBottom: spacing['3xl'],
+  },
+  quickFormHint: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  quickFormSection: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  quickFormRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickFormFieldHalf: {
+    flex: 1,
+  },
+  quickFormSubmit: {
+    marginTop: spacing.sm,
   },
 });

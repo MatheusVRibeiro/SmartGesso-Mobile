@@ -34,6 +34,18 @@ export const serviceOrdersService = {
     return response.data;
   },
 
+  /** Atualiza as etapas do serviço (V3 §33) — PATCH /service-orders/:id com etapas Json. */
+  async updateEtapas(id: string, etapas: Record<string, boolean>): Promise<ServiceOrder> {
+    const response = await api().patch<ServiceOrder>(`/service-orders/${id}`, { etapas });
+    return response.data;
+  },
+
+  /** Define se o serviço exige produção (V3 §44) — PATCH /service-orders/:id. */
+  async updateNeedsProduction(id: string, needsProduction: boolean): Promise<ServiceOrder> {
+    const response = await api().patch<ServiceOrder>(`/service-orders/${id}`, { needsProduction });
+    return response.data;
+  },
+
   /** Registra o resultado financeiro (custo/venda) de uma OS — lucro/margem calculados pela API. */
   async registerResult(id: string, data: RegisterServiceOrderResultInput): Promise<ServiceOrder> {
     const response = await api().post<ServiceOrder>(`/service-orders/${id}/result`, data);
