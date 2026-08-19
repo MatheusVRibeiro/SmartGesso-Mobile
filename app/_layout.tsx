@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { queryClient } from '../src/lib/queryClient';
 import { setUnauthorizedHandler, setAccessDeniedHandler } from '../src/services/api/client';
 import { useSessionStore } from '../src/store/useSessionStore';
+import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { colors } from '../src/theme';
@@ -18,6 +19,11 @@ export default function RootLayout() {
   const { isOffline } = useNetworkStatus();
 
   const setAccessStatus = useSessionStore((s) => s.setAccessStatus);
+
+  // V3: restaura a sessão em QUALQUER rota (inclusive deep-link/reload no web).
+  // Antes rodava só em app/index.tsx — navegação direta deixava activeCompany null
+  // e as queries escopadas por empresa desabilitadas (telas vazias).
+  useSessionBootstrap();
 
   // Quando o refresh token falha (401), limpa a sessão e o cache.
   useEffect(() => {

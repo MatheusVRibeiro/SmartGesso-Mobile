@@ -49,7 +49,6 @@ function ConfirmDialog({
         style={styles.backdrop}
         onPress={handleBackdropPress}
         accessibilityLabel="Fechar"
-        accessibilityRole="button"
       >
         <Pressable
           testID={testID}

@@ -2,16 +2,14 @@ import { useEffect } from 'react';
 import { ActivityIndicator, Text, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSessionStore } from '../src/store/useSessionStore';
-import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
 import { colors } from '../src/theme/colors';
 
 export default function Index() {
   const sessionStatus = useSessionStore((s) => s.sessionStatus);
   const router = useRouter();
 
-  // Restaura a sessão no primeiro render (token → /auth/me → store)
-  useSessionBootstrap();
-
+  // Bootstrap da sessão movido para app/_layout.tsx (roda em qualquer rota,
+  // inclusive deep-link/reload no web — antes só rodava aqui).
   useEffect(() => {
     if (sessionStatus === 'authenticated') {
       router.replace('/(app)/(tabs)');
