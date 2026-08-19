@@ -2,8 +2,10 @@ import { getApiClient } from './client';
 import type {
   ServiceOrder,
   ServiceOrderListResponse,
+  ServiceOrderResult,
   CreateServiceOrderInput,
   UpdateServiceOrderInput,
+  RegisterServiceOrderResultInput,
 } from '../../types/serviceOrder';
 
 function api() {
@@ -29,6 +31,18 @@ export const serviceOrdersService = {
 
   async update(id: string, data: UpdateServiceOrderInput): Promise<ServiceOrder> {
     const response = await api().patch<ServiceOrder>(`/service-orders/${id}`, data);
+    return response.data;
+  },
+
+  /** Registra o resultado financeiro (custo/venda) de uma OS — lucro/margem calculados pela API. */
+  async registerResult(id: string, data: RegisterServiceOrderResultInput): Promise<ServiceOrder> {
+    const response = await api().post<ServiceOrder>(`/service-orders/${id}/result`, data);
+    return response.data;
+  },
+
+  /** Busca o resultado financeiro registrado de uma OS. */
+  async getResult(id: string): Promise<ServiceOrderResult> {
+    const response = await api().get<ServiceOrderResult>(`/service-orders/${id}/result`);
     return response.data;
   },
 

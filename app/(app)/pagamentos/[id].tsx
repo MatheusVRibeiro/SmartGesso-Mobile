@@ -18,7 +18,10 @@ import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
-import type { PaymentStatus } from '../../../src/types/finance';
+import type {
+  PaymentInstallmentStatus,
+  PaymentStatus,
+} from '../../../src/types/finance';
 import { PAYMENT_METHOD_LABELS } from './index';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -30,6 +33,14 @@ const PAYMENT_STATUS_BADGE: Record<
   PENDENTE: { variant: 'expired', label: 'Pendente' },
   CONFIRMADO: { variant: 'active', label: 'Confirmado' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
+};
+
+const INSTALLMENT_STATUS_BADGE: Record<
+  PaymentInstallmentStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  PENDENTE: { variant: 'expired', label: 'Pendente' },
+  CONFIRMADO: { variant: 'active', label: 'Confirmado' },
 };
 
 function formatDate(dateStr?: string | null): string {
@@ -53,6 +64,7 @@ export default function DetalhePagamentoScreen() {
   const paymentId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+  const [receivingId, setReceivingId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
     message: string;
@@ -78,6 +90,20 @@ export default function DetalhePagamentoScreen() {
     },
   });
 
+  const payInstallmentMutation = useMutation({
+    mutationFn: (installmentId: string) =>
+      paymentsService.payInstallment(paymentId as string, installmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'payments'],
+      });
+      setSnackbar({ type: 'success', message: 'Parcela recebida com sucesso' });
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => paymentsService.remove(paymentId as string),
     onSuccess: () => {
@@ -94,6 +120,13 @@ export default function DetalhePagamentoScreen() {
     },
   });
 
+  function handleReceiveInstallment(installmentId: string) {
+    setReceivingId(installmentId);
+    payInstallmentMutation.mutate(installmentId, {
+      onSettled: () => setReceivingId(null),
+    });
+  }
+
   if (!paymentId) {
     return (
       <ScreenContainer padding keyboard={false}>
@@ -105,6 +138,15 @@ export default function DetalhePagamentoScreen() {
 
   const payment = paymentQuery.data;
   const statusBadge = payment ? PAYMENT_STATUS_BADGE[payment.status] : null;
+
+  const installments = payment?.installments?.length
+    ? payment.installments
+    : [];
+  const hasInstallments = installments.length > 0;
+  const paidCount = installments.filter(
+    (item) => item.status === 'CONFIRMADO',
+  ).length;
+  const payingInstallment = payInstallmentMutation.isPending;
 
   return (
     <View style={styles.screen}>
@@ -147,10 +189,17 @@ export default function DetalhePagamentoScreen() {
             <AppCard shadow="light" style={styles.paymentCard}>
               <View style={styles.paymentHeader}>
                 <View style={styles.paymentHeaderLeft}>
-                  <Text style={styles.paymentLabel}>Valor recebido</Text>
+                  <Text style={styles.paymentLabel}>
+                    {hasInstallments ? 'Valor total' : 'Valor recebido'}
+                  </Text>
                   <Text style={styles.paymentAmount}>
                     {formatCurrency(payment.amount)}
                   </Text>
+                  {hasInstallments ? (
+                    <Text style={styles.installmentsSummary}>
+                      {paidCount} de {installments.length} parcelas recebidas
+                    </Text>
+                  ) : null}
                 </View>
                 {statusBadge && (
                   <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
@@ -208,6 +257,55 @@ export default function DetalhePagamentoScreen() {
               </View>
             </AppCard>
 
+            {hasInstallments ? (
+              <>
+                <Text style={styles.sectionLabel}>Parcelas</Text>
+                {installments.map((item) => {
+                  const badge = INSTALLMENT_STATUS_BADGE[item.status];
+                  return (
+                    <AppCard key={item.id} shadow="light" style={styles.installmentCard}>
+                      <View style={styles.installmentHeader}>
+                        <Text style={styles.installmentTitle}>
+                          Parcela {item.installmentNumber}/{installments.length}
+                        </Text>
+                        <StatusBadge
+                          status={badge.variant}
+                          label={badge.label}
+                          size="sm"
+                        />
+                      </View>
+                      <View style={styles.installmentBody}>
+                        <View style={styles.installmentInfo}>
+                          <Text style={styles.fieldLabel}>Valor</Text>
+                          <Text style={styles.installmentAmount}>
+                            {formatCurrency(item.amount)}
+                          </Text>
+                        </View>
+                        <View style={styles.installmentInfo}>
+                          <Text style={styles.fieldLabel}>Vencimento</Text>
+                          <Text style={styles.installmentDue}>
+                            {formatDate(item.dueDate)}
+                          </Text>
+                        </View>
+                      </View>
+                      {item.status === 'PENDENTE' ? (
+                        <AppButton
+                          title="Receber parcela"
+                          size="sm"
+                          variant="outline"
+                          accessibilityLabel={`Receber parcela ${item.installmentNumber}`}
+                          onPress={() => handleReceiveInstallment(item.id)}
+                          loading={receivingId === item.id}
+                          disabled={payingInstallment}
+                          style={styles.receiveButton}
+                        />
+                      ) : null}
+                    </AppCard>
+                  );
+                })}
+              </>
+            ) : null}
+
             {payment.notes ? (
               <>
                 <Text style={styles.sectionLabel}>Observações</Text>
@@ -218,7 +316,7 @@ export default function DetalhePagamentoScreen() {
             ) : null}
 
             <View style={styles.actions}>
-              {canConfirm(payment.status) && (
+              {canConfirm(payment.status) && !hasInstallments && (
                 <AppButton
                   title="Confirmar pagamento"
                   size="lg"
@@ -312,6 +410,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.success,
   },
+  installmentsSummary: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
+  },
   divider: {
     height: 1,
     backgroundColor: colors.divider,
@@ -336,6 +440,44 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+  },
+  installmentCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  installmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  installmentTitle: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  installmentBody: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+  },
+  installmentInfo: {
+    flex: 1,
+  },
+  installmentAmount: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  installmentDue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  receiveButton: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
   },
   obsCard: {
     padding: spacing.md,

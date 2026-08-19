@@ -12,6 +12,17 @@ export type PaymentMethod =
   | 'CHEQUE'
   | 'OUTRO';
 
+export type PaymentInstallmentStatus = 'PENDENTE' | 'CONFIRMADO';
+
+export interface PaymentInstallment {
+  id: string;
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  paidDate?: string | null;
+  status: PaymentInstallmentStatus;
+}
+
 export interface Payment {
   id: string;
   companyId: string;
@@ -27,6 +38,9 @@ export interface Payment {
   createdAt: string;
   updatedAt: string;
   client?: { id: string; name: string };
+  /** Pagamento parcelado — lista de parcelas retornada pela API (Fase 6+). */
+  installmentCount?: number | null;
+  installments?: PaymentInstallment[] | null;
 }
 
 export interface PaymentListResponse {
@@ -43,6 +57,10 @@ export interface CreatePaymentInput {
   dueDate?: string;
   status?: PaymentStatus;
   notes?: string;
+  /** Número de parcelas (1-12). Omitido/1 = pagamento à vista. */
+  installmentCount?: number;
+  /** Parcelas geradas (amount + dueDate por parcela) — opcional; a API pode gerar a partir do installmentCount. */
+  installments?: { amount: number; dueDate: string }[];
 }
 
 export type UpdatePaymentInput = Partial<Omit<CreatePaymentInput, 'clientId'>>;

@@ -19,6 +19,9 @@ export interface ServiceOrder {
   status: ServiceOrderStatus;
   scheduledDate?: string | null;
   completedDate?: string | null;
+  cost?: number | null;
+  saleValue?: number | null;
+  profit?: number | null;
   observations?: string | null;
   checklist?: Record<string, boolean> | null;
   createdAt: string;
@@ -26,6 +29,20 @@ export interface ServiceOrder {
   client?: { id: string; name: string };
   work?: { id: string; name: string };
   materials?: ServiceOrderMaterial[];
+}
+
+/** Resultado financeiro de uma ordem de serviço (custo × venda → lucro/margem). */
+export interface ServiceOrderResult {
+  cost: number;
+  saleValue: number;
+  profit: number;
+  marginPct: number;
+}
+
+/** Entrada para registrar o resultado do serviço (lucro/margem calculados pela API). */
+export interface RegisterServiceOrderResultInput {
+  cost: number;
+  saleValue: number;
 }
 
 export interface ServiceOrderListResponse {

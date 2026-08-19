@@ -32,6 +32,14 @@ export const paymentsService = {
     return response.data;
   },
 
+  /** Recebe (confirma) uma parcela específica de um pagamento parcelado. */
+  async payInstallment(paymentId: string, installmentId: string): Promise<Payment> {
+    const response = await api().post<Payment>(
+      `/payments/${paymentId}/installments/${installmentId}/pay`,
+    );
+    return response.data;
+  },
+
   async remove(id: string): Promise<void> {
     await api().delete(`/payments/${id}`);
   },

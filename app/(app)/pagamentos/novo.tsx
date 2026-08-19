@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
@@ -26,6 +26,7 @@ import { clientsService } from '../../../src/services/api/clients';
 import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
+import { formatCurrency } from '../../../src/utils/format';
 import type { Client } from '../../../src/types/client';
 import type { CreatePaymentInput, PaymentMethod } from '../../../src/types/finance';
 import { z } from 'zod';
@@ -69,7 +70,10 @@ const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
  * DTOs NestJS usam @IsOptional() que NÃO ignora string vazia — strip
  * '' → undefined antes do mutate (padrão cleanPayload do projeto).
  */
-function cleanPayload(data: CreatePaymentFormData): CreatePaymentInput {
+function cleanPayload(
+  data: CreatePaymentFormData,
+  installmentCount: number,
+): CreatePaymentInput {
   return {
     clientId: data.clientId,
     amount: data.amount,
@@ -77,7 +81,61 @@ function cleanPayload(data: CreatePaymentFormData): CreatePaymentInput {
     paymentDate: data.paymentDate?.trim() || undefined,
     dueDate: data.dueDate?.trim() || undefined,
     notes: data.notes?.trim() || undefined,
+    installmentCount: installmentCount > 1 ? installmentCount : undefined,
   };
+}
+
+// ─── Parcelamento (helpers) ─────────────────────────────────────────────────
+
+const MAX_INSTALLMENTS = 12;
+
+/** Converte "AAAA-MM-DD" em Date local (sem timezone shift). */
+function parseDateInput(value?: string): Date | null {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDayMonth(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+interface InstallmentPreview {
+  number: number;
+  amount: number;
+  dueDate: Date;
+}
+
+/**
+ * Gera a prévia das parcelas: valor total dividido igualmente (última parcela
+ * absorve o arredondamento) e vencimentos mensais a partir da data base
+ * (dueDate → paymentDate → hoje).
+ */
+function buildInstallmentsPreview(
+  count: number,
+  total: number,
+  baseDate: Date,
+): InstallmentPreview[] {
+  const items: InstallmentPreview[] = [];
+  const perInstallment = Math.round((total / count) * 100) / 100;
+  let acc = 0;
+  for (let i = 0; i < count; i++) {
+    const isLast = i === count - 1;
+    const amount = isLast
+      ? Math.round((total - acc) * 100) / 100
+      : perInstallment;
+    acc += amount;
+    const dueDate = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth() + i,
+      baseDate.getDate(),
+    );
+    items.push({ number: i + 1, amount, dueDate });
+  }
+  return items;
 }
 
 // ─── Seletor de método de pagamento ─────────────────────────────────────────
@@ -271,6 +329,23 @@ export default function NovoPagamentoScreen() {
     },
   });
 
+  // Parcelamento
+  const [installmentCount, setInstallmentCount] = useState(1);
+  const watchedAmount = useWatch({ control, name: 'amount' });
+  const watchedPaymentDate = useWatch({ control, name: 'paymentDate' });
+  const watchedDueDate = useWatch({ control, name: 'dueDate' });
+
+  const installmentsPreview = useMemo(() => {
+    if (installmentCount <= 1) return [];
+    const total = Number(watchedAmount);
+    if (!Number.isFinite(total) || total <= 0) return [];
+    const baseDate =
+      parseDateInput(watchedDueDate) ??
+      parseDateInput(watchedPaymentDate) ??
+      new Date();
+    return buildInstallmentsPreview(installmentCount, total, baseDate);
+  }, [installmentCount, watchedAmount, watchedDueDate, watchedPaymentDate]);
+
   const clientsQuery = useQuery({
     queryKey: ['company', companyId, 'clients'],
     queryFn: () => clientsService.list(),
@@ -280,7 +355,7 @@ export default function NovoPagamentoScreen() {
 
   const createMutation = useMutation({
     mutationFn: (data: CreatePaymentFormData) =>
-      paymentsService.create(cleanPayload(data)),
+      paymentsService.create(cleanPayload(data, installmentCount)),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'payments'],
@@ -429,6 +504,89 @@ export default function NovoPagamentoScreen() {
           )}
         />
 
+        <Text style={styles.sectionLabel}>Parcelamento</Text>
+        <View style={styles.stepperRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Diminuir número de parcelas"
+            disabled={installmentCount <= 1}
+            onPress={() => setInstallmentCount((c) => Math.max(1, c - 1))}
+            style={[
+              styles.stepperButton,
+              installmentCount <= 1 && styles.stepperButtonDisabled,
+            ]}
+          >
+            <Ionicons
+              name="remove"
+              size={sizes.icon.md}
+              color={
+                installmentCount <= 1 ? colors.disabledText : colors.primary
+              }
+              accessibilityElementsHidden
+            />
+          </Pressable>
+          <View style={styles.stepperValueWrap}>
+            <Text style={styles.stepperValue}>{installmentCount}</Text>
+            <Text style={styles.stepperUnit}>
+              {installmentCount === 1 ? 'parcela' : 'parcelas'}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Aumentar número de parcelas"
+            disabled={installmentCount >= MAX_INSTALLMENTS}
+            onPress={() =>
+              setInstallmentCount((c) => Math.min(MAX_INSTALLMENTS, c + 1))
+            }
+            style={[
+              styles.stepperButton,
+              installmentCount >= MAX_INSTALLMENTS &&
+                styles.stepperButtonDisabled,
+            ]}
+          >
+            <Ionicons
+              name="add"
+              size={sizes.icon.md}
+              color={
+                installmentCount >= MAX_INSTALLMENTS
+                  ? colors.disabledText
+                  : colors.primary
+              }
+              accessibilityElementsHidden
+            />
+          </Pressable>
+        </View>
+
+        {installmentCount > 1 ? (
+          installmentsPreview.length > 0 ? (
+            <View style={styles.installmentsCard}>
+              {installmentsPreview.map((item) => (
+                <View key={item.number} style={styles.installmentRow}>
+                  <Text style={styles.installmentNumber}>
+                    Parcela {item.number}/{installmentsPreview.length}
+                  </Text>
+                  <Text style={styles.installmentAmount}>
+                    {formatCurrency(item.amount)}
+                  </Text>
+                  <Text style={styles.installmentDue}>
+                    venc. {formatDayMonth(item.dueDate)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.installmentHint}>
+              Informe o valor total acima para visualizar a divisão das
+              parcelas.
+            </Text>
+          )
+        ) : (
+          <Text style={styles.installmentHint}>
+            Pagamento à vista. Aumente o número de parcelas para dividir o
+            valor.
+          </Text>
+        )}
+
         <Text style={styles.sectionLabel}>Observações</Text>
         <Controller
           control={control}
@@ -568,6 +726,73 @@ const styles = StyleSheet.create({
   },
   methodChipTextSelected: {
     color: colors.textOnPrimary,
+  },
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  stepperButton: {
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepperButtonDisabled: {
+    borderColor: colors.border,
+    backgroundColor: colors.disabledBackground,
+  },
+  stepperValueWrap: {
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  stepperValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.text,
+  },
+  stepperUnit: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+  },
+  installmentsCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  installmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  installmentNumber: {
+    flex: 1,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.text,
+  },
+  installmentAmount: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  installmentDue: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+  },
+  installmentHint: {
+    marginTop: spacing.sm,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   saveButton: {
     marginTop: spacing.xl,
