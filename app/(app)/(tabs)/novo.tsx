@@ -1,67 +1,66 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
-const QUICK_ACTIONS = [
-  {
-    id: 'cliente',
-    title: 'Cliente',
-    icon: 'person-outline' as const,
-    route: '/clientes/novo',
-  },
-  {
-    id: 'obra',
-    title: 'Obra',
-    icon: 'business-outline' as const,
-    route: '/obras/novo',
-  },
+type IconName = ComponentProps<typeof Ionicons>['name'];
+
+interface QuickAction {
+  id: string;
+  title: string;
+  icon: IconName;
+  route?: string;
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'orcamento',
-    title: 'Orçamento',
-    icon: 'document-text-outline' as const,
+    title: 'Novo orçamento',
+    icon: 'document-text',
     route: '/orcamentos/novo',
   },
   {
-    id: 'servico',
-    title: 'Serviço',
-    icon: 'hammer-outline' as const,
-    route: '/servicos/novo',
+    id: 'cliente',
+    title: 'Novo cliente',
+    icon: 'person-add',
+    route: '/clientes/novo',
+  },
+  {
+    id: 'visita',
+    title: 'Agendar visita',
+    icon: 'calendar',
   },
   {
     id: 'pagamento',
-    title: 'Pagamento',
-    icon: 'cash-outline' as const,
+    title: 'Registrar pagamento',
+    icon: 'cash',
     route: '/pagamentos/novo',
   },
   {
     id: 'despesa',
-    title: 'Despesa',
-    icon: 'wallet-outline' as const,
+    title: 'Nova despesa',
+    icon: 'receipt',
     route: '/despesas/novo',
-  },
-  {
-    id: 'medicao',
-    title: 'Medição',
-    icon: 'resize-outline' as const,
-    route: '/obras',
-  },
-  {
-    id: 'producao',
-    title: 'Produção',
-    icon: 'layers-outline' as const,
-    route: '/producao/novo',
   },
 ];
 
 export default function NovoScreen() {
   const router = useRouter();
 
-  const handleAction = (action: (typeof QUICK_ACTIONS)[number]) => {
-    router.push(action.route);
+  const handleAction = (action: QuickAction) => {
+    if (action.route) {
+      router.push(action.route);
+      return;
+    }
+    Alert.alert(
+      'Módulo em desenvolvimento',
+      `A funcionalidade "${action.title}" ainda está em desenvolvimento. Em breve disponível!`,
+      [{ text: 'Entendi' }]
+    );
   };
 
   return (
@@ -78,7 +77,7 @@ export default function NovoScreen() {
             onPress={() => handleAction(action)}
             activeOpacity={0.7}
             style={styles.actionButton}
-            accessibilityLabel={`Criar novo ${action.title}`}
+            accessibilityLabel={action.title}
             accessibilityRole="button"
           >
             <AppCard shadow="light" radius={radius.lg} style={styles.actionCard}>

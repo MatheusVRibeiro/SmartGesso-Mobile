@@ -157,9 +157,31 @@ export const quoteItemSchema = z.object({
   unitPrice: z.coerce.number().min(0, 'Preço deve ser maior ou igual a 0'),
 });
 
+/** Endereço livre do local do serviço (V3 — não exige obra vinculada). */
+const quoteLocalAddressSchema = z.object({
+  zipCode: z.string().trim().optional(),
+  street: z.string().trim().optional(),
+  number: z.string().trim().optional(),
+  complement: z.string().trim().optional(),
+  neighborhood: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  reference: z.string().trim().optional(),
+});
+
+/** Data no formato AAAA-MM-DD (padrão usado nas telas do app). */
+const isoDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (use AAAA-MM-DD)');
+
 export const createQuoteSchema = z.object({
   clientId: z.string().min(1, 'Cliente é obrigatório'),
   workId: z.string().optional(),
+  localAddress: quoteLocalAddressSchema.optional(),
+  startDate: isoDateField.optional(),
+  durationDays: z.coerce.number().int('Prazo deve ser em dias inteiros').min(1, 'Prazo deve ser maior que 0').optional(),
+  endDate: isoDateField.optional(),
+  deadlineDate: isoDateField.optional(),
   discount: z.coerce.number().min(0).default(0),
   marginPct: z.coerce.number().min(0).max(100).default(0),
   paymentMethod: z.enum([

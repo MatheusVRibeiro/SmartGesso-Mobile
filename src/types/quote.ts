@@ -56,9 +56,31 @@ export interface Quote {
   items: QuoteItemSummary[];
 }
 
+/** Endereço/local onde o serviço será realizado (contexto do orçamento). */
+export interface QuoteLocalAddress {
+  zipCode?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  reference?: string;
+}
+
 export interface CreateQuoteInput {
   clientId: string;
   workId?: string;
+  /** Endereço livre do local do serviço (V3 — não exige obra vinculada). */
+  localAddress?: QuoteLocalAddress;
+  /** Previsão de início (AAAA-MM-DD). */
+  startDate?: string;
+  /** Prazo estimado em dias (Modo A). */
+  durationDays?: number;
+  /** Previsão de conclusão (AAAA-MM-DD) — calculada no Modo A, informada no Modo B. */
+  endDate?: string;
+  /** Data-limite de entrega (AAAA-MM-DD) — Modo C. */
+  deadlineDate?: string;
   discount?: number;
   marginPct?: number;
   paymentMethod?: QuotePaymentMethod;

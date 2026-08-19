@@ -50,10 +50,11 @@ import { createQuoteSchema } from '../../../src/validation/schemas';
 
 type StepKey =
   | 'cliente'
+  | 'local'
   | 'medicoes'
-  | 'materiais'
-  | 'servicos'
+  | 'itens'
   | 'valores'
+  | 'prazo'
   | 'pagamento'
   | 'revisao';
 
@@ -73,14 +74,40 @@ interface MaterialDraft {
   total?: number | null;
 }
 
+/** Endereço livre do local do serviço (Etapa 2 — V3). */
+interface QuoteLocalDraft {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  reference: string;
+}
+
+/** Modos da etapa Prazo (V3): A = início + duração, B = início + conclusão, C = data-limite. */
+type PrazoMode = 'A' | 'B' | 'C';
+
+/** Contagem do prazo no Modo A: dias úteis ou corridos. */
+type PrazoCalendar = 'UTEIS' | 'CORRIDOS';
+
 interface QuoteDraft {
   clientId: string;
   workId: string;
+  local: QuoteLocalDraft;
   selectedMeasurementIds: string[];
   materials: MaterialDraft[];
   services: ServiceDraft[];
   discount: string;
   marginPct: string;
+  prazoMode: PrazoMode;
+  prazoCalendar: PrazoCalendar;
+  startDate: string;
+  durationDays: string;
+  endDate: string;
+  deadlineDate: string;
+  deadlineObservation: string;
   paymentMethod: QuotePaymentMethod;
   observations: string;
 }
@@ -108,6 +135,69 @@ function parseNumber(value: string): number {
   if (normalized === '') return 0;
   const n = Number(normalized);
   return Number.isNaN(n) ? NaN : n;
+}
+
+/** Valida data no formato AAAA-MM-DD (ISO). */
+function isValidIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/** Soma dias corridos a uma data ISO (AAAA-MM-DD). */
+function addDaysToIsoDate(iso: string, days: number): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** Soma dias úteis (seg–sex) a uma data ISO (AAAA-MM-DD). */
+function addBusinessDaysToIsoDate(iso: string, days: number): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  let remaining = days;
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const weekday = date.getUTCDay();
+    if (weekday !== 0 && weekday !== 6) remaining -= 1;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+/** Formata data ISO (AAAA-MM-DD) como DD/MM/AAAA. */
+function formatIsoDate(value: string): string {
+  if (!isValidIsoDate(value)) return value;
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+/** Monta resumo legível do endereço local (Etapa 2). */
+function buildLocalSummary(local: QuoteLocalDraft): string {
+  const parts = [
+    [local.street.trim(), local.number.trim()].filter(Boolean).join(', '),
+    local.complement.trim(),
+    local.neighborhood.trim(),
+    [local.city.trim(), local.state.trim()].filter(Boolean).join(' - '),
+    local.zipCode.trim(),
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+
+/** Calcula a conclusão prevista (Modo A) a partir de início + prazo em dias. */
+function computeEndDate(draft: QuoteDraft): string | null {
+  if (draft.prazoMode !== 'A') return null;
+  const start = draft.startDate.trim();
+  const days = parseNumber(draft.durationDays);
+  if (!isValidIsoDate(start) || !Number.isInteger(days) || days <= 0) return null;
+  return draft.prazoCalendar === 'UTEIS'
+    ? addBusinessDaysToIsoDate(start, days)
+    : addDaysToIsoDate(start, days);
 }
 
 /** Monta o payload de cálculo de materiais a partir das medições selecionadas. */
@@ -159,10 +249,11 @@ const STEP_META: {
   icon: ComponentProps<typeof Ionicons>['name'];
 }[] = [
   { key: 'cliente', title: 'Cliente', icon: 'person-outline' },
+  { key: 'local', title: 'Local', icon: 'location-outline' },
   { key: 'medicoes', title: 'Medições', icon: 'resize-outline' },
-  { key: 'materiais', title: 'Materiais', icon: 'cube-outline' },
-  { key: 'servicos', title: 'Serviços', icon: 'construct-outline' },
+  { key: 'itens', title: 'Serviço/Materiais', icon: 'cube-outline' },
   { key: 'valores', title: 'Valores', icon: 'calculator-outline' },
+  { key: 'prazo', title: 'Prazo', icon: 'time-outline' },
   { key: 'pagamento', title: 'Pagamento', icon: 'card-outline' },
   { key: 'revisao', title: 'Revisão', icon: 'document-text-outline' },
 ];
@@ -534,11 +625,28 @@ export default function NovoOrcamentoScreen() {
   const [draft, setDraft] = useState<QuoteDraft>({
     clientId: '',
     workId: '',
+    local: {
+      zipCode: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      reference: '',
+    },
     selectedMeasurementIds: [],
     materials: [],
     services: [],
     discount: '',
     marginPct: '',
+    prazoMode: 'A',
+    prazoCalendar: 'UTEIS',
+    startDate: '',
+    durationDays: '',
+    endDate: '',
+    deadlineDate: '',
+    deadlineObservation: '',
     paymentMethod: 'AVISTA',
     observations: '',
   });
@@ -632,7 +740,10 @@ export default function NovoOrcamentoScreen() {
     return itemsTotal - discount + (itemsTotal * marginPct) / 100;
   }, [itemsTotal, draft.discount, draft.marginPct]);
 
-  // ── Cálculo de materiais (Etapa 3) ─────────────────────────────────────────
+  /** Conclusão calculada no Modo A (início + prazo em dias). */
+  const computedEndDate = useMemo(() => computeEndDate(draft), [draft]);
+
+  // ── Cálculo de materiais (Etapa 4) ─────────────────────────────────────────
 
   const runMaterialsCalculation = useCallback(
     (measurementsToCalc: Measurement[], key: string) => {
@@ -665,7 +776,7 @@ export default function NovoOrcamentoScreen() {
   );
 
   useEffect(() => {
-    if (currentStep !== 2) return;
+    if (currentStep !== 3) return;
     const key = calcKey;
     if (key === '') {
       setMaterialsCalc(null);
@@ -707,7 +818,17 @@ export default function NovoOrcamentoScreen() {
       }
     }
 
-    if (stepKey === 'materiais') {
+    if (stepKey === 'local') {
+      const hasLocal = Object.values(draft.local).some(
+        (value) => value.trim() !== '',
+      );
+      if (!hasLocal) {
+        setStepError('Informe o local onde o serviço será realizado');
+        return;
+      }
+    }
+
+    if (stepKey === 'itens') {
       const invalid = draft.materials.filter((m) => {
         const qty = parseNumber(m.quantity);
         return Number.isNaN(qty) || qty <= 0;
@@ -720,9 +841,7 @@ export default function NovoOrcamentoScreen() {
         );
         return;
       }
-    }
 
-    if (stepKey === 'servicos') {
       const errors: ServiceErrors = {};
       let hasError = false;
       for (const service of draft.services) {
@@ -740,7 +859,7 @@ export default function NovoOrcamentoScreen() {
       setServiceErrors(errors);
       if (hasError) return;
       if (draft.services.length === 0 && draft.materials.length === 0) {
-        setStepError('Adicione ao menos um material (Etapa 3) ou um serviço');
+        setStepError('Adicione ao menos um material ou um serviço');
         return;
       }
     }
@@ -753,6 +872,40 @@ export default function NovoOrcamentoScreen() {
       if (!parsed.success) {
         setStepError(parsed.error.issues[0]?.message ?? 'Verifique os valores');
         return;
+      }
+    }
+
+    if (stepKey === 'prazo') {
+      if (draft.prazoMode === 'A') {
+        if (!isValidIsoDate(draft.startDate.trim())) {
+          setStepError('Informe a previsão de início (AAAA-MM-DD)');
+          return;
+        }
+        const days = parseNumber(draft.durationDays);
+        if (!Number.isInteger(days) || days <= 0) {
+          setStepError('Informe o prazo estimado em dias (inteiro maior que 0)');
+          return;
+        }
+      }
+      if (draft.prazoMode === 'B') {
+        if (!isValidIsoDate(draft.startDate.trim())) {
+          setStepError('Informe a previsão de início (AAAA-MM-DD)');
+          return;
+        }
+        if (!isValidIsoDate(draft.endDate.trim())) {
+          setStepError('Informe a previsão de conclusão (AAAA-MM-DD)');
+          return;
+        }
+        if (draft.endDate.trim() < draft.startDate.trim()) {
+          setStepError('A conclusão não pode ser anterior ao início');
+          return;
+        }
+      }
+      if (draft.prazoMode === 'C') {
+        if (!isValidIsoDate(draft.deadlineDate.trim())) {
+          setStepError('Informe a data limite de entrega (AAAA-MM-DD)');
+          return;
+        }
       }
     }
 
@@ -851,7 +1004,7 @@ export default function NovoOrcamentoScreen() {
     });
   }
 
-  // ── Submit (Etapa 7) ───────────────────────────────────────────────────────
+  // ── Submit (Etapa 8) ───────────────────────────────────────────────────────
 
   /** Monta o DTO final — mesmo formato do formulário anterior (não quebra a API). */
   function buildPayload(): CreateQuoteInput {
@@ -871,13 +1024,56 @@ export default function NovoOrcamentoScreen() {
         unitPrice: parseNumber(s.unitPrice),
       })),
     ];
+
+    const local = draft.local;
+    const hasLocal = Object.values(local).some((value) => value.trim() !== '');
+    const startDate = draft.startDate.trim();
+    const durationDays = parseNumber(draft.durationDays);
+    const computedEnd = computeEndDate(draft);
+    const observations =
+      [draft.observations?.trim(), draft.deadlineObservation?.trim()]
+        .filter(Boolean)
+        .join('\n') || undefined;
+
     return {
       clientId: draft.clientId,
       workId: draft.workId?.trim() || undefined,
+      localAddress: hasLocal
+        ? {
+            zipCode: local.zipCode.trim() || undefined,
+            street: local.street.trim() || undefined,
+            number: local.number.trim() || undefined,
+            complement: local.complement.trim() || undefined,
+            neighborhood: local.neighborhood.trim() || undefined,
+            city: local.city.trim() || undefined,
+            state: local.state.trim() || undefined,
+            reference: local.reference.trim() || undefined,
+          }
+        : undefined,
+      startDate:
+        draft.prazoMode === 'A' || draft.prazoMode === 'B'
+          ? startDate || undefined
+          : undefined,
+      durationDays:
+        draft.prazoMode === 'A' &&
+        Number.isInteger(durationDays) &&
+        durationDays > 0
+          ? durationDays
+          : undefined,
+      endDate:
+        draft.prazoMode === 'A'
+          ? computedEnd ?? undefined
+          : draft.prazoMode === 'B'
+            ? draft.endDate.trim() || undefined
+            : undefined,
+      deadlineDate:
+        draft.prazoMode === 'C'
+          ? draft.deadlineDate.trim() || undefined
+          : undefined,
       discount: parseNumber(draft.discount),
       marginPct: parseNumber(draft.marginPct),
       paymentMethod: draft.paymentMethod,
-      observations: draft.observations?.trim() || undefined,
+      observations,
       items,
     };
   }
@@ -970,6 +1166,91 @@ export default function NovoOrcamentoScreen() {
               accessibilityElementsHidden
             />
           </Pressable>
+        </View>
+      );
+    }
+
+    if (stepKey === 'local') {
+      const local = draft.local;
+      const setLocal = (field: keyof QuoteLocalDraft, value: string) =>
+        setDraft((d) => ({ ...d, local: { ...d.local, [field]: value } }));
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>
+            Onde o serviço será realizado?
+          </Text>
+          <View style={styles.localRow}>
+            <View style={styles.localFieldHalf}>
+              <AppInput
+                label="CEP"
+                value={local.zipCode}
+                onChangeText={(text) => setLocal('zipCode', text)}
+                placeholder="00000-000"
+                keyboardType="number-pad"
+                maxLength={9}
+                accessibilityLabel="CEP"
+              />
+            </View>
+            <View style={styles.localFieldHalf}>
+              <AppInput
+                label="Número"
+                value={local.number}
+                onChangeText={(text) => setLocal('number', text)}
+                placeholder="Ex.: 123"
+                accessibilityLabel="Número"
+              />
+            </View>
+          </View>
+          <AppInput
+            label="Rua"
+            value={local.street}
+            onChangeText={(text) => setLocal('street', text)}
+            placeholder="Ex.: Rua das Flores"
+            accessibilityLabel="Rua"
+          />
+          <AppInput
+            label="Complemento"
+            value={local.complement}
+            onChangeText={(text) => setLocal('complement', text)}
+            placeholder="Ex.: Apto 42, bloco B (opcional)"
+            accessibilityLabel="Complemento"
+          />
+          <AppInput
+            label="Bairro"
+            value={local.neighborhood}
+            onChangeText={(text) => setLocal('neighborhood', text)}
+            placeholder="Ex.: Centro"
+            accessibilityLabel="Bairro"
+          />
+          <View style={styles.localRow}>
+            <View style={styles.localFieldHalf}>
+              <AppInput
+                label="Cidade"
+                value={local.city}
+                onChangeText={(text) => setLocal('city', text)}
+                placeholder="Ex.: São Paulo"
+                accessibilityLabel="Cidade"
+              />
+            </View>
+            <View style={styles.localFieldHalf}>
+              <AppInput
+                label="Estado"
+                value={local.state}
+                onChangeText={(text) => setLocal('state', text)}
+                placeholder="UF"
+                maxLength={2}
+                autoCapitalize="characters"
+                accessibilityLabel="Estado"
+              />
+            </View>
+          </View>
+          <AppInput
+            label="Referência"
+            value={local.reference}
+            onChangeText={(text) => setLocal('reference', text)}
+            placeholder="Ex.: Próximo ao mercado central (opcional)"
+            accessibilityLabel="Referência"
+          />
         </View>
       );
     }
@@ -1074,134 +1355,126 @@ export default function NovoOrcamentoScreen() {
       );
     }
 
-    if (stepKey === 'materiais') {
-      if (draft.selectedMeasurementIds.length === 0) {
-        return (
-          <EmptyState
-            title="Nenhum ambiente selecionado"
-            description="Selecione ao menos um ambiente na Etapa 2 para calcular os materiais da composição."
-            icon="cube-outline"
-          />
-        );
-      }
-
-      if (materialsCalcPending) {
-        return <LoadingState text="Calculando materiais..." />;
-      }
-
-      if (materialsCalcError) {
-        return (
-          <ErrorState message={materialsCalcError} onRetry={handleRecalculate} />
-        );
-      }
-
-      if (!materialsCalc) {
-        return <LoadingState text="Preparando materiais..." />;
-      }
-
-      const result = materialsCalc.result;
-
+    if (stepKey === 'itens') {
+      const result = materialsCalc?.result ?? null;
       return (
         <View>
-          <AppCard shadow="light" style={styles.compositionCard}>
-            <View style={styles.compositionRow}>
-              <Text style={styles.compositionCode}>{result.composition.code}</Text>
-              <StatusBadge
-                status="active"
-                label={`v${result.composition.version}`}
-                size="sm"
-              />
-            </View>
-            <Text style={styles.compositionName} numberOfLines={2}>
-              {result.composition.name}
-            </Text>
-          </AppCard>
-
-          <Text style={styles.sectionLabel}>Materiais calculados</Text>
-          {draft.materials.length === 0 ? (
+          <Text style={styles.sectionLabel}>Materiais</Text>
+          {draft.selectedMeasurementIds.length === 0 ? (
             <EmptyState
-              title="Nenhum material calculado"
-              description="A composição não retornou materiais para os ambientes selecionados."
+              title="Nenhum ambiente selecionado"
+              description="Selecione ao menos um ambiente na Etapa 3 para calcular os materiais da composição."
               icon="cube-outline"
             />
+          ) : materialsCalcPending ? (
+            <LoadingState text="Calculando materiais..." />
+          ) : materialsCalcError ? (
+            <ErrorState
+              message={materialsCalcError}
+              onRetry={handleRecalculate}
+            />
+          ) : !result ? (
+            <LoadingState text="Preparando materiais..." />
           ) : (
-            draft.materials.map((material) => (
-              <AppCard
-                key={material.key}
-                shadow="light"
-                style={styles.materialCard}
-              >
-                <View style={styles.materialRow}>
-                  <View style={styles.materialInfo}>
-                    <Text style={styles.materialName} numberOfLines={2}>
-                      {material.name}
-                    </Text>
-                    <Text style={styles.materialMeta} numberOfLines={1}>
-                      {material.unitPrice != null
-                        ? `${formatCurrency(material.unitPrice)}/${material.unit}`
-                        : 'Preço não cadastrado'}
-                    </Text>
-                  </View>
-                  <View style={styles.materialQtyField}>
-                    <AppInput
-                      label="Qtd"
-                      value={material.quantity}
-                      onChangeText={(text) =>
-                        updateMaterialQuantity(material.key, text)
-                      }
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                      accessibilityLabel={`Quantidade de ${material.name}`}
-                      style={styles.materialQtyInput}
-                    />
-                  </View>
-                </View>
-                <View style={styles.itemSubtotalRow}>
-                  <Text style={styles.itemSubtotalLabel}>
-                    Total ({material.unit})
+            <View>
+              <AppCard shadow="light" style={styles.compositionCard}>
+                <View style={styles.compositionRow}>
+                  <Text style={styles.compositionCode}>
+                    {result.composition.code}
                   </Text>
-                  <Text style={styles.itemSubtotalValue}>
-                    {formatCurrency(
-                      parseNumber(material.quantity) * (material.unitPrice ?? 0),
-                    )}
+                  <StatusBadge
+                    status="active"
+                    label={`v${result.composition.version}`}
+                    size="sm"
+                  />
+                </View>
+                <Text style={styles.compositionName} numberOfLines={2}>
+                  {result.composition.name}
+                </Text>
+              </AppCard>
+
+              <Text style={styles.sectionLabel}>Materiais calculados</Text>
+              {draft.materials.length === 0 ? (
+                <EmptyState
+                  title="Nenhum material calculado"
+                  description="A composição não retornou materiais para os ambientes selecionados."
+                  icon="cube-outline"
+                />
+              ) : (
+                draft.materials.map((material) => (
+                  <AppCard
+                    key={material.key}
+                    shadow="light"
+                    style={styles.materialCard}
+                  >
+                    <View style={styles.materialRow}>
+                      <View style={styles.materialInfo}>
+                        <Text style={styles.materialName} numberOfLines={2}>
+                          {material.name}
+                        </Text>
+                        <Text style={styles.materialMeta} numberOfLines={1}>
+                          {material.unitPrice != null
+                            ? `${formatCurrency(material.unitPrice)}/${material.unit}`
+                            : 'Preço não cadastrado'}
+                        </Text>
+                      </View>
+                      <View style={styles.materialQtyField}>
+                        <AppInput
+                          label="Qtd"
+                          value={material.quantity}
+                          onChangeText={(text) =>
+                            updateMaterialQuantity(material.key, text)
+                          }
+                          keyboardType="decimal-pad"
+                          placeholder="0"
+                          accessibilityLabel={`Quantidade de ${material.name}`}
+                          style={styles.materialQtyInput}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.itemSubtotalRow}>
+                      <Text style={styles.itemSubtotalLabel}>
+                        Total ({material.unit})
+                      </Text>
+                      <Text style={styles.itemSubtotalValue}>
+                        {formatCurrency(
+                          parseNumber(material.quantity) *
+                            (material.unitPrice ?? 0),
+                        )}
+                      </Text>
+                    </View>
+                  </AppCard>
+                ))
+              )}
+
+              <AppCard shadow="light" style={styles.summaryCard}>
+                <Text style={styles.summaryTitle}>Resumo</Text>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Área total</Text>
+                  <Text style={styles.summaryValue}>
+                    {formatNumber(result.totalArea)} m²
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Custo estimado</Text>
+                  <Text style={styles.summaryCost}>
+                    {formatCurrency(result.estimatedCost)}
                   </Text>
                 </View>
               </AppCard>
-            ))
+
+              <AppButton
+                title="Calcular novamente"
+                variant="outline"
+                size="lg"
+                loading={materialsCalcPending}
+                onPress={handleRecalculate}
+                accessibilityLabel="Calcular novamente"
+                style={styles.recalculateButton}
+              />
+            </View>
           )}
 
-          <AppCard shadow="light" style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Resumo</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Área total</Text>
-              <Text style={styles.summaryValue}>
-                {formatNumber(result.totalArea)} m²
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Custo estimado</Text>
-              <Text style={styles.summaryCost}>
-                {formatCurrency(result.estimatedCost)}
-              </Text>
-            </View>
-          </AppCard>
-
-          <AppButton
-            title="Calcular novamente"
-            variant="outline"
-            size="lg"
-            loading={materialsCalcPending}
-            onPress={handleRecalculate}
-            accessibilityLabel="Calcular novamente"
-            style={styles.recalculateButton}
-          />
-        </View>
-      );
-    }
-
-    if (stepKey === 'servicos') {
-      return (
-        <View>
           <Text style={styles.sectionLabel}>Serviços</Text>
           {draft.services.length === 0 ? (
             <EmptyState
@@ -1345,6 +1618,185 @@ export default function NovoOrcamentoScreen() {
       );
     }
 
+    if (stepKey === 'prazo') {
+      const prazoModes: {
+        value: PrazoMode;
+        label: string;
+        description: string;
+      }[] = [
+        {
+          value: 'A',
+          label: 'Início + prazo',
+          description: 'Previsão de início e prazo em dias',
+        },
+        {
+          value: 'B',
+          label: 'Início + conclusão',
+          description: 'Previsão de início e de conclusão',
+        },
+        {
+          value: 'C',
+          label: 'Entregar até',
+          description: 'Data-limite comercial',
+        },
+      ];
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>Como informar o prazo?</Text>
+          <View style={styles.paymentRow}>
+            {prazoModes.map((mode) => {
+              const selected = mode.value === draft.prazoMode;
+              return (
+                <Pressable
+                  key={mode.value}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Modo de prazo ${mode.label}`}
+                  accessibilityState={{ selected }}
+                  onPress={() =>
+                    setDraft((d) => ({ ...d, prazoMode: mode.value }))
+                  }
+                  style={[
+                    styles.paymentChip,
+                    selected && styles.paymentChipSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.paymentChipText,
+                      selected && styles.paymentChipTextSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {mode.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {draft.prazoMode === 'A' ? (
+            <View>
+              <AppInput
+                label="Previsão de início"
+                required
+                value={draft.startDate}
+                onChangeText={(text) =>
+                  setDraft((d) => ({ ...d, startDate: text }))
+                }
+                placeholder="AAAA-MM-DD"
+                autoCapitalize="none"
+                accessibilityLabel="Previsão de início"
+              />
+              <AppInput
+                label="Prazo estimado (dias)"
+                required
+                value={draft.durationDays}
+                onChangeText={(text) =>
+                  setDraft((d) => ({ ...d, durationDays: text }))
+                }
+                placeholder="Ex.: 3"
+                keyboardType="number-pad"
+                accessibilityLabel="Prazo estimado em dias"
+              />
+              <Text style={styles.sectionLabel}>Contagem do prazo</Text>
+              <View style={styles.paymentRow}>
+                {(['UTEIS', 'CORRIDOS'] as const).map((calendar) => {
+                  const selected = calendar === draft.prazoCalendar;
+                  return (
+                    <Pressable
+                      key={calendar}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Contagem em dias ${
+                        calendar === 'UTEIS' ? 'úteis' : 'corridos'
+                      }`}
+                      accessibilityState={{ selected }}
+                      onPress={() =>
+                        setDraft((d) => ({ ...d, prazoCalendar: calendar }))
+                      }
+                      style={[
+                        styles.paymentChip,
+                        selected && styles.paymentChipSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.paymentChipText,
+                          selected && styles.paymentChipTextSelected,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {calendar === 'UTEIS' ? 'Dias úteis' : 'Dias corridos'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View style={styles.computedDateBox}>
+                <Text style={styles.computedDateLabel}>
+                  Previsão calculada de conclusão
+                </Text>
+                <Text style={styles.computedDateValue}>
+                  {computedEndDate ? formatIsoDate(computedEndDate) : '—'}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {draft.prazoMode === 'B' ? (
+            <View>
+              <AppInput
+                label="Previsão de início"
+                required
+                value={draft.startDate}
+                onChangeText={(text) =>
+                  setDraft((d) => ({ ...d, startDate: text }))
+                }
+                placeholder="AAAA-MM-DD"
+                autoCapitalize="none"
+                accessibilityLabel="Previsão de início"
+              />
+              <AppInput
+                label="Previsão de conclusão"
+                required
+                value={draft.endDate}
+                onChangeText={(text) =>
+                  setDraft((d) => ({ ...d, endDate: text }))
+                }
+                placeholder="AAAA-MM-DD"
+                autoCapitalize="none"
+                accessibilityLabel="Previsão de conclusão"
+              />
+            </View>
+          ) : null}
+
+          {draft.prazoMode === 'C' ? (
+            <AppInput
+              label="Entregar até"
+              required
+              value={draft.deadlineDate}
+              onChangeText={(text) =>
+                setDraft((d) => ({ ...d, deadlineDate: text }))
+              }
+              placeholder="AAAA-MM-DD"
+              autoCapitalize="none"
+              accessibilityLabel="Data limite de entrega"
+            />
+          ) : null}
+
+          <AppInput
+            label="Observação de prazo"
+            value={draft.deadlineObservation}
+            onChangeText={(text) =>
+              setDraft((d) => ({ ...d, deadlineObservation: text }))
+            }
+            placeholder="Ex.: Cliente precisa do serviço concluído antes de um evento (opcional)"
+            accessibilityLabel="Observação de prazo"
+            multiline
+          />
+        </View>
+      );
+    }
+
     if (stepKey === 'pagamento') {
       return (
         <View>
@@ -1383,7 +1835,7 @@ export default function NovoOrcamentoScreen() {
       );
     }
 
-    // Etapa 7 — Revisão
+    // Etapa 8 — Revisão
     const paymentLabel =
       PAYMENT_METHOD_OPTIONS.find((o) => o.value === draft.paymentMethod)?.label ??
       draft.paymentMethod;
@@ -1412,6 +1864,18 @@ export default function NovoOrcamentoScreen() {
               ? selectedMeasurementNames.join(', ')
               : 'Nenhum ambiente selecionado'}
           </Text>
+        </AppCard>
+
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>Local</Text>
+          <Text style={styles.reviewValue}>
+            {buildLocalSummary(draft.local) || 'Não informado'}
+          </Text>
+          {draft.local.reference.trim() ? (
+            <Text style={styles.reviewMeta}>
+              Ref.: {draft.local.reference.trim()}
+            </Text>
+          ) : null}
         </AppCard>
 
         <AppCard shadow="light" style={styles.reviewCard}>
@@ -1480,6 +1944,46 @@ export default function NovoOrcamentoScreen() {
           <View style={styles.reviewDivider} />
           <Text style={styles.reviewSectionTitle}>Pagamento</Text>
           <Text style={styles.reviewValue}>{paymentLabel}</Text>
+        </AppCard>
+
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>Prazo</Text>
+          {draft.prazoMode === 'A' ? (
+            <>
+              <Text style={styles.reviewValue}>
+                Início: {formatIsoDate(draft.startDate.trim()) || '—'}
+              </Text>
+              <Text style={styles.reviewMeta}>
+                Prazo: {draft.durationDays.trim() || '—'} dias{' '}
+                {draft.prazoCalendar === 'UTEIS' ? 'úteis' : 'corridos'}
+              </Text>
+              <Text style={styles.reviewValue}>
+                Conclusão prevista:{' '}
+                {computedEndDate ? formatIsoDate(computedEndDate) : '—'}
+              </Text>
+            </>
+          ) : draft.prazoMode === 'B' ? (
+            <>
+              <Text style={styles.reviewValue}>
+                Início: {formatIsoDate(draft.startDate.trim()) || '—'}
+              </Text>
+              <Text style={styles.reviewValue}>
+                Conclusão: {formatIsoDate(draft.endDate.trim()) || '—'}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.reviewValue}>
+              Entregar até: {formatIsoDate(draft.deadlineDate.trim()) || '—'}
+            </Text>
+          )}
+          {draft.deadlineObservation.trim() ? (
+            <>
+              <View style={styles.reviewDivider} />
+              <Text style={styles.reviewMeta}>
+                {draft.deadlineObservation.trim()}
+              </Text>
+            </>
+          ) : null}
         </AppCard>
 
         <AppInput
@@ -1756,7 +2260,15 @@ const styles = StyleSheet.create({
   selectorPlaceholder: {
     color: colors.textLight,
   },
-  // Etapa 2 — Medições
+  // Etapa 2 — Local
+  localRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  localFieldHalf: {
+    flex: 1,
+  },
+  // Etapa 3 — Medições
   infoCard: {
     marginBottom: spacing.md,
   },
@@ -1805,7 +2317,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  // Etapa 3 — Materiais
+  // Etapa 4 — Serviço/Materiais
   compositionCard: {
     marginBottom: spacing.lg,
   },
@@ -1938,7 +2450,7 @@ const styles = StyleSheet.create({
   recalculateButton: {
     marginBottom: spacing.sm,
   },
-  // Etapa 4 — Serviços
+  // Etapa 4 — Serviço/Materiais
   serviceCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -1978,7 +2490,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
-  // Etapa 6 — Pagamento
+  // Etapa 7 — Pagamento
   paymentRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2003,7 +2515,27 @@ const styles = StyleSheet.create({
   paymentChipTextSelected: {
     color: colors.textOnPrimary,
   },
-  // Etapa 7 — Revisão
+  // Etapa 6 — Prazo
+  computedDateBox: {
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    marginBottom: spacing.lg,
+  },
+  computedDateLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  computedDateValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  // Etapa 8 — Revisão
   reviewCard: {
     marginBottom: spacing.md,
   },
