@@ -21,6 +21,7 @@ export type { ErrorStateProps } from './ErrorState';
 
 export { default as LoadingState } from './LoadingState';
 export type { LoadingStateProps } from './LoadingState';
+export { Skeleton, SkeletonList } from './Skeleton';
 
 export { default as OfflineBanner } from './OfflineBanner';
 export type { OfflineBannerProps } from './OfflineBanner';
