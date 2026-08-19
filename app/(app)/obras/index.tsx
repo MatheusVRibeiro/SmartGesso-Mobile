@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
@@ -135,6 +135,9 @@ function WorkCard({ work, onPress }: { work: Work; onPress: () => void }) {
 
 export default function ObrasListScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ clientId?: string; clientName?: string }>();
+  const clientId = typeof params.clientId === 'string' ? params.clientId : undefined;
+  const clientName = typeof params.clientName === 'string' ? params.clientName : undefined;
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search.trim(), 400);
@@ -153,12 +156,24 @@ export default function ObrasListScreen() {
     enabled: Boolean(companyId),
   });
 
+  const filteredWorks = useMemo(() => {
+    if (!clientId || !works) return works;
+    return works.filter((w) => w.clientId === clientId);
+  }, [works, clientId]);
+
   return (
     <ScreenContainer padding={false} keyboard={false}>
-      <Stack.Screen options={{ title: 'Obras', headerShown: true }} />
+      <Stack.Screen options={{ title: clientName ? `Obras de ${clientName}` : 'Obras', headerShown: true }} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Obras</Text>
+        <View style={styles.headerTitleBlock}>
+          <Text style={styles.title}>Obras</Text>
+          {clientName ? (
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {clientName}
+            </Text>
+          ) : null}
+        </View>
         <AppButton
           title="+"
           size="md"
@@ -190,17 +205,21 @@ export default function ObrasListScreen() {
         <LoadingState text="Carregando obras..." />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
-      ) : works && works.length === 0 ? (
+      ) : filteredWorks && filteredWorks.length === 0 ? (
         <EmptyState
           title={
-            debouncedSearch
-              ? 'Nenhuma obra encontrada'
-              : 'Nenhuma obra cadastrada'
+            clientId
+              ? 'Nenhuma obra para este cliente'
+              : debouncedSearch
+                ? 'Nenhuma obra encontrada'
+                : 'Nenhuma obra cadastrada'
           }
           description={
-            debouncedSearch
-              ? 'Tente buscar com outro termo'
-              : 'Comece cadastrando sua primeira obra'
+            clientId
+              ? 'Cadastre uma obra vinculando a este cliente'
+              : debouncedSearch
+                ? 'Tente buscar com outro termo'
+                : 'Comece cadastrando sua primeira obra'
           }
           icon="construct-outline"
           actionLabel="Nova obra"
@@ -208,7 +227,7 @@ export default function ObrasListScreen() {
         />
       ) : (
         <FlatList
-          data={works ?? []}
+          data={filteredWorks ?? []}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <WorkCard
@@ -235,6 +254,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: sizes.screenPadding,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  headerTitleBlock: {
+    flex: 1,
+  },
+  headerSubtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   title: {
     fontSize: typography.sizes.xl,

@@ -12,7 +12,7 @@ export default function ObraDetailLayout() {
         headerTitleStyle: { color: colors.text, fontFamily: typography.weights.bold },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Detalhes da Obra' }} />
+      <Stack.Screen name="index" options={{ title: 'Perfil da Obra' }} />
       <Stack.Screen name="materiais" options={{ title: 'Materiais da Obra' }} />
       <Stack.Screen name="medicoes" options={{ title: 'Medições' }} />
     </Stack>

@@ -23,8 +23,20 @@ const CLIENT_TYPES: { value: ClientType; label: string }[] = [
   { value: 'JURIDICA', label: 'Pessoa Jurídica' },
 ];
 
+const ADDRESS_DEFAULTS = {
+  zipCode: '',
+  street: '',
+  number: '',
+  complement: '',
+  neighborhood: '',
+  city: '',
+  state: '',
+};
+
 /** Remove strings vazias antes de enviar (DTO usa @IsOptional — string vazia falharia). */
 function cleanPayload(data: CreateClientFormData): CreateClientInput {
+  const addr = data.address;
+  const hasAddress = addr && Object.values(addr).some((v) => v && v.trim());
   return {
     type: data.type,
     name: data.name,
@@ -33,6 +45,19 @@ function cleanPayload(data: CreateClientFormData): CreateClientInput {
     phone: data.phone?.trim() || undefined,
     whatsapp: data.whatsapp?.trim() || undefined,
     observations: data.observations?.trim() || undefined,
+    ...(hasAddress
+      ? {
+          address: {
+            zipCode: addr?.zipCode?.trim() || undefined,
+            street: addr?.street?.trim() || undefined,
+            number: addr?.number?.trim() || undefined,
+            complement: addr?.complement?.trim() || undefined,
+            neighborhood: addr?.neighborhood?.trim() || undefined,
+            city: addr?.city?.trim() || undefined,
+            state: addr?.state?.trim() || undefined,
+          },
+        }
+      : {}),
   };
 }
 
@@ -58,6 +83,7 @@ export default function NovoClienteScreen() {
       email: '',
       phone: '',
       whatsapp: '',
+      address: { ...ADDRESS_DEFAULTS },
       observations: '',
     },
   });
@@ -83,10 +109,8 @@ export default function NovoClienteScreen() {
     <ScreenContainer scroll keyboard>
       <Stack.Screen options={{ title: 'Novo cliente' }} />
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Novo cliente</Text>
-        <Text style={styles.subtitle}>Preencha os dados do cliente para começar.</Text>
-      </View>
+      {/* ── Dados básicos ── */}
+      <Text style={styles.sectionTitle}>Dados básicos</Text>
 
       <Controller
         control={control}
@@ -200,12 +224,121 @@ export default function NovoClienteScreen() {
         )}
       />
 
+      {/* ── Endereço ── */}
+      <Text style={styles.sectionTitle}>Endereço</Text>
+      <Text style={styles.sectionSubtitle}>Campos opcionais — preencha se disponível.</Text>
+
+      <Controller
+        control={control}
+        name="address.zipCode"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="CEP"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="00000-000"
+            keyboardType="number-pad"
+            maxLength={9}
+            accessibilityLabel="CEP do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.street"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Rua"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="Nome da rua"
+            accessibilityLabel="Rua do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.number"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Número"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="Nº"
+            keyboardType="number-pad"
+            accessibilityLabel="Número do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.complement"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Complemento"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="Apto, bloco, etc. (opcional)"
+            accessibilityLabel="Complemento do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.neighborhood"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Bairro"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="Nome do bairro"
+            accessibilityLabel="Bairro do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.city"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Cidade"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="Nome da cidade"
+            accessibilityLabel="Cidade do cliente"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address.state"
+        render={({ field: { onChange, value } }) => (
+          <AppInput
+            label="Estado"
+            value={value ?? ''}
+            onChangeText={onChange}
+            placeholder="UF"
+            maxLength={2}
+            autoCapitalize="characters"
+            accessibilityLabel="Estado do cliente"
+          />
+        )}
+      />
+
+      {/* ── Observações ── */}
+      <Text style={styles.sectionTitle}>Observações</Text>
+
       <Controller
         control={control}
         name="observations"
         render={({ field: { onChange, value } }) => (
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Observações</Text>
             <TextInput
               value={value}
               onChangeText={onChange}
@@ -240,6 +373,18 @@ export default function NovoClienteScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xs,
+  },
+  sectionSubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
   header: {
     marginBottom: spacing.xl,
   },

@@ -2,6 +2,17 @@
 
 export type ClientType = 'FISICA' | 'JURIDICA';
 
+/** Endereço do cliente no form (nomeclatura mobile). */
+export interface ClientAddressInput {
+  zipCode?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}
+
 export interface Client {
   id: string;
   companyId: string;
@@ -11,6 +22,14 @@ export interface Client {
   email?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
+  /** Endereço (API retorna campos flat: postalCode/district/...). */
+  postalCode?: string | null;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  district?: string | null;
+  city?: string | null;
+  state?: string | null;
   observations?: string | null;
   status: string;
   createdAt: string;
@@ -29,6 +48,7 @@ export interface CreateClientInput {
   email?: string;
   phone?: string;
   whatsapp?: string;
+  address?: ClientAddressInput;
   observations?: string;
 }
 

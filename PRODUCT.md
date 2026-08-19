@@ -10,15 +10,19 @@ adaptive
 
 ## Users
 
-Gesseiros e pequenos empreiteiros de drywall (1–10 funcionários). Usam o app no celular, dentro da obra, com luz variável e mãos sujas de pó. Precisam de leitura rápida, botões grandes, contraste forte e fluxos curtos. Não são "power users" de tecnologia — a interface precisa ser óbvia e funcionar em 2 segundos de olhada.
+Gesseiros e pequenas empresas de gesso/drywall (1–10 funcionários). Usam o app no celular, dentro da obra, com luz variável e mãos sujas de pó. Precisam de leitura rápida, botões grandes, contraste forte e fluxos curtos. Não são "power users" de tecnologia — a interface precisa ser óbvia e funcionar em 2 segundos de olhada.
 
 ## Product Purpose
 
-Sistema de **ordem de serviço** para gesseiros e empreiteiros: controla o serviço do início ao fim — orçamento → OS → execução → produção → pagamento. Inclui **controle de estoque** (materiais com alerta de mínimo), **controle de serviço** (OS com status, materiais usados, produção) e **financeiro** (valor a receber, valor a pagar, despesas, relatórios). Sucesso = o gesseiro sai da obra sabendo o que fazer, quanto tem a receber e quanto de material tem no estoque, sem papelada.
+Centralizar e organizar toda a operação de pequenas empresas de gesso e drywall em um único sistema. Controla desde o primeiro contato com o cliente até o recebimento final do serviço, reduzindo cadernos, planilhas separadas, cálculos manuais e informações espalhadas no WhatsApp.
+
+Fluxo principal: **Cliente → Obra → Medição → Cálculo de materiais → Orçamento → Aprovação → Produção → Instalação → Pagamento → Resultado do serviço**.
+
+Sucesso = o gesseiro controla custo, venda e lucro de cada serviço, sem papelada e sem perda de informação na obra.
 
 ## Positioning
 
-A operação completa do gesseiro no bolso: da ordem de serviço ao pagamento, com estoque sempre sob controle — sem planilha, sem escritório, sem perda de informação na obra.
+Plataforma de gestão para empresas de gesso e drywall que integra clientes, medições, cálculo de materiais, orçamentos, produção, serviços, financeiro e estoque — permitindo organização, controle de custos e acompanhamento da rentabilidade de cada serviço.
 
 ## Brand Personality
 
@@ -35,7 +39,7 @@ Confiável, direto, trabalhador. Três palavras: **prático, sólido, profission
 
 1. **Contraste de obra**: texto ≥4.5:1, nada de cinza-claro "elegante" que desbota no sol
 2. **Uma ação por tela**: botões grandes (≥44px), hierarquia óbvia, fluxos curtos
-3. **Dados na frente**: o valor que importa (R$, status, prazo, estoque) aparece primeiro e em destaque
+3. **Dados na frente**: o valor que importa (R$, status, prazo, estoque, lucro) aparece primeiro e em destaque
 4. **Status sempre legíveis**: badge com cor + texto (nunca só cor) — OS, pagamentos, estoque
 5. **Consistência de tokens**: zero cores hardcoded, tudo via theme tokens
 

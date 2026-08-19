@@ -10,6 +10,22 @@ function api() {
   return getApiClient();
 }
 
+/** Mapeia address aninhado (mobile) → campos flat (API/Prisma). */
+function flattenAddress(data: CreateClientInput) {
+  const { address, ...rest } = data;
+  if (!address) return rest;
+  return {
+    ...rest,
+    postalCode: address.zipCode || undefined,
+    street: address.street || undefined,
+    number: address.number || undefined,
+    complement: address.complement || undefined,
+    district: address.neighborhood || undefined,
+    city: address.city || undefined,
+    state: address.state || undefined,
+  };
+}
+
 /** Módulo tipado de clientes (Fase 2). */
 export const clientsService = {
   /** GET /clients?search=&page=&limit= */
@@ -26,13 +42,15 @@ export const clientsService = {
 
   /** POST /clients */
   async create(data: CreateClientInput): Promise<Client> {
-    const response = await api().post<Client>('/clients', data);
+    const body = flattenAddress(data);
+    const response = await api().post<Client>('/clients', body);
     return response.data;
   },
 
   /** PATCH /clients/:id */
   async update(id: string, data: UpdateClientInput): Promise<Client> {
-    const response = await api().patch<Client>(`/clients/${id}`, data);
+    const body = flattenAddress(data as CreateClientInput);
+    const response = await api().patch<Client>(`/clients/${id}`, body);
     return response.data;
   },
 

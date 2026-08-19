@@ -63,6 +63,16 @@ export type AcceptInvitationFormData = z.infer<typeof acceptInvitationSchema>;
 
 // ─── Clientes (Fase 2) ─────────────────────────────────────────────────────
 
+const clientAddressSchema = z.object({
+  zipCode: z.string().trim().optional(),
+  street: z.string().trim().optional(),
+  number: z.string().trim().optional(),
+  complement: z.string().trim().optional(),
+  neighborhood: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+});
+
 export const createClientSchema = z.object({
   type: z.enum(['FISICA', 'JURIDICA']).default('FISICA'),
   name: z.string().trim().min(1, 'Nome é obrigatório'),
@@ -70,6 +80,7 @@ export const createClientSchema = z.object({
   email: z.string().trim().email('E-mail inválido').optional().or(z.literal('')),
   phone: z.string().trim().optional(),
   whatsapp: z.string().trim().optional(),
+  address: clientAddressSchema.optional(),
   observations: z.string().trim().optional(),
 });
 
