@@ -7,6 +7,7 @@ export {
 
 export { authService } from './api/auth';
 export { companyService } from './api/companies';
+export { companyMembersService } from './api/companyMembers';
 export { clientsService } from './api/clients';
 export { worksService } from './api/works';
 export { catalogService } from './api/catalog';
@@ -20,6 +21,13 @@ export { expensesService } from './api/expenses';
 export { dashboardService } from './api/dashboard';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
+
+export {
+  loadNotifications,
+  countNotifications,
+  registerForPushNotifications,
+} from './notifications';
+export type { Notificacao, NotificationType } from '../types/notification';
 
 export { useSessionStore } from '../store/useSessionStore';
 export type { SessionState } from '../store/useSessionStore';

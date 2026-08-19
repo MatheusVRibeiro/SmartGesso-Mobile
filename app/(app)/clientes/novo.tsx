@@ -9,11 +9,14 @@ import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppInput } from '../../../src/components/ui/AppInput';
 import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
+import { PhotoPicker } from '../../../src/components/domain/PhotoPicker';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { clientsService } from '../../../src/services/api/clients';
 import { toApiError } from '../../../src/services/api/client';
+import { savePhotoLocally } from '../../../src/services/photos/photoStorage';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { borders, colors, radius, sizes, spacing, typography } from '../../../src/theme';
+import type { PhotoAttachment } from '../../../src/types/photo';
 import type { ClientType, CreateClientInput } from '../../../src/types/client';
 import { createClientSchema } from '../../../src/validation/schemas';
 import type { CreateClientFormData } from '../../../src/validation/schemas';
@@ -69,6 +72,7 @@ export default function NovoClienteScreen() {
   const [snackbar, setSnackbar] = useState<{ type: AppSnackbarType; message: string } | null>(
     null
   );
+  const [photo, setPhoto] = useState<PhotoAttachment | null>(null);
 
   const {
     control,
@@ -101,7 +105,18 @@ export default function NovoClienteScreen() {
     },
   });
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    if (photo) {
+      try {
+        await savePhotoLocally(photo, 'clientes');
+      } catch {
+        setSnackbar({
+          type: 'error',
+          message: 'Não foi possível salvar a foto no dispositivo',
+        });
+        return;
+      }
+    }
     createMutation.mutate(cleanPayload(data));
   });
 
@@ -351,6 +366,17 @@ export default function NovoClienteScreen() {
             />
           </View>
         )}
+      />
+
+      {/* ── Foto (opcional) ── */}
+      <Text style={styles.sectionTitle}>Foto</Text>
+      <Text style={styles.sectionSubtitle}>Foto do cliente (opcional).</Text>
+      <PhotoPicker
+        label="Foto do cliente"
+        hint="Câmera ou galeria"
+        value={photo}
+        onChange={setPhoto}
+        accessibilityLabel="Foto do cliente"
       />
 
       <AppButton

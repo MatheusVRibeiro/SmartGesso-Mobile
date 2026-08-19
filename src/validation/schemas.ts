@@ -322,3 +322,47 @@ export const quoteSettingsSchema = z.object({
 });
 
 export type QuoteSettingsFormData = z.infer<typeof quoteSettingsSchema>;
+
+// ─── Estoque / Movimentos (V3) ──────────────────────────────────────────────
+
+export const createInventoryMovementSchema = z
+  .object({
+    materialId: z.string().min(1, 'Material é obrigatório'),
+    type: z.enum([
+      'ENTRADA',
+      'SAIDA',
+      'RESERVA',
+      'CONSUMO',
+      'PERDA',
+      'AJUSTE',
+      'RETORNO',
+    ]),
+    /** Para AJUSTE, a quantidade é o valor FINAL do estoque (pode ser 0). */
+    quantity: z.coerce.number().min(0, 'Quantidade não pode ser negativa'),
+    serviceOrderId: z.string().optional(),
+    notes: z.string().trim().optional(),
+  })
+  .refine(
+    (data) => data.type === 'AJUSTE' || data.quantity > 0,
+    { path: ['quantity'], message: 'Quantidade deve ser maior que zero' },
+  );
+
+export type CreateInventoryMovementFormData = z.infer<
+  typeof createInventoryMovementSchema
+>;
+
+// ─── Convite de membro da empresa (V3 §57) ──────────────────────────────────
+
+export const inviteMemberSchema = z.object({
+  email: emailField,
+  role: z.enum([
+    'COMPANY_OWNER',
+    'MANAGER',
+    'SALES',
+    'FINANCE',
+    'INSTALLER',
+    'PRODUCTION',
+  ]),
+});
+
+export type InviteMemberFormData = z.infer<typeof inviteMemberSchema>;

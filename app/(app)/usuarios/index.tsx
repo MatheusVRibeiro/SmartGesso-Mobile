@@ -2,25 +2,66 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
+import { ErrorState } from '../../../src/components/ui/ErrorState';
+import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { PermissionGate } from '../../../src/components/domain/PermissionGate';
-import { mockCompanyUsers } from '../../../src/data/mockUsers';
+import { toApiError } from '../../../src/services/api/client';
+import { companyMembersService } from '../../../src/services/api/companyMembers';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { USER_MANAGE_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
-import { COMPANY_USER_ROLE_LABELS } from '../../../src/types/user';
-import type { CompanyUser } from '../../../src/types/user';
+import {
+  COMPANY_MEMBER_ROLE_LABELS,
+  COMPANY_MEMBER_STATUS_LABELS,
+} from '../../../src/types/companyMember';
+import type { CompanyMember, CompanyMemberStatus } from '../../../src/types/companyMember';
+
+/**
+ * A API real retorna array puro em GET /company/members (Prisma findMany),
+ * enquanto alguns endpoints retornam { data, total }. Normaliza ambos.
+ */
+function toArray<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[];
+  if (result && typeof result === 'object' && 'data' in result) {
+    return (result as { data: T[] }).data;
+  }
+  return [];
+}
+
+const MEMBER_STATUS_BADGE: Record<
+  CompanyMemberStatus,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  ATIVO: { variant: 'active', label: 'Ativo' },
+  INATIVO: { variant: 'suspended', label: 'Inativo' },
+  CONVIDADO: { variant: 'info', label: 'Convidado' },
+};
 
 export default function UsuariosListScreen() {
   const router = useRouter();
+  const companyId = useSessionStore((s) => s.activeCompany?.company.id ?? null);
   const companyName = useSessionStore((s) => s.activeCompany?.company.tradeName ?? null);
 
-  const renderItem = ({ item }: { item: CompanyUser }) => {
-    const initial = item.name.trim().charAt(0).toUpperCase();
+  const membersQuery = useQuery({
+    queryKey: ['company', companyId, 'users'],
+    queryFn: () => companyMembersService.list(),
+    enabled: Boolean(companyId),
+  });
+
+  const members = toArray<CompanyMember>(membersQuery.data);
+
+  const renderItem = ({ item }: { item: CompanyMember }) => {
+    const name = item.user?.name ?? 'Usuário';
+    const email = item.user?.email ?? '';
+    const initial = name.trim().charAt(0).toUpperCase();
+    const badge = MEMBER_STATUS_BADGE[item.status];
 
     return (
       <AppCard shadow="light" radius={radius.md} style={styles.card}>
@@ -32,13 +73,9 @@ export default function UsuariosListScreen() {
           <View style={styles.cardInfo}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardName} numberOfLines={1}>
-                {item.name}
+                {name}
               </Text>
-              <StatusBadge
-                status={item.status === 'ATIVO' ? 'active' : 'suspended'}
-                label={item.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
-                size="sm"
-              />
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
             </View>
 
             <View style={styles.cardRow}>
@@ -49,7 +86,7 @@ export default function UsuariosListScreen() {
                 accessibilityElementsHidden
               />
               <Text style={styles.cardRowText} numberOfLines={1}>
-                {COMPANY_USER_ROLE_LABELS[item.role]}
+                {COMPANY_MEMBER_ROLE_LABELS[item.role]}
               </Text>
             </View>
 
@@ -61,7 +98,7 @@ export default function UsuariosListScreen() {
                 accessibilityElementsHidden
               />
               <Text style={styles.cardRowText} numberOfLines={1}>
-                {item.email}
+                {email || 'E-mail não informado'}
               </Text>
             </View>
           </View>
@@ -85,54 +122,54 @@ export default function UsuariosListScreen() {
         }
       >
         <View style={styles.header}>
-        <View style={styles.headerTitles}>
-          <Text style={styles.title}>Usuários</Text>
-          {companyName ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {companyName}
-            </Text>
-          ) : null}
+          <View style={styles.headerTitles}>
+            <Text style={styles.title}>Usuários</Text>
+            {companyName ? (
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {companyName}
+              </Text>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/usuarios/novo')}
+            accessibilityRole="button"
+            accessibilityLabel="Convidar usuário"
+            style={styles.addButton}
+          >
+            <Ionicons name="add" size={sizes.icon.lg} color={colors.white} accessibilityElementsHidden />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
+
+        <AppButton
+          title="Convidar usuário"
           onPress={() => router.push('/usuarios/novo')}
-          accessibilityRole="button"
           accessibilityLabel="Convidar usuário"
-          style={styles.addButton}
-        >
-          <Ionicons name="add" size={sizes.icon.lg} color={colors.white} accessibilityElementsHidden />
-        </TouchableOpacity>
-      </View>
+          style={styles.inviteButton}
+        />
 
-      {/* Aviso honesto: dados de exemplo até a API expor o endpoint de membros */}
-      <AppCard shadow="light" radius={radius.md} style={styles.noticeCard}>
-        <View style={styles.noticeContent}>
-          <Ionicons
-            name="information-circle-outline"
-            size={sizes.icon.lg}
-            color={colors.info}
-            accessibilityElementsHidden
+        {membersQuery.isLoading ? (
+          <LoadingState text="Carregando usuários..." />
+        ) : membersQuery.isError ? (
+          <ErrorState
+            message={toApiError(membersQuery.error).message}
+            onRetry={membersQuery.refetch}
           />
-          <Text style={styles.noticeText}>
-            Lista de exemplo — a integração com a API estará disponível na próxima versão.
-          </Text>
-        </View>
-      </AppCard>
-
-      <AppButton
-        title="Convidar usuário"
-        onPress={() => router.push('/usuarios/novo')}
-        accessibilityLabel="Convidar usuário"
-        style={styles.inviteButton}
-      />
-
-      <FlatList
-        data={mockCompanyUsers}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      />
+        ) : members.length === 0 ? (
+          <EmptyState
+            title="Nenhum usuário"
+            description="Convide o primeiro membro da sua empresa para começar."
+            icon="people-outline"
+          />
+        ) : (
+          <FlatList
+            data={members}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          />
+        )}
       </PermissionGate>
     </ScreenContainer>
   );
@@ -166,20 +203,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  noticeCard: {
-    marginBottom: spacing.md,
-    backgroundColor: colors.infoSoft,
-  },
-  noticeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  noticeText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.text,
   },
   inviteButton: {
     marginBottom: spacing.lg,

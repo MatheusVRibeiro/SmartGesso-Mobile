@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -18,11 +18,14 @@ import { AppCard } from '../../../../../src/components/ui/AppCard';
 import { AppInput } from '../../../../../src/components/ui/AppInput';
 import { AppSnackbar } from '../../../../../src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '../../../../../src/components/ui/AppSnackbar';
+import { PhotoPicker } from '../../../../../src/components/domain/PhotoPicker';
 import { ScreenContainer } from '../../../../../src/components/ui/ScreenContainer';
 import { toApiError } from '../../../../../src/services/api/client';
 import { measurementsService } from '../../../../../src/services/api/measurements';
+import { savePhotoLocally } from '../../../../../src/services/photos/photoStorage';
 import { useSessionStore } from '../../../../../src/store/useSessionStore';
 import { borders, colors, radius, sizes, spacing, typography } from '../../../../../src/theme';
+import type { PhotoAttachment } from '../../../../../src/types/photo';
 import type {
   CreateMeasurementInput,
   MeasurementApplicationType,
@@ -158,6 +161,8 @@ export default function NovaMedicaoScreen() {
     type: AppSnackbarType;
     message: string;
   } | null>(null);
+  const [photo, setPhoto] = useState<PhotoAttachment | null>(null);
+  const photoNoteRef = useRef('');
 
   const {
     control,
@@ -203,7 +208,10 @@ export default function NovaMedicaoScreen() {
           queryKey: ['company', companyId, 'works', workId, 'measurements'],
         });
       }
-      setSnackbar({ type: 'success', message: 'Medição criada com sucesso' });
+      setSnackbar({
+        type: 'success',
+        message: `Medição criada com sucesso.${photoNoteRef.current}`,
+      });
       setTimeout(() => router.back(), 600);
     },
     onError: (error: unknown) => {
@@ -211,7 +219,21 @@ export default function NovaMedicaoScreen() {
     },
   });
 
-  function onSubmit(data: CreateMeasurementFormData) {
+  async function onSubmit(data: CreateMeasurementFormData) {
+    photoNoteRef.current = '';
+    if (photo) {
+      try {
+        await savePhotoLocally(photo, 'medicoes');
+        photoNoteRef.current =
+          ' Foto salva no dispositivo — upload na próxima versão.';
+      } catch {
+        setSnackbar({
+          type: 'error',
+          message: 'Não foi possível salvar a foto no dispositivo',
+        });
+        return;
+      }
+    }
     createMutation.mutate(toCreateInput(data));
   }
 
@@ -452,6 +474,14 @@ export default function NovaMedicaoScreen() {
               accessibilityLabel="Possui forro rebaixado"
             />
           )}
+        />
+
+        <PhotoPicker
+          label="Foto do ambiente"
+          hint="Registre o ambiente antes da medição"
+          value={photo}
+          onChange={setPhoto}
+          accessibilityLabel="Foto do ambiente"
         />
 
         <Controller

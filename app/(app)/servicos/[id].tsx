@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Linking,
   Modal,
@@ -31,9 +31,12 @@ import { productionOrdersService } from '../../../src/services/api/productionOrd
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { PermissionGate } from '../../../src/components/domain/PermissionGate';
+import { PhotoPicker } from '../../../src/components/domain/PhotoPicker';
 import { COST_VIEW_ROLES } from '../../../src/types/permissions';
+import { savePhotoLocally } from '../../../src/services/photos/photoStorage';
 import { borders, colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
+import type { PhotoAttachment } from '../../../src/types/photo';
 import type {
   ProductionOrder,
   RegisterServiceOrderResultInput,
@@ -77,6 +80,32 @@ const CHECKLIST_ITEMS = [
   'Limpeza',
 ] as const;
 
+/** Motivos de pausa/atraso (V3 §35) — chips selecionáveis no modal. */
+const PAUSE_REASONS = [
+  'Aguardando cliente',
+  'Aguardando material',
+  'Chuva',
+  'Ambiente não liberado',
+  'Outro fornecedor',
+  'Problema técnico',
+  'Reagendamento',
+  'Outro',
+] as const;
+
+/**
+ * Pré-requisitos para início (V3 §34) — chaves `prereq_*` persistidas no
+ * checklist Json existente (PATCH /service-orders/:id com { checklist }),
+ * sem campo novo na API.
+ */
+const PREREQ_ITEMS = [
+  { key: 'prereq_ambiente_liberado', label: 'Ambiente liberado' },
+  { key: 'prereq_material_disponivel', label: 'Material disponível' },
+  { key: 'prereq_eletrica_finalizada', label: 'Elétrica finalizada' },
+  { key: 'prereq_local_seco', label: 'Local seco' },
+  { key: 'prereq_acesso_liberado', label: 'Acesso liberado' },
+  { key: 'prereq_outro', label: 'Outro' },
+] as const;
+
 /** Etapas do serviço (V3 §33) — timeline interativa; nem todo serviço usa todas. */
 const SERVICE_ORDER_ETAPAS = [
   { key: 'medicao', label: 'Medição' },
@@ -89,17 +118,21 @@ const SERVICE_ORDER_ETAPAS = [
   { key: 'entrega', label: 'Entrega' },
 ] as const;
 
-/** Slots de fotos (antes/durante/depois) — estrutura visual sem câmera. */
+/** Slots de fotos (antes/durante/depois) — V3 §67, captura real. */
 const PHOTO_SLOTS = [
   { key: 'antes', label: 'Antes' },
   { key: 'durante', label: 'Durante' },
   { key: 'depois', label: 'Depois' },
 ] as const;
 
+type PhotoSlotKey = (typeof PHOTO_SLOTS)[number]['key'];
+
 interface StatusTransition {
   to: ServiceOrderStatus;
   label: string;
   completedDate?: boolean;
+  /** Motivo da pausa (V3 §35) — preenchido pelo modal antes do PATCH. */
+  pauseReason?: string;
 }
 
 /** Transições de status disponíveis a partir do status atual. */
@@ -256,6 +289,126 @@ function RegisterResultModal({
   );
 }
 
+// ─── Modal de motivo de pausa/atraso (V3 §35) ───────────────────────────────
+
+interface PauseReasonModalProps {
+  visible: boolean;
+  loading: boolean;
+  /** true = registrar atraso sem mudar status; false = pausar (muda status). */
+  pauseOnly?: boolean;
+  onConfirm: (reason: string, observation: string) => void;
+  onClose: () => void;
+}
+
+function PauseReasonModal({
+  visible,
+  loading,
+  pauseOnly = false,
+  onConfirm,
+  onClose,
+}: PauseReasonModalProps) {
+  const [reason, setReason] = useState<string | null>(null);
+  const [observation, setObservation] = useState('');
+
+  // Reset do formulário a cada abertura.
+  useEffect(() => {
+    if (visible) {
+      setReason(null);
+      setObservation('');
+    }
+  }, [visible]);
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom']}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>
+            {pauseOnly ? 'Motivo do atraso' : 'Motivo da pausa'}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Fechar motivo"
+            onPress={onClose}
+            hitSlop={8}
+            style={styles.modalClose}
+          >
+            <Ionicons name="close" size={sizes.icon.lg} color={colors.text} />
+          </Pressable>
+        </View>
+
+        <View style={styles.modalBody}>
+          <Text style={styles.pauseModalHint}>
+            {pauseOnly
+              ? 'Registre o motivo do atraso desta ordem de serviço.'
+              : 'Selecione o motivo da pausa e, se quiser, adicione uma observação.'}
+          </Text>
+
+          <View style={styles.pauseReasonsGrid}>
+            {PAUSE_REASONS.map((item) => {
+              const selected = reason === item;
+              return (
+                <Pressable
+                  key={item}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Motivo ${item}`}
+                  accessibilityState={{ selected }}
+                  onPress={() => setReason(item)}
+                  style={({ pressed }) => [
+                    styles.pauseReasonChip,
+                    selected && styles.pauseReasonChipSelected,
+                    pressed && styles.pauseReasonChipPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={sizes.icon.sm}
+                    color={selected ? colors.primary : colors.textLight}
+                    accessibilityElementsHidden
+                  />
+                  <Text
+                    style={[
+                      styles.pauseReasonChipText,
+                      selected && styles.pauseReasonChipTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <AppInput
+            label="Observação (opcional)"
+            value={observation}
+            onChangeText={setObservation}
+            placeholder="Detalhes do motivo..."
+            multiline
+            numberOfLines={3}
+            accessibilityLabel="Observação do motivo"
+            style={styles.pauseObservationInput}
+          />
+
+          <Text style={styles.pauseDateHint}>
+            Data registrada automaticamente:{' '}
+            {new Date().toLocaleDateString('pt-BR')}
+          </Text>
+
+          <AppButton
+            title={pauseOnly ? 'Registrar motivo' : 'Pausar serviço'}
+            size="lg"
+            accessibilityLabel="Confirmar motivo"
+            onPress={() => onConfirm(reason ?? '', observation)}
+            loading={loading}
+            disabled={loading || !reason}
+            style={styles.modalConfirmButton}
+          />
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function DetalheOrdemServicoScreen() {
@@ -267,6 +420,17 @@ export default function DetalheOrdemServicoScreen() {
 
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [resultModalVisible, setResultModalVisible] = useState(false);
+  // Pausa/atraso (V3 §35) — modal de motivo antes do PATCH de status.
+  const [pauseModalVisible, setPauseModalVisible] = useState(false);
+  const [pendingPauseTransition, setPendingPauseTransition] =
+    useState<StatusTransition | null>(null);
+  // Pré-requisitos (V3 §34) — confirmação antes de iniciar com itens pendentes.
+  const [prereqConfirmVisible, setPrereqConfirmVisible] = useState(false);
+  const [pendingStartTransition, setPendingStartTransition] =
+    useState<StatusTransition | null>(null);
+  const [servicePhotos, setServicePhotos] = useState<
+    Record<PhotoSlotKey, PhotoAttachment | null>
+  >({ antes: null, durante: null, depois: null });
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
     message: string;
@@ -276,6 +440,7 @@ export default function DetalheOrdemServicoScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const statusSectionY = useRef(0);
   const checklistSectionY = useRef(0);
+  const photosSectionY = useRef(0);
 
   const orderQuery = useQuery({
     queryKey: ['company', companyId, 'service-orders', orderId],
@@ -290,6 +455,9 @@ export default function DetalheOrdemServicoScreen() {
         ...(transition.completedDate
           ? { completedDate: new Date().toISOString() }
           : {}),
+        ...(transition.pauseReason
+          ? { pauseReason: transition.pauseReason }
+          : {}),
       }),
     onSuccess: (_data, transition) => {
       queryClient.invalidateQueries({
@@ -301,6 +469,22 @@ export default function DetalheOrdemServicoScreen() {
           ? 'Ordem de serviço concluída com sucesso'
           : 'Status atualizado com sucesso',
       });
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  // Motivo de atraso (V3 §35) — PATCH { pauseReason } sem mudar o status
+  // (usado para OS atrasada que ainda não foi pausada).
+  const pauseReasonMutation = useMutation({
+    mutationFn: (pauseReason: string) =>
+      serviceOrdersService.update(orderId as string, { pauseReason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
+      setSnackbar({ type: 'success', message: 'Motivo registrado com sucesso' });
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
@@ -575,11 +759,7 @@ export default function DetalheOrdemServicoScreen() {
           icon: 'camera-outline' as const,
           color: colors.primary,
           backgroundColor: colors.primarySoft,
-          onPress: () =>
-            setSnackbar({
-              type: 'info',
-              message: 'Registro de fotos disponível em breve',
-            }),
+          onPress: () => scrollToSection(photosSectionY.current),
         },
         {
           key: 'status',
@@ -667,6 +847,70 @@ export default function DetalheOrdemServicoScreen() {
     if (!order) return;
     const current = order.etapas ?? {};
     etapasMutation.mutate({ ...current, [key]: !current[key] });
+  }
+
+  /** Pré-requisito (V3 §34) — chaves `prereq_*` no checklist Json existente. */
+  function togglePrereq(key: string) {
+    if (!order) return;
+    const current = order.checklist ?? {};
+    checklistMutation.mutate({ ...current, [key]: !current[key] });
+  }
+
+  /**
+   * Intercepta transições especiais:
+   * - PAUSADA → abre o modal de motivo (V3 §35) antes do PATCH.
+   * - EM_ANDAMENTO com pré-requisitos pendentes → ConfirmDialog (V3 §34),
+   *   avisa mas não bloqueia (confirmar segue com o início).
+   */
+  function handleStatusPress(transition: StatusTransition) {
+    if (transition.to === 'PAUSADA') {
+      setPendingPauseTransition(transition);
+      setPauseModalVisible(true);
+      return;
+    }
+    if (transition.to === 'EM_ANDAMENTO') {
+      const pending = PREREQ_ITEMS.filter(
+        (item) => order?.checklist?.[item.key] !== true,
+      );
+      if (pending.length > 0) {
+        setPendingStartTransition(transition);
+        setPrereqConfirmVisible(true);
+        return;
+      }
+    }
+    statusMutation.mutate(transition);
+  }
+
+  /**
+   * Confirma o motivo (pausa ou atraso): monta a string composta
+   * "<motivo> — <observação> — dd/mm/aaaa" e faz o PATCH.
+   */
+  function confirmPause(reason: string, observation: string) {
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const pauseReason = [reason, observation.trim(), dateStr]
+      .filter(Boolean)
+      .join(' — ');
+    if (pendingPauseTransition) {
+      statusMutation.mutate({ ...pendingPauseTransition, pauseReason });
+    } else {
+      pauseReasonMutation.mutate(pauseReason);
+    }
+    setPauseModalVisible(false);
+    setPendingPauseTransition(null);
+  }
+
+  /** Foto do serviço: atualiza o estado e persiste localmente (sem upload na API). */
+  async function handlePhotoChange(key: PhotoSlotKey, photo: PhotoAttachment | null) {
+    setServicePhotos((prev) => ({ ...prev, [key]: photo }));
+    if (!photo || !order) return;
+    try {
+      await savePhotoLocally(photo, `servicos/${order.id}`);
+    } catch {
+      setSnackbar({
+        type: 'error',
+        message: 'Não foi possível salvar a foto no dispositivo',
+      });
+    }
   }
 
   // Resultado do serviço (custo × venda → lucro/margem)
@@ -858,6 +1102,21 @@ export default function DetalheOrdemServicoScreen() {
                   />
                 </View>
               )}
+              {prazoBadge?.variant === 'expired' &&
+                order.status !== 'CONCLUIDA' &&
+                order.status !== 'CANCELADA' && (
+                  <AppButton
+                    title="Registrar motivo de atraso"
+                    variant="outline"
+                    size="sm"
+                    accessibilityLabel="Registrar motivo de atraso"
+                    onPress={() => {
+                      setPendingPauseTransition(null);
+                      setPauseModalVisible(true);
+                    }}
+                    style={styles.prazoLateButton}
+                  />
+                )}
             </AppCard>
 
             {/* ── Central operacional (V3): Financeiro ────────────────────── */}
@@ -1071,6 +1330,25 @@ export default function DetalheOrdemServicoScreen() {
                     );
                   })}
 
+                  {order.pauseReason ? (
+                    <View style={styles.pauseReasonBox}>
+                      <Ionicons
+                        name="pause-circle-outline"
+                        size={sizes.icon.md}
+                        color={colors.warning}
+                        accessibilityElementsHidden
+                      />
+                      <View style={styles.pauseReasonInfo}>
+                        <Text style={styles.pauseReasonLabel}>
+                          Motivo da pausa
+                        </Text>
+                        <Text style={styles.pauseReasonText}>
+                          {order.pauseReason}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+
                   {statusTransitions.length > 0 && (
                     <View style={styles.statusActions}>
                       {statusTransitions.map((transition) => (
@@ -1082,7 +1360,7 @@ export default function DetalheOrdemServicoScreen() {
                           }
                           size="md"
                           accessibilityLabel={transition.label}
-                          onPress={() => statusMutation.mutate(transition)}
+                          onPress={() => handleStatusPress(transition)}
                           loading={statusMutation.isPending}
                           disabled={statusMutation.isPending}
                           style={styles.statusActionButton}
@@ -1093,6 +1371,55 @@ export default function DetalheOrdemServicoScreen() {
                 </>
               )}
             </AppCard>
+
+            {/* ── Pré-requisitos para início (V3 §34) ───────────────────── */}
+            {order.status !== 'CONCLUIDA' && order.status !== 'CANCELADA' && (
+              <>
+                <Text style={styles.sectionLabel}>
+                  Pré-requisitos para início
+                </Text>
+                <AppCard shadow="light" style={styles.prereqCard}>
+                  {PREREQ_ITEMS.map((item) => {
+                    const checked = order.checklist?.[item.key] === true;
+                    return (
+                      <Pressable
+                        key={item.key}
+                        accessibilityRole="checkbox"
+                        accessibilityLabel={item.label}
+                        accessibilityState={{ checked }}
+                        onPress={() => togglePrereq(item.key)}
+                        disabled={checklistMutation.isPending}
+                        style={({ pressed }) => [
+                          styles.checklistItem,
+                          pressed && styles.checklistItemPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={checked ? 'checkbox' : 'square-outline'}
+                          size={sizes.icon.lg}
+                          color={checked ? colors.success : colors.textLight}
+                          accessibilityElementsHidden
+                        />
+                        <Text
+                          style={[
+                            styles.checklistItemLabel,
+                            checked && styles.checklistItemLabelChecked,
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                  <Text style={styles.checklistHint}>
+                    {PREREQ_ITEMS.filter(
+                      (item) => order.checklist?.[item.key] === true,
+                    ).length}{' '}
+                    de {PREREQ_ITEMS.length} pré-requisitos confirmados
+                  </Text>
+                </AppCard>
+              </>
+            )}
 
             {/* ── Etapas do serviço (V3 §33): timeline interativa ───────── */}
             <Text style={styles.sectionLabel}>Etapas</Text>
@@ -1317,34 +1644,27 @@ export default function DetalheOrdemServicoScreen() {
               </Text>
             </AppCard>
 
-            <Text style={styles.sectionLabel}>Fotos</Text>
-            <View style={styles.photoSlots}>
+            <Text
+              style={styles.sectionLabel}
+              onLayout={(event) => {
+                photosSectionY.current = event.nativeEvent.layout.y;
+              }}
+            >
+              Fotos
+            </Text>
+            <View style={styles.photoSection}>
               {PHOTO_SLOTS.map((slot) => (
-                <Pressable
+                <PhotoPicker
                   key={slot.key}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Fotos ${slot.label}`}
-                  onPress={() =>
-                    setSnackbar({
-                      type: 'info',
-                      message: 'Registro de fotos disponível em breve',
-                    })
-                  }
-                  style={({ pressed }) => [
-                    styles.photoSlot,
-                    pressed && styles.photoSlotPressed,
-                  ]}
-                >
-                  <Ionicons
-                    name="camera-outline"
-                    size={sizes.icon.lg}
-                    color={colors.primary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.photoSlotLabel}>{slot.label}</Text>
-                  <Text style={styles.photoSlotHint}>Em breve</Text>
-                </Pressable>
+                  label={`Foto ${slot.label}`}
+                  hint="Câmera ou galeria"
+                  value={servicePhotos[slot.key]}
+                  onChange={(photo) => handlePhotoChange(slot.key, photo)}
+                />
               ))}
+              <Text style={styles.photoHint}>
+                Fotos salvas no dispositivo — upload na próxima versão.
+              </Text>
             </View>
 
             <Text style={styles.sectionLabel}>Materiais usados</Text>
@@ -1435,6 +1755,43 @@ export default function DetalheOrdemServicoScreen() {
           registerResultMutation.mutate({ cost: costValue, saleValue: saleValueValue })
         }
         onClose={() => setResultModalVisible(false)}
+      />
+
+      <PauseReasonModal
+        visible={pauseModalVisible}
+        loading={statusMutation.isPending || pauseReasonMutation.isPending}
+        pauseOnly={pendingPauseTransition === null}
+        onConfirm={confirmPause}
+        onClose={() => {
+          setPauseModalVisible(false);
+          setPendingPauseTransition(null);
+        }}
+      />
+
+      <ConfirmDialog
+        visible={prereqConfirmVisible}
+        title="Confirme os pré-requisitos"
+        message={
+          'Alguns pré-requisitos ainda não foram confirmados:\n' +
+          PREREQ_ITEMS.filter((item) => order?.checklist?.[item.key] !== true)
+            .map((item) => `• ${item.label}`)
+            .join('\n') +
+          '\n\nDeseja iniciar o serviço mesmo assim?'
+        }
+        confirmLabel="Iniciar mesmo assim"
+        cancelLabel="Cancelar"
+        loading={statusMutation.isPending}
+        onConfirm={() => {
+          if (pendingStartTransition) {
+            statusMutation.mutate(pendingStartTransition);
+          }
+          setPrereqConfirmVisible(false);
+          setPendingStartTransition(null);
+        }}
+        onCancel={() => {
+          setPrereqConfirmVisible(false);
+          setPendingStartTransition(null);
+        }}
       />
 
       <ConfirmDialog
@@ -1974,34 +2331,15 @@ const styles = StyleSheet.create({
   producaoCtaButton: {
     marginTop: spacing.sm,
   },
-  // Fotos (antes / durante / depois)
-  photoSlots: {
-    flexDirection: 'row',
+  // Fotos (antes / durante / depois) — PhotoPicker (V3 §67)
+  photoSection: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  photoSlot: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.inputBorder,
-  },
-  photoSlotPressed: {
-    backgroundColor: colors.primarySoft,
-  },
-  photoSlotLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  photoSlotHint: {
+  photoHint: {
     fontSize: typography.sizes.xs,
-    color: colors.textLight,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   // Modal styles
   modalSafe: {
@@ -2031,5 +2369,89 @@ const styles = StyleSheet.create({
   },
   modalConfirmButton: {
     marginTop: spacing.lg,
+  },
+  // Motivo da pausa/atraso (V3 §35) — exibição no card de Status
+  pauseReasonBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.warningSoft,
+  },
+  pauseReasonInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  pauseReasonLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
+    color: colors.warning,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  pauseReasonText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text,
+    lineHeight: typography.sizes.sm * 1.4,
+  },
+  // Modal de motivo (V3 §35) — chips + observação
+  pauseModalHint: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  pauseReasonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  pauseReasonChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: sizes.touchTarget,
+  },
+  pauseReasonChipSelected: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  pauseReasonChipPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  pauseReasonChipText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+  },
+  pauseReasonChipTextSelected: {
+    color: colors.primary,
+  },
+  pauseObservationInput: {
+    marginBottom: spacing.md,
+  },
+  pauseDateHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginBottom: spacing.sm,
+  },
+  // Prazo — botão de atraso (V3 §35)
+  prazoLateButton: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  // Pré-requisitos para início (V3 §34)
+  prereqCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
 });

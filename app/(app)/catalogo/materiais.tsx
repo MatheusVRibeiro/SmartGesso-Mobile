@@ -17,6 +17,7 @@ import type { AppSnackbarType } from '../../../src/components/ui';
 import { CatalogItemFormModal } from '../../../src/components/catalog/CatalogItemFormModal';
 import type { CatalogItemFormValues } from '../../../src/components/catalog/CatalogItemFormModal';
 import { catalogService } from '../../../src/services/api/catalog';
+import { inventoryService } from '../../../src/services/api/inventory';
 import { toApiError } from '../../../src/services/api/client';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { useDebouncedValue } from '../../../src/hooks/useDebouncedValue';
@@ -25,7 +26,6 @@ import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { CreateMaterialInput, MaterialItem } from '../../../src/types/catalog';
 
 const SEARCH_DEBOUNCE_MS = 400;
-const LIST_LIMIT = 100;
 
 export default function CatalogMaterialsScreen() {
   const companyId = useSessionStore((s) => s.activeCompany?.company.id);
@@ -50,10 +50,10 @@ export default function CatalogMaterialsScreen() {
     isRefetching,
   } = useQuery({
     queryKey: [...baseQueryKey, { search: debouncedSearch }],
+    // V3 — visão de estoque real (saldo + estoque mínimo) via /inventory/materials.
     queryFn: () =>
-      catalogService.listMaterials({
+      inventoryService.listMaterials({
         search: debouncedSearch || undefined,
-        limit: LIST_LIMIT,
       }),
     enabled: !!companyId,
   });
@@ -155,7 +155,7 @@ export default function CatalogMaterialsScreen() {
         />
       ) : (
         <FlatList
-          data={data?.data ?? []}
+          data={data ?? []}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <MaterialCard material={item} />}
           style={styles.list}

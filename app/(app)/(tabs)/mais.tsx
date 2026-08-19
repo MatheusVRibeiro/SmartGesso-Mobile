@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import type { ComponentProps } from 'react';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
+import { countNotifications } from '../../../src/services/notifications';
 import { queryClient } from '../../../src/lib/queryClient';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
@@ -19,12 +21,21 @@ interface MenuItem {
   icon: IconName;
   section: string;
   action?: () => void;
+  /** Contagem exibida em badge (oculta quando ausente ou 0). */
+  badge?: number;
 }
 
 export default function MaisScreen() {
   const router = useRouter();
   const clearSession = useSessionStore((s) => s.clearSession);
+  const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   const [logoutDialogVisible, setLogoutDialogVisible] = useState(false);
+
+  const { data: notificationCount } = useQuery({
+    queryKey: ['company', companyId, 'notificacoes', 'count'],
+    queryFn: () => countNotifications(),
+    enabled: Boolean(companyId),
+  });
 
   const handleModuleNotImplemented = (moduleName: string) => {
     Alert.alert(
@@ -60,6 +71,14 @@ export default function MaisScreen() {
       icon: 'calendar-outline',
       section: 'Operação',
       action: () => router.push('/agenda'),
+    },
+    {
+      id: 'notificacoes',
+      title: 'Notificações',
+      icon: 'notifications-outline',
+      section: 'Operação',
+      action: () => router.push('/notificacoes'),
+      badge: notificationCount,
     },
     {
       id: 'orcamentos',
@@ -202,6 +221,11 @@ export default function MaisScreen() {
                       />
                     </View>
                     <Text style={styles.menuItemTitle}>{item.title}</Text>
+                    {item.badge != null && item.badge > 0 ? (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                      </View>
+                    ) : null}
                   </View>
                   <Ionicons
                     name="chevron-forward"
@@ -314,6 +338,20 @@ const styles = StyleSheet.create({
   menuItemTitle: {
     fontSize: typography.sizes.md,
     color: colors.text,
+  },
+  badge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  badgeText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.textOnPrimary,
   },
   logoutIcon: {
     backgroundColor: colors.dangerSoft,

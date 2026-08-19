@@ -25,7 +25,20 @@ const config: ExpoConfig = {
     favicon: './assets/favicon.png',
     bundler: 'metro',
   },
-  plugins: ['expo-router', 'expo-image', 'expo-sharing'],
+  plugins: [
+    'expo-router',
+    'expo-image',
+    'expo-sharing',
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'O SmartGesso usa a galeria para anexar fotos a medições, serviços e clientes.',
+        cameraPermission:
+          'O SmartGesso usa a câmera para fotografar ambientes, serviços e clientes.',
+      },
+    ],
+  ],
   extra: {
     eas: {
       projectId: 'smartgesso',
