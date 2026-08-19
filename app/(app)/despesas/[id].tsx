@@ -15,7 +15,8 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { ExpenseCategory } from '../../../src/types/finance';
 import { formatCurrency } from '../../../src/utils/format';
 
@@ -47,6 +48,7 @@ function formatDate(dateStr: string): string {
 
 export default function DetalheDespesaScreen() {
   const router = useRouter();
+  const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   const params = useLocalSearchParams<{ id: string }>();
@@ -113,6 +115,8 @@ export default function DetalheDespesaScreen() {
               accessibilityRole="button"
               accessibilityLabel="Excluir despesa"
               onPress={() => setConfirmDeleteVisible(true)}
+              disabled={isOffline}
+              accessibilityState={{ disabled: isOffline }}
               hitSlop={8}
               style={styles.headerAction}
             >
@@ -120,6 +124,12 @@ export default function DetalheDespesaScreen() {
             </Pressable>
           </View>
         </View>
+
+        {isOffline ? (
+          <Text style={styles.offlineWarning}>
+            Você está offline. Conecte-se para excluir a despesa.
+          </Text>
+        ) : null}
 
         {expenseQuery.isLoading ? (
           <LoadingState text="Carregando despesa..." />
@@ -185,6 +195,7 @@ export default function DetalheDespesaScreen() {
         cancelLabel="Cancelar"
         danger
         loading={deleteMutation.isPending}
+        confirmDisabled={isOffline}
         onConfirm={() => deleteMutation.mutate()}
         onCancel={() => setConfirmDeleteVisible(false)}
       />
@@ -294,5 +305,16 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
     lineHeight: typography.sizes.sm * 1.5,
+  },
+  offlineWarning: {
+    backgroundColor: colors.warningSoft,
+    color: colors.warning,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    marginBottom: spacing.lg,
   },
 });

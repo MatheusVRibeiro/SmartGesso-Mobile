@@ -26,6 +26,7 @@ import { clientsService } from '../../../src/services/api/clients';
 import { paymentsService } from '../../../src/services/api/payments';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
 import type { Client } from '../../../src/types/client';
@@ -307,6 +308,7 @@ function ClientPickerModal({
 
 export default function NovoPagamentoScreen() {
   const router = useRouter();
+  const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   // V3 — pagamento contextual: ?clientId=&serviceOrderId= pré-seleciona o
@@ -730,13 +732,19 @@ export default function NovoPagamentoScreen() {
           )}
         />
 
+        {isOffline ? (
+          <Text style={styles.offlineWarning}>
+            Você está offline. Conecte-se para salvar o pagamento.
+          </Text>
+        ) : null}
+
         <AppButton
           title="Salvar"
           size="lg"
           accessibilityLabel="Salvar pagamento"
           onPress={handleSubmit(onSubmit)}
           loading={createMutation.isPending}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || isOffline}
           style={styles.saveButton}
         />
       </ScreenContainer>
@@ -991,6 +999,17 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: spacing.xl,
     marginBottom: spacing['3xl'],
+  },
+  offlineWarning: {
+    backgroundColor: colors.warningSoft,
+    color: colors.warning,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    marginTop: spacing.xl,
   },
   // Modal styles
   modalSafe: {

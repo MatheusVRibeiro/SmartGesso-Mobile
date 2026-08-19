@@ -16,7 +16,8 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
 import type {
   PaymentInstallmentStatus,
@@ -58,6 +59,7 @@ function canConfirm(status: PaymentStatus): boolean {
 
 export default function DetalhePagamentoScreen() {
   const router = useRouter();
+  const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   const params = useLocalSearchParams<{ id: string }>();
@@ -296,7 +298,7 @@ export default function DetalhePagamentoScreen() {
                           accessibilityLabel={`Receber parcela ${item.installmentNumber}`}
                           onPress={() => handleReceiveInstallment(item.id)}
                           loading={receivingId === item.id}
-                          disabled={payingInstallment}
+                          disabled={payingInstallment || isOffline}
                           style={styles.receiveButton}
                         />
                       ) : null}
@@ -316,6 +318,11 @@ export default function DetalhePagamentoScreen() {
             ) : null}
 
             <View style={styles.actions}>
+              {isOffline && payment.status === 'PENDENTE' ? (
+                <Text style={styles.offlineWarning}>
+                  Você está offline. Conecte-se para confirmar o pagamento.
+                </Text>
+              ) : null}
               {canConfirm(payment.status) && !hasInstallments && (
                 <AppButton
                   title="Confirmar pagamento"
@@ -323,7 +330,7 @@ export default function DetalhePagamentoScreen() {
                   accessibilityLabel="Confirmar pagamento"
                   onPress={() => confirmMutation.mutate()}
                   loading={confirmMutation.isPending}
-                  disabled={confirmMutation.isPending}
+                  disabled={confirmMutation.isPending || isOffline}
                 />
               )}
             </View>
@@ -492,5 +499,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.lg,
     marginBottom: spacing['3xl'],
+  },
+  offlineWarning: {
+    backgroundColor: colors.warningSoft,
+    color: colors.warning,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
   },
 });

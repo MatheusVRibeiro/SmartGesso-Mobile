@@ -31,6 +31,8 @@ export interface ServiceOrder {
   observations?: string | null;
   /** Motivo da pausa/atraso (V3 §35): motivo + observação + data em texto livre. */
   pauseReason?: string | null;
+  /** Orçamento de origem (V3 — conversão aprovado → serviço; forward-compatible). */
+  quoteId?: string | null;
   checklist?: Record<string, boolean> | null;
   /** Etapas do serviço (V3 §33) — timeline interativa: `{ 'medicao': true, ... }`. */
   etapas?: Record<string, boolean> | null;

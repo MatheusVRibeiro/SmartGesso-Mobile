@@ -12,6 +12,8 @@ export interface ConfirmDialogProps {
   /** Quando true, o botão de confirmar usa variante danger (vermelho). */
   danger?: boolean;
   loading?: boolean;
+  /** Quando true, o botão de confirmar fica desabilitado (ex.: offline). */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   testID?: string;
@@ -25,6 +27,7 @@ function ConfirmDialog({
   cancelLabel = 'Cancelar',
   danger = false,
   loading = false,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
   testID,
@@ -71,6 +74,7 @@ function ConfirmDialog({
               size="sm"
               loading={loading}
               onPress={onConfirm}
+              disabled={confirmDisabled}
               style={styles.confirmButton}
             />
           </View>

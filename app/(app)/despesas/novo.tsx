@@ -14,6 +14,7 @@ import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { ExpenseCategory } from '../../../src/types/finance';
 import { z } from 'zod';
@@ -45,6 +46,7 @@ const EXPENSE_CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
 
 export default function NovaDespesaScreen() {
   const router = useRouter();
+  const { isOffline } = useNetworkStatus();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   // V3 — despesa contextual: ?serviceOrderId= pré-vincula a despesa ao serviço.
@@ -255,13 +257,19 @@ export default function NovaDespesaScreen() {
           )}
         />
 
+        {isOffline ? (
+          <Text style={styles.offlineWarning}>
+            Você está offline. Conecte-se para salvar a despesa.
+          </Text>
+        ) : null}
+
         <AppButton
           title="Salvar"
           size="lg"
           accessibilityLabel="Salvar despesa"
           onPress={handleSubmit(onSubmit)}
           loading={createMutation.isPending}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || isOffline}
           style={styles.saveButton}
         />
       </ScreenContainer>
@@ -375,5 +383,16 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: spacing.xl,
     marginBottom: spacing['3xl'],
+  },
+  offlineWarning: {
+    backgroundColor: colors.warningSoft,
+    color: colors.warning,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    marginTop: spacing.xl,
   },
 });

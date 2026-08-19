@@ -44,6 +44,39 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('pt-BR');
 }
 
+/** dd/mm — datas da timeline do orçamento (V3 §40). */
+function formatDayMonth(dateStr?: string | null): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+/** Status que encerram o ciclo comercial — nunca exibem badge de vencimento. */
+const CLOSED_QUOTE_STATUSES: ReadonlySet<QuoteStatus> = new Set([
+  'APROVADO',
+  'CANCELADO',
+]);
+
+/**
+ * Orçamento vencido (V3 §39): status VENCIDO pela API ou validade ultrapassada
+ * com ciclo comercial ainda aberto (não aprovado nem cancelado).
+ */
+function isQuoteExpired(quote: {
+  status: QuoteStatus;
+  validUntil?: string | null;
+}): boolean {
+  if (quote.status === 'VENCIDO') return true;
+  if (!quote.validUntil) return false;
+  if (CLOSED_QUOTE_STATUSES.has(quote.status)) return false;
+  const validUntil = new Date(quote.validUntil);
+  if (Number.isNaN(validUntil.getTime())) return false;
+  validUntil.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return validUntil.getTime() < today.getTime();
+}
+
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function DetalheOrcamentoScreen() {
@@ -155,7 +188,10 @@ export default function DetalheOrcamentoScreen() {
       });
       setApprovedModalVisible(false);
       setSnackbar({ type: 'success', message: 'Serviço criado a partir do orçamento' });
-      router.replace(`/servicos/${converted.serviceOrderId}`);
+      router.replace({
+        pathname: '/servicos/[id]',
+        params: { id: converted.serviceOrderId, quoteId },
+      });
     },
     onError: (error: unknown) => {
       setApprovedModalVisible(false);
@@ -215,6 +251,7 @@ export default function DetalheOrcamentoScreen() {
   const quote = quoteQuery.data;
   const statusBadge = quote ? QUOTE_STATUS_BADGE[quote.status] : null;
   const history = quote?.history ?? [];
+  const expired = quote ? isQuoteExpired(quote) : false;
   const canApprove =
     quote?.status === 'RASCUNHO' ||
     quote?.status === 'ENVIADO' ||
@@ -375,37 +412,40 @@ export default function DetalheOrcamentoScreen() {
               </>
             )}
 
-            {history.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Histórico</Text>
-                <AppCard shadow="light" style={styles.historyCard}>
-                  {history.map((event, index) => (
-                    <View
-                      key={event.id}
-                      style={[
-                        styles.historyItem,
-                        index < history.length - 1 && styles.historyItemBorder,
-                      ]}
-                    >
-                      <View style={styles.historyDot} />
-                      <View style={styles.historyContent}>
-                        <View style={styles.historyHeader}>
-                          <Text style={styles.historyStatus}>
-                            {QUOTE_STATUS_BADGE[event.status]?.label ?? event.status}
-                          </Text>
-                          <Text style={styles.historyDate}>
-                            {formatDate(event.changedAt)}
-                          </Text>
-                        </View>
-                        {event.note ? (
-                          <Text style={styles.historyNote}>{event.note}</Text>
-                        ) : null}
-                      </View>
+            <Text style={styles.sectionLabel}>Histórico</Text>
+            <AppCard shadow="light" style={styles.historyCard}>
+              {history.length > 0 ? (
+                history.map((event, index) => (
+                  <View
+                    key={event.id}
+                    style={[
+                      styles.historyItem,
+                      index < history.length - 1 && styles.historyItemBorder,
+                    ]}
+                  >
+                    <View style={styles.historyDot} />
+                    <View style={styles.historyContent}>
+                      <Text style={styles.historyStatus}>
+                        {formatDayMonth(event.changedAt)} —{' '}
+                        {QUOTE_STATUS_BADGE[event.status]?.label ?? event.status}
+                      </Text>
+                      {event.note ? (
+                        <Text style={styles.historyNote}>{event.note}</Text>
+                      ) : null}
                     </View>
-                  ))}
-                </AppCard>
-              </>
-            )}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.historyItem}>
+                  <View style={styles.historyDot} />
+                  <View style={styles.historyContent}>
+                    <Text style={styles.historyStatus}>
+                      Criado em {formatDayMonth(quote.createdAt)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </AppCard>
 
             <View style={styles.actions}>
               {canApprove && (
@@ -427,16 +467,28 @@ export default function DetalheOrcamentoScreen() {
                   />
                 </>
               )}
-              <AppButton
-                title="Duplicar"
-                variant="secondary"
-                size="lg"
-                accessibilityLabel="Duplicar orçamento"
-                onPress={() => duplicateMutation.mutate()}
-                loading={duplicateMutation.isPending}
-                disabled={duplicateMutation.isPending}
-                style={styles.actionButton}
-              />
+              {expired ? (
+                <AppButton
+                  title="Duplicar e atualizar"
+                  size="lg"
+                  accessibilityLabel="Duplicar orçamento vencido e atualizar"
+                  onPress={() => duplicateMutation.mutate()}
+                  loading={duplicateMutation.isPending}
+                  disabled={duplicateMutation.isPending}
+                  style={styles.actionButton}
+                />
+              ) : (
+                <AppButton
+                  title="Duplicar"
+                  variant="secondary"
+                  size="lg"
+                  accessibilityLabel="Duplicar orçamento"
+                  onPress={() => duplicateMutation.mutate()}
+                  loading={duplicateMutation.isPending}
+                  disabled={duplicateMutation.isPending}
+                  style={styles.actionButton}
+                />
+              )}
               <AppButton
                 title="Gerar PDF"
                 size="lg"

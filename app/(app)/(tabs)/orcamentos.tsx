@@ -34,6 +34,31 @@ const QUOTE_STATUS_BADGE: Record<
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
 };
 
+/** Status que encerram o ciclo comercial — nunca exibem badge de vencimento. */
+const CLOSED_QUOTE_STATUSES: ReadonlySet<QuoteStatus> = new Set([
+  'APROVADO',
+  'CANCELADO',
+]);
+
+/**
+ * Orçamento vencido (V3 §39): validade ultrapassada e o ciclo comercial segue
+ * aberto (não aprovado nem cancelado) — mesmo que o status ainda não tenha sido
+ * atualizado para VENCIDO pela API.
+ */
+function isQuoteExpired(quote: {
+  validUntil?: string | null;
+  status: QuoteStatus;
+}): boolean {
+  if (!quote.validUntil) return false;
+  if (CLOSED_QUOTE_STATUSES.has(quote.status)) return false;
+  const validUntil = new Date(quote.validUntil);
+  if (Number.isNaN(validUntil.getTime())) return false;
+  validUntil.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return validUntil.getTime() < today.getTime();
+}
+
 // ─── Card de orçamento ─────────────────────────────────────────────────────
 
 interface QuoteCardProps {
@@ -43,13 +68,16 @@ interface QuoteCardProps {
     version: number;
     status: QuoteStatus;
     total: number;
+    validUntil?: string | null;
     client?: { id: string; name: string };
   };
   onPress: () => void;
 }
 
 function QuoteCard({ quote, onPress }: QuoteCardProps) {
-  const badge = QUOTE_STATUS_BADGE[quote.status];
+  const badge = isQuoteExpired(quote)
+    ? { variant: 'expired' as const, label: 'Vencido' }
+    : QUOTE_STATUS_BADGE[quote.status];
 
   return (
     <AppCard shadow="light" radius={radius.lg} style={styles.card}>

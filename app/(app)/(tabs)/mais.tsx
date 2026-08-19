@@ -37,14 +37,6 @@ export default function MaisScreen() {
     enabled: Boolean(companyId),
   });
 
-  const handleModuleNotImplemented = (moduleName: string) => {
-    Alert.alert(
-      'Módulo em desenvolvimento',
-      `A funcionalidade "${moduleName}" ainda está em desenvolvimento. Em breve disponível!`,
-      [{ text: 'Entendi' }]
-    );
-  };
-
   const handleLogout = async () => {
     try {
       await SecureTokenStorage.clearTokens();
@@ -171,11 +163,11 @@ export default function MaisScreen() {
 
     // Suporte
     {
-      id: 'suporte',
-      title: 'Suporte',
+      id: 'ajuda',
+      title: 'Ajuda e suporte',
       icon: 'help-circle-outline',
       section: 'Suporte',
-      action: () => handleModuleNotImplemented('Suporte'),
+      action: () => router.push('/ajuda'),
     },
     {
       id: 'trocar-empresa',

@@ -39,6 +39,8 @@ export interface QuoteSummary {
   total: number;
   paymentMethod: QuotePaymentMethod;
   createdAt: string;
+  /** Até quando o preço/condições são válidos (V3 — validade do orçamento). */
+  validUntil?: string | null;
   /** Data agendada para visita técnica (V3 — Agenda). */
   visitDate?: string | null;
   /** Data agendada para medição (V3 — Agenda). */
@@ -63,6 +65,12 @@ export interface Quote {
   observations?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Até quando o preço/condições são válidos (V3 — validade do orçamento). */
+  validUntil?: string | null;
+  /** Previsão de conclusão (AAAA-MM-DD) — usado no planejado x realizado. */
+  endDate?: string | null;
+  /** Data-limite de entrega (AAAA-MM-DD) — Modo C. */
+  deadlineDate?: string | null;
   /** Marcado quando o orçamento aprovado vira ordem de serviço (V3). */
   convertedAt?: string | null;
   client?: { id: string; name: string; document?: string | null };
