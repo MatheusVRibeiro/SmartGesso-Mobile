@@ -14,11 +14,11 @@ Gesseiros e pequenos empreiteiros de drywall (1–10 funcionários). Usam o app 
 
 ## Product Purpose
 
-Gestão completa para gesseiros e empreiteiros: clientes, obras, medições, composições de materiais, orçamentos com PDF, ordens de serviço, produção, pagamentos e despesas — tudo no celular, na obra. Sucesso = o gesseiro sai da obra sabendo quanto tem a receber, sem papelada e sem depender de ninguém.
+Sistema de **ordem de serviço** para gesseiros e empreiteiros: controla o serviço do início ao fim — orçamento → OS → execução → produção → pagamento. Inclui **controle de estoque** (materiais com alerta de mínimo), **controle de serviço** (OS com status, materiais usados, produção) e **financeiro** (valor a receber, valor a pagar, despesas, relatórios). Sucesso = o gesseiro sai da obra sabendo o que fazer, quanto tem a receber e quanto de material tem no estoque, sem papelada.
 
 ## Positioning
 
-A operação completa do gesseiro no bolso: do orçamento ao pagamento, sem planilha, sem escritório, sem perda de informação na obra.
+A operação completa do gesseiro no bolso: da ordem de serviço ao pagamento, com estoque sempre sob controle — sem planilha, sem escritório, sem perda de informação na obra.
 
 ## Brand Personality
 
@@ -35,8 +35,8 @@ Confiável, direto, trabalhador. Três palavras: **prático, sólido, profission
 
 1. **Contraste de obra**: texto ≥4.5:1, nada de cinza-claro "elegante" que desbota no sol
 2. **Uma ação por tela**: botões grandes (≥44px), hierarquia óbvia, fluxos curtos
-3. **Dados na frente**: o valor que importa (R$, status, prazo) aparece primeiro e em destaque
-4. **Status sempre legíveis**: badge com cor + texto (nunca só cor)
+3. **Dados na frente**: o valor que importa (R$, status, prazo, estoque) aparece primeiro e em destaque
+4. **Status sempre legíveis**: badge com cor + texto (nunca só cor) — OS, pagamentos, estoque
 5. **Consistência de tokens**: zero cores hardcoded, tudo via theme tokens
 
 ## Accessibility & Inclusion
