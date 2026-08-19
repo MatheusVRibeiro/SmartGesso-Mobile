@@ -14,6 +14,7 @@ export default function CatalogoLayout() {
     >
       <Stack.Screen name="index" options={{ title: 'Catálogo' }} />
       <Stack.Screen name="materiais" options={{ title: 'Materiais' }} />
+      <Stack.Screen name="[id]" options={{ title: 'Detalhe do material' }} />
       <Stack.Screen name="servicos" options={{ title: 'Serviços' }} />
       <Stack.Screen name="produtos" options={{ title: 'Produtos' }} />
     </Stack>

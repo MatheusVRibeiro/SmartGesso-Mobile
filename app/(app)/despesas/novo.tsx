@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppInput } from '../../../src/components/ui/AppInput';
 import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
@@ -12,6 +12,7 @@ import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
+import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { ExpenseCategory } from '../../../src/types/finance';
@@ -46,6 +47,11 @@ export default function NovaDespesaScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+  // V3 — despesa contextual: ?serviceOrderId= pré-vincula a despesa ao serviço.
+  const params = useLocalSearchParams<{ serviceOrderId?: string }>();
+  const serviceOrderId = Array.isArray(params.serviceOrderId)
+    ? params.serviceOrderId[0]
+    : params.serviceOrderId;
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
     message: string;
@@ -59,8 +65,17 @@ export default function NovaDespesaScreen() {
       amount: undefined,
       expenseDate: '',
       observations: '',
+      serviceOrderId: serviceOrderId ?? '',
     },
   });
+
+  // Serviço vinculado (V3) — reutiliza a query do Detalhe da OS quando houver cache.
+  const serviceOrderQuery = useQuery({
+    queryKey: ['company', companyId, 'service-orders', serviceOrderId],
+    queryFn: () => serviceOrdersService.getById(serviceOrderId as string),
+    enabled: Boolean(companyId && serviceOrderId),
+  });
+  const linkedOrder = serviceOrderQuery.data;
 
   const createMutation = useMutation({
     mutationFn: (data: ExpenseFormValues) => {
@@ -71,12 +86,17 @@ export default function NovaDespesaScreen() {
         amount: parseFloat(String(data.amount)),
         expenseDate: data.expenseDate?.trim() || undefined,
         observations: data.observations?.trim() || undefined,
+        serviceOrderId: data.serviceOrderId?.trim() || undefined,
       };
       return expensesService.create(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'expenses'],
+      });
+      // V3 — invalida as queries do serviço (detalhe + listagem + central operacional).
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
       });
       setSnackbar({ type: 'success', message: 'Despesa registrada com sucesso' });
       setTimeout(() => router.back(), 600);
@@ -110,6 +130,33 @@ export default function NovaDespesaScreen() {
             <Text style={styles.subtitle}>Registre uma despesa da sua empresa.</Text>
           </View>
         </View>
+
+        {serviceOrderId ? (
+          <View style={styles.serviceCard}>
+            <View style={styles.serviceCardIcon}>
+              <Ionicons
+                name="construct-outline"
+                size={sizes.icon.md}
+                color={colors.warning}
+                accessibilityElementsHidden
+              />
+            </View>
+            <View style={styles.serviceCardInfo}>
+              <Text style={styles.serviceCardTitle}>
+                Despesa vinculada ao serviço
+              </Text>
+              <Text style={styles.serviceCardSubtitle} numberOfLines={1}>
+                {serviceOrderQuery.isLoading
+                  ? 'Carregando serviço...'
+                  : linkedOrder
+                    ? `OS #${linkedOrder.code} · ${
+                        linkedOrder.client?.name ?? 'Cliente não informado'
+                      }`
+                    : 'Serviço não encontrado'}
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <Text style={styles.sectionLabel}>Categoria</Text>
         <Controller
@@ -257,6 +304,38 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  serviceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  serviceCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.warningSoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  serviceCardInfo: {
+    flex: 1,
+  },
+  serviceCardTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  serviceCardSubtitle: {
+    marginTop: 2,
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },

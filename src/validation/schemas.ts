@@ -266,6 +266,8 @@ export const createExpenseSchema = z.object({
   amount: z.coerce.number().min(0.01, 'Valor deve ser maior que 0'),
   expenseDate: z.string().optional(),
   observations: z.string().trim().optional(),
+  /** Ordem de serviço vinculada (V3 — despesa contextual dentro do serviço). */
+  serviceOrderId: z.string().optional(),
 });
 
 export type CreateExpenseFormData = z.infer<typeof createExpenseSchema>;

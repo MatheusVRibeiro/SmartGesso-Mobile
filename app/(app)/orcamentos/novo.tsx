@@ -30,6 +30,8 @@ import { measurementsService } from '../../../src/services/api/measurements';
 import { quotesService } from '../../../src/services/api/quotes';
 import { worksService } from '../../../src/services/api/works';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { PermissionGate } from '../../../src/components/domain/PermissionGate';
+import { COST_VIEW_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type { Client } from '../../../src/types/client';
@@ -1455,12 +1457,14 @@ export default function NovoOrcamentoScreen() {
                     {formatNumber(result.totalArea)} m²
                   </Text>
                 </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Custo estimado</Text>
-                  <Text style={styles.summaryCost}>
-                    {formatCurrency(result.estimatedCost)}
-                  </Text>
-                </View>
+                <PermissionGate allow={COST_VIEW_ROLES}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Custo estimado</Text>
+                    <Text style={styles.summaryCost}>
+                      {formatCurrency(result.estimatedCost)}
+                    </Text>
+                  </View>
+                </PermissionGate>
               </AppCard>
 
               <AppButton
@@ -1594,19 +1598,21 @@ export default function NovoOrcamentoScreen() {
                   style={styles.summaryInput}
                 />
               </View>
-              <View style={styles.itemFieldHalf}>
-                <AppInput
-                  label="Margem (%)"
-                  value={draft.marginPct}
-                  onChangeText={(text) =>
-                    setDraft((d) => ({ ...d, marginPct: text }))
-                  }
-                  placeholder="0"
-                  keyboardType="decimal-pad"
-                  accessibilityLabel="Margem percentual"
-                  style={styles.summaryInput}
-                />
-              </View>
+              <PermissionGate allow={COST_VIEW_ROLES}>
+                <View style={styles.itemFieldHalf}>
+                  <AppInput
+                    label="Margem (%)"
+                    value={draft.marginPct}
+                    onChangeText={(text) =>
+                      setDraft((d) => ({ ...d, marginPct: text }))
+                    }
+                    placeholder="0"
+                    keyboardType="decimal-pad"
+                    accessibilityLabel="Margem percentual"
+                    style={styles.summaryInput}
+                  />
+                </View>
+              </PermissionGate>
             </View>
 
             <View style={[styles.summaryRow, styles.totalRow]}>
@@ -1930,12 +1936,14 @@ export default function NovoOrcamentoScreen() {
               {formatCurrency(parseNumber(draft.discount))}
             </Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Margem</Text>
-            <Text style={styles.summaryValue}>
-              {formatNumber(parseNumber(draft.marginPct))}%
-            </Text>
-          </View>
+          <PermissionGate allow={COST_VIEW_ROLES}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Margem</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(parseNumber(draft.marginPct))}%
+              </Text>
+            </View>
+          </PermissionGate>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>TOTAL</Text>
             <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>

@@ -4,10 +4,13 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
+import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { mockCompanyUsers } from '../../../src/data/mockUsers';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { USER_MANAGE_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { COMPANY_USER_ROLE_LABELS } from '../../../src/types/user';
 import type { CompanyUser } from '../../../src/types/user';
@@ -71,7 +74,17 @@ export default function UsuariosListScreen() {
     <ScreenContainer padding keyboard={false}>
       <Stack.Screen options={{ title: 'Usuários' }} />
 
-      <View style={styles.header}>
+      <PermissionGate
+        allow={USER_MANAGE_ROLES}
+        fallback={
+          <EmptyState
+            title="Sem permissão"
+            description="Apenas o proprietário e gerentes podem gerenciar usuários."
+            icon="lock-closed-outline"
+          />
+        }
+      >
+        <View style={styles.header}>
         <View style={styles.headerTitles}>
           <Text style={styles.title}>Usuários</Text>
           {companyName ? (
@@ -120,6 +133,7 @@ export default function UsuariosListScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />
+      </PermissionGate>
     </ScreenContainer>
   );
 }

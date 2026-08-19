@@ -54,6 +54,10 @@ export const catalogService = {
     const response = await api().get<CatalogListResponse<MaterialItem>>('/catalog/materials', { params });
     return response.data;
   },
+  async getMaterial(id: string): Promise<MaterialItem> {
+    const response = await api().get<MaterialItem>(`/catalog/materials/${id}`);
+    return response.data;
+  },
   async createMaterial(data: CreateMaterialInput): Promise<MaterialItem> {
     const response = await api().post<MaterialItem>('/catalog/materials', data);
     return response.data;

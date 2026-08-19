@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { paymentsService } from '../../../src/services/api/payments';
+import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
@@ -308,6 +309,18 @@ export default function NovoPagamentoScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+  // V3 — pagamento contextual: ?clientId=&serviceOrderId= pré-seleciona o
+  // cliente e mostra o saldo do serviço (valor contratado / pago / saldo).
+  const params = useLocalSearchParams<{
+    clientId?: string;
+    serviceOrderId?: string;
+  }>();
+  const clientIdParam = Array.isArray(params.clientId)
+    ? params.clientId[0]
+    : params.clientId;
+  const serviceOrderIdParam = Array.isArray(params.serviceOrderId)
+    ? params.serviceOrderId[0]
+    : params.serviceOrderId;
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
@@ -321,7 +334,7 @@ export default function NovoPagamentoScreen() {
   } = useForm<PaymentFormValues, any, CreatePaymentFormData>({
     resolver: zodResolver(createPaymentSchema),
     defaultValues: {
-      clientId: '',
+      clientId: clientIdParam ?? '',
       paymentMethod: 'PIX',
       paymentDate: '',
       dueDate: '',
@@ -353,12 +366,54 @@ export default function NovoPagamentoScreen() {
     enabled: Boolean(companyId),
   });
 
+  // Serviço vinculado (V3) — reutiliza a query do Detalhe da OS quando houver cache.
+  const serviceOrderQuery = useQuery({
+    queryKey: ['company', companyId, 'service-orders', serviceOrderIdParam],
+    queryFn: () => serviceOrdersService.getById(serviceOrderIdParam as string),
+    enabled: Boolean(companyId && serviceOrderIdParam),
+  });
+
+  // Pagamentos da empresa — para calcular o saldo do serviço (mesma lógica
+  // do Detalhe da OS: recebido = soma de CONFIRMADO do cliente, com parcelas).
+  const paymentsQuery = useQuery({
+    queryKey: ['company', companyId, 'payments'],
+    queryFn: () => paymentsService.list(),
+    enabled: Boolean(companyId),
+  });
+
+  const linkedOrder = serviceOrderQuery.data;
+  const linkedClientPayments = linkedOrder
+    ? (paymentsQuery.data?.data ?? []).filter(
+        (payment) => payment.clientId === linkedOrder.clientId,
+      )
+    : [];
+  const linkedPaidTotal = linkedClientPayments.reduce((sum, payment) => {
+    if (payment.installments && payment.installments.length > 0) {
+      return (
+        sum +
+        payment.installments
+          .filter((installment) => installment.status === 'CONFIRMADO')
+          .reduce((s, installment) => s + installment.amount, 0)
+      );
+    }
+    return payment.status === 'CONFIRMADO' ? sum + payment.amount : sum;
+  }, 0);
+  const linkedContractedValue = linkedOrder?.saleValue ?? null;
+  const linkedBalanceValue =
+    linkedContractedValue != null
+      ? linkedContractedValue - linkedPaidTotal
+      : null;
+
   const createMutation = useMutation({
     mutationFn: (data: CreatePaymentFormData) =>
       paymentsService.create(cleanPayload(data, installmentCount)),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'payments'],
+      });
+      // V3 — invalida as queries do serviço (detalhe + listagem + central operacional).
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
       });
       setSnackbar({ type: 'success', message: 'Pagamento registrado com sucesso' });
       setTimeout(() => router.back(), 600);
@@ -393,6 +448,66 @@ export default function NovoPagamentoScreen() {
           </View>
         </View>
 
+        {serviceOrderIdParam ? (
+          <View style={styles.serviceCard}>
+            <View style={styles.serviceCardHeader}>
+              <View style={styles.serviceCardIcon}>
+                <Ionicons
+                  name="construct-outline"
+                  size={sizes.icon.md}
+                  color={colors.primary}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <View style={styles.serviceCardInfo}>
+                <Text style={styles.serviceCardTitle}>Serviço vinculado</Text>
+                <Text style={styles.serviceCardSubtitle} numberOfLines={1}>
+                  {serviceOrderQuery.isLoading
+                    ? 'Carregando serviço...'
+                    : linkedOrder
+                      ? `OS #${linkedOrder.code} · ${
+                          linkedOrder.client?.name ?? 'Cliente não informado'
+                        }`
+                      : 'Serviço não encontrado'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.serviceCardDivider} />
+            <View style={styles.balanceRow}>
+              <View style={styles.balanceItem}>
+                <Text style={styles.balanceLabel}>Valor contratado</Text>
+                <Text style={styles.balanceValue}>
+                  {formatCurrency(linkedContractedValue)}
+                </Text>
+              </View>
+              <View style={styles.balanceItem}>
+                <Text style={styles.balanceLabel}>Pago</Text>
+                <Text
+                  style={[styles.balanceValue, { color: colors.success }]}
+                >
+                  {formatCurrency(linkedPaidTotal)}
+                </Text>
+              </View>
+              <View style={styles.balanceItem}>
+                <Text style={styles.balanceLabel}>Saldo</Text>
+                <Text
+                  style={[
+                    styles.balanceValue,
+                    {
+                      color:
+                        linkedBalanceValue != null && linkedBalanceValue > 0
+                          ? colors.warning
+                          : colors.success,
+                    },
+                  ]}
+                >
+                  {formatCurrency(linkedBalanceValue)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
         <Text style={styles.sectionLabel}>Cliente</Text>
         <Controller
           control={control}
@@ -406,10 +521,16 @@ export default function NovoPagamentoScreen() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Selecionar cliente"
-                  onPress={() => setClientModalVisible(true)}
+                  accessibilityState={{ disabled: Boolean(serviceOrderIdParam) }}
+                  onPress={
+                    serviceOrderIdParam
+                      ? undefined
+                      : () => setClientModalVisible(true)
+                  }
                   style={[
                     styles.selectorField,
                     fieldState.error != null && styles.selectorFieldError,
+                    serviceOrderIdParam && styles.selectorFieldLocked,
                   ]}
                 >
                   <Ionicons
@@ -428,12 +549,19 @@ export default function NovoPagamentoScreen() {
                     {selectedClient?.name ?? 'Selecione um cliente'}
                   </Text>
                   <Ionicons
-                    name="chevron-down"
+                    name={
+                      serviceOrderIdParam ? 'lock-closed-outline' : 'chevron-down'
+                    }
                     size={sizes.icon.md}
                     color={colors.textLight}
                     accessibilityElementsHidden
                   />
                 </Pressable>
+                {serviceOrderIdParam ? (
+                  <Text style={styles.selectorHint}>
+                    Cliente do serviço — não é possível alterar
+                  </Text>
+                ) : null}
                 {fieldState.error ? (
                   <Text style={styles.fieldError}>
                     {fieldState.error.message}
@@ -696,6 +824,72 @@ const styles = StyleSheet.create({
   },
   selectorPlaceholder: {
     color: colors.textLight,
+  },
+  selectorFieldLocked: {
+    backgroundColor: colors.disabledBackground,
+    borderColor: colors.border,
+  },
+  selectorHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  // Serviço vinculado (V3) — card de saldo do serviço
+  serviceCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  serviceCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  serviceCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  serviceCardInfo: {
+    flex: 1,
+  },
+  serviceCardTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  serviceCardSubtitle: {
+    marginTop: 2,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+  },
+  serviceCardDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  balanceItem: {
+    flex: 1,
+  },
+  balanceLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  balanceValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   fieldError: {
     fontSize: typography.sizes.xs,

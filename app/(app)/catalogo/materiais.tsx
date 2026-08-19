@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -200,66 +200,75 @@ export default function CatalogMaterialsScreen() {
 }
 
 function MaterialCard({ material }: { material: MaterialItem }) {
+  const router = useRouter();
   const isActive = material.status === 'ACTIVE';
   const stockQty = material.stockQty ?? 0;
   const minStockQty = material.minStockQty ?? 0;
-  const lowStock = stockQty < minStockQty;
+  const lowStock = stockQty <= minStockQty;
 
   return (
-    <AppCard shadow="light" radius={radius.lg} style={styles.card}>
-      <View style={styles.cardContent}>
-        <View style={styles.cardIcon}>
-          <Ionicons
-            name="layers-outline"
-            size={sizes.icon.md}
-            color={colors.primary}
-            accessibilityElementsHidden
-          />
-        </View>
-
-        <View style={styles.cardInfo}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardName} numberOfLines={1}>
-              {material.name}
-            </Text>
-            <StatusBadge
-              status={isActive ? 'active' : 'cancelled'}
-              label={isActive ? 'Ativo' : 'Inativo'}
-              size="sm"
-            />
-          </View>
-
-          {material.description ? (
-            <Text style={styles.cardDescription} numberOfLines={2}>
-              {material.description}
-            </Text>
-          ) : null}
-
-          <View style={styles.cardMeta}>
-            <Text style={styles.cardPrice}>{formatCurrency(material.price)}</Text>
-            <Text style={styles.cardUnit}>{material.unit}</Text>
-          </View>
-
-          <View style={styles.stockRow}>
+    <Pressable
+      onPress={() => router.push(`/catalogo/${material.id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Ver detalhes de ${material.name}`}
+    >
+      <AppCard shadow="light" radius={radius.lg} style={styles.card}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
             <Ionicons
-              name={lowStock ? 'alert-circle' : 'cube-outline'}
-              size={sizes.icon.sm}
-              color={lowStock ? colors.warning : colors.textSecondary}
+              name="layers-outline"
+              size={sizes.icon.md}
+              color={colors.primary}
               accessibilityElementsHidden
             />
-            <Text
-              style={[
-                styles.stockText,
-                lowStock && styles.stockTextLow,
-              ]}
-            >
-              Estoque: {stockQty} · Mínimo: {minStockQty}
-              {lowStock ? ' · Estoque baixo' : ''}
-            </Text>
+          </View>
+
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardName} numberOfLines={1}>
+                {material.name}
+              </Text>
+              <StatusBadge
+                status={isActive ? 'active' : 'cancelled'}
+                label={isActive ? 'Ativo' : 'Inativo'}
+                size="sm"
+              />
+            </View>
+
+            {material.description ? (
+              <Text style={styles.cardDescription} numberOfLines={2}>
+                {material.description}
+              </Text>
+            ) : null}
+
+            <View style={styles.cardMeta}>
+              <Text style={styles.cardPrice}>{formatCurrency(material.price)}</Text>
+              <Text style={styles.cardUnit}>{material.unit}</Text>
+            </View>
+
+            <View style={styles.stockRow}>
+              <Ionicons
+                name={lowStock ? 'alert-circle' : 'cube-outline'}
+                size={sizes.icon.sm}
+                color={lowStock ? colors.warning : colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text
+                style={[
+                  styles.stockText,
+                  lowStock && styles.stockTextLow,
+                ]}
+              >
+                Estoque: {stockQty} · Mínimo: {minStockQty}
+              </Text>
+              {lowStock ? (
+                <StatusBadge status="warning" label="Estoque baixo" size="sm" />
+              ) : null}
+            </View>
           </View>
         </View>
-      </View>
-    </AppCard>
+      </AppCard>
+    </Pressable>
   );
 }
 

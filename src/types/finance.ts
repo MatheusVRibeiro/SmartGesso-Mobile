@@ -89,6 +89,8 @@ export interface Expense {
   expenseDate: string;
   receiptUrl?: string | null;
   observations?: string | null;
+  /** Ordem de serviço vinculada (V3 — despesa contextual dentro do serviço). */
+  serviceOrderId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -104,6 +106,8 @@ export interface CreateExpenseInput {
   amount: number;
   expenseDate?: string;
   observations?: string;
+  /** Ordem de serviço vinculada (V3 — despesa contextual dentro do serviço). */
+  serviceOrderId?: string;
 }
 
 export type UpdateExpenseInput = Partial<CreateExpenseInput>;

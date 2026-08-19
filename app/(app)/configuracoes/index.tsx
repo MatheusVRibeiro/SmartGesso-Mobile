@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { EmptyState } from '../../../src/components/ui/EmptyState';
+import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -61,7 +63,17 @@ export default function ConfiguracoesScreen() {
 
   return (
     <ScreenContainer scroll padding keyboard={false}>
-      <View style={styles.header}>
+      <PermissionGate
+        allow={['COMPANY_OWNER']}
+        fallback={
+          <EmptyState
+            title="Sem permissão"
+            description="Apenas o proprietário da empresa pode acessar as configurações."
+            icon="lock-closed-outline"
+          />
+        }
+      >
+        <View style={styles.header}>
         <Text style={styles.title}>Configurações</Text>
         <Text style={styles.subtitle}>
           Ajuste os dados da sua empresa e as preferências de orçamento.
@@ -100,6 +112,7 @@ export default function ConfiguracoesScreen() {
           </TouchableOpacity>
         ))}
       </AppCard>
+      </PermissionGate>
     </ScreenContainer>
   );
 }

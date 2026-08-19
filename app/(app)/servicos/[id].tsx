@@ -29,9 +29,10 @@ import { expensesService } from '../../../src/services/api/expenses';
 import { paymentsService } from '../../../src/services/api/payments';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { PermissionGate } from '../../../src/components/domain/PermissionGate';
+import { COST_VIEW_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
-import type { Expense } from '../../../src/types/finance';
 import type {
   RegisterServiceOrderResultInput,
   ServiceOrder,
@@ -419,13 +420,11 @@ export default function DetalheOrdemServicoScreen() {
   const toReceiveValue =
     contractedValue != null ? contractedValue - receivedTotal : null;
 
-  // Custos — despesas vinculadas ao serviço (Expense ainda não tem
-  // serviceOrderId na API; filtro forward-compatible).
+  // Custos — despesas vinculadas ao serviço (serviceOrderId enviado pelo
+  // mobile V3; filtro forward-compatible caso a API ainda não o retorne).
   const linkedExpenses = order
     ? (expensesQuery.data?.data ?? []).filter(
-        (expense) =>
-          (expense as Expense & { serviceOrderId?: string | null })
-            .serviceOrderId === order.id,
+        (expense) => expense.serviceOrderId === order.id,
       )
     : [];
   const expensesTotal = linkedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -446,7 +445,7 @@ export default function DetalheOrdemServicoScreen() {
           onPress: () =>
             router.push({
               pathname: '/pagamentos/novo',
-              params: { clientId: order.clientId },
+              params: { clientId: order.clientId, serviceOrderId: order.id },
             }),
         },
         {
@@ -766,30 +765,32 @@ export default function DetalheOrdemServicoScreen() {
             </AppCard>
 
             {/* ── Central operacional (V3): Custos ────────────────────────── */}
-            <Text style={styles.sectionLabel}>Custos</Text>
-            <AppCard shadow="light" style={styles.custosCard}>
-              <View style={styles.custosRow}>
-                <View style={styles.custosIcon}>
-                  <Ionicons
-                    name="receipt-outline"
-                    size={sizes.icon.md}
-                    color={colors.warning}
-                    accessibilityElementsHidden
-                  />
+            <PermissionGate allow={COST_VIEW_ROLES}>
+              <Text style={styles.sectionLabel}>Custos</Text>
+              <AppCard shadow="light" style={styles.custosCard}>
+                <View style={styles.custosRow}>
+                  <View style={styles.custosIcon}>
+                    <Ionicons
+                      name="receipt-outline"
+                      size={sizes.icon.md}
+                      color={colors.warning}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.custosInfo}>
+                    <Text style={styles.custosLabel}>Despesas vinculadas</Text>
+                    <Text style={styles.custosValue}>
+                      {formatCurrency(expensesTotal)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.custosInfo}>
-                  <Text style={styles.custosLabel}>Despesas vinculadas</Text>
-                  <Text style={styles.custosValue}>
-                    {formatCurrency(expensesTotal)}
+                {expensesTotal === 0 && (
+                  <Text style={styles.custosHint}>
+                    Nenhuma despesa vinculada a este serviço
                   </Text>
-                </View>
-              </View>
-              {expensesTotal === 0 && (
-                <Text style={styles.custosHint}>
-                  Nenhuma despesa vinculada a este serviço
-                </Text>
-              )}
-            </AppCard>
+                )}
+              </AppCard>
+            </PermissionGate>
 
             {/* ── Central operacional (V3): Atalhos ───────────────────────── */}
             <Text style={styles.sectionLabel}>Atalhos</Text>
@@ -1075,7 +1076,7 @@ export default function DetalheOrdemServicoScreen() {
             ) : null}
 
             {showResultSection && (
-              <>
+              <PermissionGate allow={COST_VIEW_ROLES}>
                 <Text style={styles.sectionLabel}>Resultado do serviço</Text>
                 {hasResult ? (
                   <AppCard shadow="light" style={styles.resultCard}>
@@ -1114,7 +1115,7 @@ export default function DetalheOrdemServicoScreen() {
                     style={styles.resultCtaButton}
                   />
                 )}
-              </>
+              </PermissionGate>
             )}
           </>
         ) : null}
