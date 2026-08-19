@@ -17,6 +17,7 @@ export { serviceOrdersService } from './api/serviceOrders';
 export { productionOrdersService } from './api/productionOrders';
 export { paymentsService } from './api/payments';
 export { expensesService } from './api/expenses';
+export { dashboardService } from './api/dashboard';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
 
