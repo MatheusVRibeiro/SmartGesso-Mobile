@@ -12,6 +12,7 @@ export const typography = {
     lg: 18,
     xl: 22,
     '2xl': 28,
+    '3xl': 32,
   },
   weights: {
     regular: '400',

@@ -1,59 +1,64 @@
 /**
- * SmartGesso Mobile — Tokens de cor (fonte canônica do design system).
+ * SmartGesso Mobile — Tokens de cor.
  *
- * Paleta obrigatória definida no prompt mestre (seção 14 — identidade visual).
- * Este arquivo é o superset de `src/constants/colors.ts` (que re-exporta daqui).
+ * Paleta "Obra profissional": indigo de confiança sobre concreto claro.
+ * Referência: DESIGN.md (oklch → hex).
  */
 export const colors = {
-  // Marca
-  primary: '#0B5ED7',
-  primaryDark: '#084298',
-  primaryLight: '#3D8BFD',
+  // Marca — indigo
+  primary: '#4338CA',
+  primaryDark: '#3730A3',
+  primaryLight: '#6366F1',
+  primarySoft: '#EEF0FF',
 
   // Secundária / destaque
-  secondary: '#F59E0B',
+  secondary: '#D97706',
   secondaryDark: '#B45309',
-  secondaryLight: '#FBBF24',
+  secondaryLight: '#F59E0B',
 
   // Semânticos
-  success: '#16A34A',
+  success: '#059669',
+  successSoft: '#E7F6F0',
   danger: '#DC2626',
+  dangerSoft: '#FDECEC',
   /** Alias de compatibilidade — usa o mesmo valor que `danger`. */
   error: '#DC2626',
   warning: '#D97706',
-  info: '#0B5ED7',
+  warningSoft: '#FDF1E3',
+  info: '#2563EB',
+  infoSoft: '#E8F0FE',
 
-  // Fundos e superfícies
-  background: '#F7F9FC',
+  // Fundos e superfícies (neutro azulado, NÃO cream)
+  background: '#F7F7F8',
   surface: '#FFFFFF',
   card: '#FFFFFF',
 
   // Texto
-  text: '#172033',
-  textSecondary: '#64748B',
-  textLight: '#94A3B8',
+  text: '#1E2230',
+  textSecondary: '#5A6172',
+  textLight: '#8A90A0',
   textOnPrimary: '#FFFFFF',
   textOnSecondary: '#FFFFFF',
 
   // Bordas e divisores
-  border: '#E2E8F0',
-  divider: '#EEF2F7',
+  border: '#E2E4EA',
+  divider: '#EDEFF3',
 
   // Inputs
-  inputBackground: '#F1F5F9',
-  inputBorder: '#E2E8F0',
-  inputFocus: '#0B5ED7',
+  inputBackground: '#FFFFFF',
+  inputBorder: '#D8DBE2',
+  inputFocus: '#4338CA',
 
   // Estados desabilitados
-  disabled: '#CBD5E1',
-  disabledBackground: '#E2E8F0',
-  disabledText: '#94A3B8',
+  disabled: '#C8CBD4',
+  disabledBackground: '#EDEFF3',
+  disabledText: '#9BA0AC',
 
   // Utilitários
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
-  overlay: 'rgba(23, 32, 51, 0.55)',
+  overlay: 'rgba(30, 34, 48, 0.55)',
 } as const;
 
 export type Colors = typeof colors;
