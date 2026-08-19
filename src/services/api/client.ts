@@ -24,6 +24,7 @@ let client: AxiosInstance | null = null;
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 let unauthorizedHandler: (() => void) | null = null;
+let accessDeniedHandler: (() => void) | null = null;
 
 // ─── Queue helpers ──────────────────────────────────────────────────────────
 
@@ -197,7 +198,10 @@ export function createApiClient(): AxiosInstance {
           isRefreshing = false;
         }
       }
-
+      // Handle 403 / access suspended
+      if (error.response?.status === 403 && accessDeniedHandler) {
+        accessDeniedHandler();
+      }
       return Promise.reject(error);
     },
   );
@@ -218,4 +222,8 @@ export function getApiClient(): AxiosInstance {
  */
 export function setUnauthorizedHandler(handler: () => void): void {
   unauthorizedHandler = handler;
+}
+
+export function setAccessDeniedHandler(handler: () => void): void {
+  accessDeniedHandler = handler;
 }

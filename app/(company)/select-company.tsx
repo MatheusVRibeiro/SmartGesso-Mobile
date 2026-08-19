@@ -13,6 +13,7 @@ import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../src/components/ui/AppCard';
 import { LoadingState } from '../../src/components/ui/LoadingState';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { queryClient } from '../../src/lib/queryClient';
 import { ErrorState } from '../../src/components/ui/ErrorState';
 import { StatusBadge } from '../../src/components/ui/StatusBadge';
 import { AppButton } from '../../src/components/ui/AppButton';
@@ -81,6 +82,9 @@ export default function SelectCompanyScreen() {
           setActiveCompany(selectedCompany);
         }
         
+        // V3 §59: limpar cache do tenant anterior ao trocar de empresa.
+        queryClient.clear();
+
         // Navigate to main app
         router.replace('/(app)/(tabs)');
       } catch (err: any) {

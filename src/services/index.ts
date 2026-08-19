@@ -3,6 +3,7 @@ export {
   getApiClient,
   toApiError,
   setUnauthorizedHandler,
+  setAccessDeniedHandler,
 } from './api/client';
 
 export { authService } from './api/auth';

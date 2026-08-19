@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { queryClient } from '../src/lib/queryClient';
-import { setUnauthorizedHandler } from '../src/services/api/client';
+import { setUnauthorizedHandler, setAccessDeniedHandler } from '../src/services/api/client';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
@@ -17,6 +17,8 @@ export default function RootLayout() {
   const clearSession = useSessionStore((s) => s.clearSession);
   const { isOffline } = useNetworkStatus();
 
+  const setAccessStatus = useSessionStore((s) => s.setAccessStatus);
+
   // Quando o refresh token falha (401), limpa a sessão e o cache.
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -24,6 +26,14 @@ export default function RootLayout() {
       clearSession();
     });
   }, [clearSession]);
+
+  // V3 §61: quando a API retorna 403 (acesso suspenso/negado), redireciona.
+  useEffect(() => {
+    setAccessDeniedHandler(() => {
+      setAccessStatus('COMPANY_ACCESS_SUSPENDED');
+      router.replace('/(company)/access-suspended');
+    });
+  }, [router, setAccessStatus]);
 
   // Redireciona para login quando a sessão é limpa (token expirado/inválido).
   useEffect(() => {
