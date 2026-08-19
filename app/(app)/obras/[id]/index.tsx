@@ -356,6 +356,15 @@ export default function EditarObraScreen() {
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>Editar obra</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Excluir obra"
+            onPress={() => setConfirmDeleteVisible(true)}
+            hitSlop={8}
+            style={styles.headerAction}
+          >
+            <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+          </Pressable>
         </View>
 
         <AppButton
@@ -604,16 +613,6 @@ export default function EditarObraScreen() {
               accessibilityLabel="Salvar alterações"
               style={styles.submitButton}
             />
-
-            <AppButton
-              title="Excluir obra"
-              size="lg"
-              variant="danger"
-              loading={deleteMutation.isPending}
-              onPress={() => setConfirmDeleteVisible(true)}
-              accessibilityLabel="Excluir obra"
-              style={styles.deleteButton}
-            />
           </>
         )}
       </ScreenContainer>
@@ -672,7 +671,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: -spacing.sm,
   },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
@@ -746,10 +752,6 @@ const styles = StyleSheet.create({
   },
   measurementsButton: {
     marginBottom: spacing.lg,
-  },
-  deleteButton: {
-    marginTop: spacing.md,
-    marginBottom: spacing['3xl'],
   },
   modalSafe: {
     flex: 1,

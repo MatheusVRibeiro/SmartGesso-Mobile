@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
+import { AppCard } from '../../src/components/ui/AppCard';
 import { AppButton } from '../../src/components/ui/AppButton';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
 import { queryClient } from '../../src/lib/queryClient';
-import { colors, spacing, typography, radius } from '../../src/theme';
+import { colors, spacing, typography, radius, sizes } from '../../src/theme';
 
 export default function AccessSuspendedScreen() {
   const router = useRouter();
@@ -33,50 +34,57 @@ export default function AccessSuspendedScreen() {
   return (
     <ScreenContainer>
       <View style={styles.container}>
-        <View style={styles.iconContainer}>
-          <Ionicons
-            name="alert-circle"
-            size={80}
-            color={colors.danger}
-            accessibilityElementsHidden
-          />
-        </View>
+        <AppCard
+          padding={spacing['2xl']}
+          radius={radius.xl}
+          shadow="medium"
+          style={styles.card}
+        >
+          <View style={styles.iconCircle}>
+            <Ionicons
+              name="alert-circle"
+              size={sizes.icon.xl}
+              color={colors.danger}
+              accessibilityElementsHidden
+            />
+          </View>
 
-        <Text style={styles.title}>Acesso suspenso</Text>
-        
-        <Text style={styles.description}>
-          Seu acesso à empresa{' '}
-          <Text style={styles.companyName}>
-            {activeCompany?.company?.tradeName || 'selecionada'}
-          </Text>{' '}
-          está suspenso. Entre em contato com o suporte para mais informações.
-        </Text>
+          <Text style={styles.title}>Acesso suspenso</Text>
 
-        <View style={styles.buttonsContainer}>
-          <AppButton
-            title="Trocar empresa"
-            variant="outline"
-            onPress={handleSwitchCompany}
-            style={styles.button}
-            accessibilityLabel="Trocar para outra empresa"
-          />
-          
-          <AppButton
-            title="Suporte"
-            variant="secondary"
-            onPress={handleSupport}
-            style={styles.button}
-            accessibilityLabel="Entrar em contato com o suporte"
-          />
-          
-          <AppButton
-            title="Sair"
-            variant="ghost"
-            onPress={handleLogout}
-            style={styles.button}
-            accessibilityLabel="Sair da conta"
-          />
-        </View>
+          <Text style={styles.description}>
+            Seu acesso à empresa{' '}
+            <Text style={styles.companyName}>
+              {activeCompany?.company?.tradeName || 'selecionada'}
+            </Text>{' '}
+            está suspenso. Entre em contato com o suporte para mais informações.
+          </Text>
+
+          <View style={styles.buttonsContainer}>
+            <AppButton
+              title="Trocar empresa"
+              variant="outline"
+              onPress={handleSwitchCompany}
+              style={styles.button}
+              accessibilityLabel="Trocar para outra empresa"
+            />
+
+            <AppButton
+              title="Suporte"
+              variant="secondary"
+              onPress={handleSupport}
+              style={styles.button}
+              accessibilityLabel="Entrar em contato com o suporte"
+            />
+
+            <AppButton
+              title="Sair"
+              variant="ghost"
+              onPress={handleLogout}
+              style={styles.button}
+              accessibilityLabel="Sair da conta"
+            />
+          </View>
+        </AppCard>
       </View>
     </ScreenContainer>
   );
@@ -89,14 +97,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
   },
-  iconContainer: {
+  card: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.xl,
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
     textAlign: 'center',
+    letterSpacing: -0.5,
     marginBottom: spacing.md,
   },
   description: {

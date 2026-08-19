@@ -31,11 +31,6 @@ const QUOTE_STATUS_BADGE: Record<
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
 };
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('pt-BR');
-}
-
 // ─── Card de orçamento ─────────────────────────────────────────────────────
 
 interface QuoteCardProps {
@@ -46,7 +41,6 @@ interface QuoteCardProps {
     status: QuoteStatus;
     total: number;
     client?: { id: string; name: string };
-    createdAt: string;
   };
   onPress: () => void;
 }
@@ -55,7 +49,7 @@ function QuoteCard({ quote, onPress }: QuoteCardProps) {
   const badge = QUOTE_STATUS_BADGE[quote.status];
 
   return (
-    <AppCard shadow="light" radius={radius.md} style={styles.card}>
+    <AppCard shadow="light" radius={radius.lg} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver orçamento ${quote.quoteNumber} versão ${quote.version}`}
@@ -66,40 +60,27 @@ function QuoteCard({ quote, onPress }: QuoteCardProps) {
         ]}
       >
         <View style={styles.cardContent}>
-          <View style={styles.cardLeft}>
-            <View style={styles.cardIcon}>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                #{quote.quoteNumber} v{quote.version}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
+
+            <View style={styles.cardRow}>
               <Ionicons
-                name="document-text-outline"
-                size={sizes.icon.md}
-                color={colors.primary}
+                name="person-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
                 accessibilityElementsHidden
               />
+              <Text style={styles.cardText} numberOfLines={1}>
+                {quote.client?.name ?? 'Cliente não informado'}
+              </Text>
             </View>
-            <View style={styles.cardInfo}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  #{quote.quoteNumber} v{quote.version}
-                </Text>
-                <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-              </View>
 
-              <View style={styles.cardRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.cardText} numberOfLines={1}>
-                  {quote.client?.name ?? 'Cliente não informado'}
-                </Text>
-              </View>
-
-              <View style={styles.cardFooter}>
-                <Text style={styles.cardDate}>{formatDate(quote.createdAt)}</Text>
-                <Text style={styles.cardTotal}>{formatCurrency(quote.total)}</Text>
-              </View>
-            </View>
+            <Text style={styles.cardTotal}>{formatCurrency(quote.total)}</Text>
           </View>
           <Ionicons
             name="chevron-forward"
@@ -190,7 +171,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -216,20 +197,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  cardLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cardInfo: {
     flex: 1,
@@ -257,19 +224,10 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  cardDate: {
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
-  },
   cardTotal: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
     color: colors.primary,
+    marginTop: spacing.xs,
   },
 });

@@ -48,6 +48,8 @@ export const colors = {
   inputBackground: '#FFFFFF',
   inputBorder: '#D8DBE2',
   inputFocus: '#4338CA',
+  /** Anel de foco de inputs (primary a 12%). */
+  focusRing: 'rgba(67, 56, 202, 0.12)',
 
   // Estados desabilitados
   disabled: '#C8CBD4',

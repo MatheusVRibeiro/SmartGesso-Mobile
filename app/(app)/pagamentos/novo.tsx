@@ -312,7 +312,10 @@ export default function NovoPagamentoScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Novo pagamento</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Novo pagamento</Text>
+            <Text style={styles.subtitle}>Registre um pagamento recebido do cliente.</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Cliente</Text>
@@ -498,6 +501,14 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerText: {
+    flex: 1,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,

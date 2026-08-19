@@ -3,8 +3,16 @@ import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScreenContainer, AppInput, AppButton, AppSnackbar } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  ScreenContainer,
+  AppCard,
+  AppInput,
+  AppButton,
+  AppSnackbar,
+} from '../../src/components/ui';
+import { BackButton } from '../../src/components/navigation/BackButton';
+import { colors, spacing, typography, radius, sizes } from '../../src/theme';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../src/validation/schemas';
 import { authService } from '../../src/services/api/auth';
 
@@ -58,15 +66,24 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenContainer scroll padding>
+      <ScreenContainer scroll padding keyboard>
+        <View style={styles.topBar}>
+          <BackButton />
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Recuperar senha</Text>
           <Text style={styles.subtitle}>
-            Informe seu e-mail para receber o link de recuperação
+            Enviaremos um link para seu e-mail
           </Text>
         </View>
 
-        <View style={styles.form}>
+        <AppCard
+          padding={spacing['2xl']}
+          radius={radius.xl}
+          shadow="medium"
+          style={styles.card}
+        >
           {!success ? (
             <>
               <Controller
@@ -90,6 +107,7 @@ export default function ForgotPasswordScreen() {
 
               <AppButton
                 title="Enviar link"
+                size="lg"
                 loading={loading}
                 disabled={loading}
                 accessibilityLabel="Enviar link de recuperação"
@@ -99,7 +117,14 @@ export default function ForgotPasswordScreen() {
             </>
           ) : (
             <View style={styles.successContainer}>
-              <Text style={styles.successIcon}>✉️</Text>
+              <View style={styles.successCircle}>
+                <Ionicons
+                  name="mail-outline"
+                  size={sizes.icon.xl}
+                  color={colors.success}
+                  accessibilityElementsHidden
+                />
+              </View>
               <Text style={styles.successText}>
                 Se o e-mail estiver cadastrado, você receberá um link de recuperação.
               </Text>
@@ -111,10 +136,11 @@ export default function ForgotPasswordScreen() {
             accessibilityRole="button"
             accessibilityLabel="Voltar para o login"
             style={styles.backButton}
+            hitSlop={8}
           >
             <Text style={styles.backText}>Voltar para o login</Text>
           </Pressable>
-        </View>
+        </AppCard>
       </ScreenContainer>
 
       <AppSnackbar
@@ -128,31 +154,38 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    paddingTop: spacing.md,
+  },
   header: {
-    marginTop: spacing['4xl'],
+    marginTop: spacing['3xl'],
     marginBottom: spacing['3xl'],
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['3xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
     lineHeight: 24,
   },
-  form: {
-    flex: 1,
+  card: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
   },
   submitButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   backButton: {
     alignItems: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    minHeight: sizes.touchTarget,
   },
   backText: {
     fontSize: typography.sizes.sm,
@@ -163,8 +196,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing['2xl'],
   },
-  successIcon: {
-    fontSize: 48,
+  successCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.successSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.lg,
   },
   successText: {

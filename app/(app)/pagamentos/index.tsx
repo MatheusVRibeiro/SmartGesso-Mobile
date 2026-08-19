@@ -1,10 +1,17 @@
-import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { AppInput } from '../../../src/components/ui/AppInput';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
@@ -14,7 +21,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
 import type { Payment, PaymentMethod, PaymentStatus } from '../../../src/types/finance';
 
@@ -70,7 +77,7 @@ function PaymentCard({ payment, onPress }: PaymentCardProps) {
   const badge = PAYMENT_STATUS_BADGE[payment.status];
 
   return (
-    <AppCard shadow="light" style={styles.card}>
+    <AppCard shadow="light" radius={radius.md} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver pagamento de ${payment.client?.name ?? 'cliente'}`}
@@ -80,30 +87,46 @@ function PaymentCard({ payment, onPress }: PaymentCardProps) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {payment.client?.name ?? 'Cliente não informado'}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
-
-        <Text style={styles.cardAmount}>{formatCurrency(payment.amount)}</Text>
-
-        <View style={styles.cardFooter}>
-          <View style={styles.cardRow}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
             <Ionicons
               name="wallet-outline"
-              size={sizes.icon.sm}
-              color={colors.textSecondary}
+              size={sizes.icon.md}
+              color={colors.primary}
               accessibilityElementsHidden
             />
-            <Text style={styles.cardText} numberOfLines={1}>
-              {PAYMENT_METHOD_LABELS[payment.paymentMethod]}
-            </Text>
           </View>
-          <Text style={styles.cardDate}>
-            {formatDate(payment.paymentDate)}
-          </Text>
+
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {payment.client?.name ?? 'Cliente não informado'}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
+
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardText} numberOfLines={1}>
+                {PAYMENT_METHOD_LABELS[payment.paymentMethod]}
+                {payment.paymentDate ? ` · ${formatDate(payment.paymentDate)}` : ''}
+              </Text>
+            </View>
+
+            <Text style={styles.cardAmount}>{formatCurrency(payment.amount)}</Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
+            accessibilityElementsHidden
+          />
         </View>
       </Pressable>
     </AppCard>
@@ -115,6 +138,7 @@ function PaymentCard({ payment, onPress }: PaymentCardProps) {
 export default function PagamentosScreen() {
   const router = useRouter();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+  const [search, setSearch] = useState('');
 
   const {
     data: payments,
@@ -130,18 +154,54 @@ export default function PagamentosScreen() {
     enabled: Boolean(companyId),
   });
 
+  // Busca client-side por cliente, método ou status (a API não expõe ?search=).
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return payments ?? [];
+    return (payments ?? []).filter((payment) => {
+      const clientName = payment.client?.name?.toLowerCase() ?? '';
+      const methodLabel = PAYMENT_METHOD_LABELS[payment.paymentMethod].toLowerCase();
+      const statusLabel = PAYMENT_STATUS_BADGE[payment.status].label.toLowerCase();
+      return (
+        clientName.includes(term) ||
+        methodLabel.includes(term) ||
+        statusLabel.includes(term)
+      );
+    });
+  }, [payments, search]);
+
   return (
     <ScreenContainer padding={false} keyboard={false}>
       <Stack.Screen options={{ title: 'Pagamentos', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Pagamentos</Text>
-        <AppButton
-          title="+"
-          size="md"
-          accessibilityLabel="Novo pagamento"
+        <TouchableOpacity
           onPress={() => router.push('/pagamentos/novo')}
+          accessibilityRole="button"
+          accessibilityLabel="Novo pagamento"
           style={styles.addButton}
+        >
+          <Ionicons name="add" size={sizes.icon.lg} color={colors.white} accessibilityElementsHidden />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchWrapper}>
+        <AppInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar por cliente, método ou status"
+          accessibilityLabel="Buscar pagamentos"
+          autoCapitalize="none"
+          autoCorrect={false}
+          leftAccessory={
+            <Ionicons
+              name="search"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          }
         />
       </View>
 
@@ -149,17 +209,25 @@ export default function PagamentosScreen() {
         <LoadingState text="Carregando pagamentos..." />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
-      ) : payments && payments.length === 0 ? (
-        <EmptyState
-          title="Nenhum pagamento"
-          description="Comece registrando um pagamento recebido"
-          icon="card-outline"
-          actionLabel="Novo pagamento"
-          onAction={() => router.push('/pagamentos/novo')}
-        />
+      ) : filtered.length === 0 ? (
+        search.trim() ? (
+          <EmptyState
+            title="Nenhum pagamento encontrado"
+            description={`Nenhum resultado para "${search.trim()}". Tente outro termo.`}
+            icon="search-outline"
+          />
+        ) : (
+          <EmptyState
+            title="Nenhum pagamento"
+            description="Comece registrando um pagamento recebido"
+            icon="card-outline"
+            actionLabel="Novo pagamento"
+            onAction={() => router.push('/pagamentos/novo')}
+          />
+        )
       ) : (
         <FlatList
-          data={payments ?? []}
+          data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <PaymentCard
@@ -193,8 +261,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   addButton: {
-    minWidth: sizes.touchTarget,
-    paddingHorizontal: 0,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchWrapper: {
+    paddingHorizontal: sizes.screenPadding,
   },
   listContent: {
     padding: sizes.screenPadding,
@@ -205,10 +280,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   cardPressable: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -222,18 +314,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  cardAmount: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-    marginTop: spacing.xs,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -244,8 +324,9 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
-  cardDate: {
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
+  cardAmount: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.success,
   },
 });

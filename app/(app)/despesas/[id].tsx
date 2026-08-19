@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
@@ -109,6 +108,17 @@ export default function DetalheDespesaScreen() {
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>Detalhe da despesa</Text>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Excluir despesa"
+              onPress={() => setConfirmDeleteVisible(true)}
+              hitSlop={8}
+              style={styles.headerAction}
+            >
+              <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+            </Pressable>
+          </View>
         </View>
 
         {expenseQuery.isLoading ? (
@@ -122,42 +132,36 @@ export default function DetalheDespesaScreen() {
           <>
             <AppCard shadow="light" style={styles.expenseCard}>
               <View style={styles.expenseHeader}>
-                <Text style={styles.expenseDescription} numberOfLines={2}>
-                  {expense.description}
-                </Text>
+                <View style={styles.expenseHeaderLeft}>
+                  <Text style={styles.expenseLabel}>Descrição</Text>
+                  <Text style={styles.expenseDescription} numberOfLines={2}>
+                    {expense.description}
+                  </Text>
+                </View>
                 {badge && (
                   <StatusBadge status={badge.variant} label={badge.label} size="sm" />
                 )}
               </View>
 
-              <Text style={styles.expenseAmount}>
-                {formatCurrency(expense.amount)}
-              </Text>
+              <View style={styles.divider} />
 
-              <View style={styles.expenseDivider} />
-
-              <View style={styles.expenseRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.expenseText}>
-                  Data: {formatDate(expense.expenseDate)}
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Valor da despesa</Text>
+                <Text style={styles.expenseAmount}>
+                  {formatCurrency(expense.amount)}
                 </Text>
               </View>
 
-              <View style={styles.expenseRow}>
-                <Ionicons
-                  name="time-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.expenseText}>
-                  Registrada em: {formatDate(expense.createdAt)}
-                </Text>
+              <View style={styles.divider} />
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Data</Text>
+                <Text style={styles.fieldValue}>{formatDate(expense.expenseDate)}</Text>
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Registrada em</Text>
+                <Text style={styles.fieldValue}>{formatDate(expense.createdAt)}</Text>
               </View>
             </AppCard>
 
@@ -169,17 +173,6 @@ export default function DetalheDespesaScreen() {
                 </AppCard>
               </>
             ) : null}
-
-            <View style={styles.actions}>
-              <AppButton
-                title="Excluir"
-                variant="danger"
-                size="md"
-                accessibilityLabel="Excluir despesa"
-                onPress={() => setConfirmDeleteVisible(true)}
-                style={styles.actionButton}
-              />
-            </View>
           </>
         ) : null}
       </ScreenContainer>
@@ -225,9 +218,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   expenseCard: {
     padding: spacing.lg,
@@ -237,36 +241,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  expenseHeaderLeft: {
+    flex: 1,
+  },
+  expenseLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   expenseDescription: {
-    flex: 1,
     fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.lg,
+  },
+  field: {
+    marginBottom: spacing.md,
+  },
+  fieldLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  fieldValue: {
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.text,
   },
   expenseAmount: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-    marginBottom: spacing.md,
-  },
-  expenseDivider: {
-    height: 1,
-    backgroundColor: colors.divider,
-    marginBottom: spacing.md,
-  },
-  expenseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  expenseText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -283,13 +294,5 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
     lineHeight: typography.sizes.sm * 1.5,
-  },
-  actions: {
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    marginBottom: spacing['3xl'],
-  },
-  actionButton: {
-    marginBottom: spacing.xs,
   },
 });

@@ -105,7 +105,10 @@ export default function NovaDespesaScreen() {
           >
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
-          <Text style={styles.title}>Nova despesa</Text>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Nova despesa</Text>
+            <Text style={styles.subtitle}>Registre uma despesa da sua empresa.</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Categoria</Text>
@@ -248,6 +251,14 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
+  },
+  headerText: {
+    flex: 1,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,

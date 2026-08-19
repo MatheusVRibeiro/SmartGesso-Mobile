@@ -175,6 +175,14 @@ export default function ObrasListScreen() {
           placeholder="Buscar obras..."
           accessibilityLabel="Buscar obras"
           returnKeyType="search"
+          leftAccessory={
+            <Ionicons
+              name="search"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          }
         />
       </View>
 
@@ -266,10 +274,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary + '15',
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

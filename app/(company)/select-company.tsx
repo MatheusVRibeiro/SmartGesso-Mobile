@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../src/components/ui/ScreenContainer';
+import { AppCard } from '../../src/components/ui/AppCard';
 import { LoadingState } from '../../src/components/ui/LoadingState';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ErrorState } from '../../src/components/ui/ErrorState';
@@ -18,7 +19,7 @@ import { AppButton } from '../../src/components/ui/AppButton';
 import { authService } from '../../src/services/api/auth';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
-import { colors, spacing, typography, radius } from '../../src/theme';
+import { colors, spacing, typography, radius, sizes } from '../../src/theme';
 import type { CompanyResult, CompanyMemberStatus } from '../../src/types/company';
 
 export default function SelectCompanyScreen() {
@@ -129,10 +130,9 @@ export default function SelectCompanyScreen() {
 
       return (
         <Pressable
-          style={[
-            styles.card,
-            isSelected && styles.cardSelected,
-            isBlocked && styles.cardBlocked,
+          style={({ pressed }) => [
+            styles.cardPressable,
+            pressed && canSelect && styles.cardPressed,
           ]}
           onPress={() => canSelect && handleSelectCompany(item.company.id)}
           disabled={!canSelect}
@@ -140,44 +140,66 @@ export default function SelectCompanyScreen() {
           accessibilityLabel={`Selecionar empresa ${item.company.tradeName}`}
           testID={`company-card-${item.company.id}`}
         >
-          <View style={styles.cardHeader}>
-            <View style={styles.companyInfo}>
-              <Text style={styles.companyName} numberOfLines={1}>
-                {item.company.tradeName}
-              </Text>
-              <Text style={styles.companyDocument}>
-                {item.company.document}
-              </Text>
+          <AppCard
+            padding={spacing.lg}
+            radius={radius.lg}
+            shadow="light"
+            style={StyleSheet.flatten([
+              styles.card,
+              isSelected && styles.cardSelected,
+              isBlocked && styles.cardBlocked,
+            ])}
+          >
+            <View style={styles.cardRow}>
+              <View style={styles.cardIcon}>
+                <Ionicons
+                  name="business-outline"
+                  size={sizes.icon.lg}
+                  color={colors.primary}
+                  accessibilityElementsHidden
+                />
+              </View>
+
+              <View style={styles.cardInfo}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.companyName} numberOfLines={1}>
+                    {item.company.tradeName}
+                  </Text>
+                  <StatusBadge
+                    status={getStatusVariant(item.member.status)}
+                    label={getStatusLabel(item.member.status)}
+                    size="sm"
+                  />
+                </View>
+
+                <Text style={styles.companyDocument}>
+                  {item.company.document}
+                </Text>
+
+                {item.member.isOwner && (
+                  <View style={styles.ownerBadge}>
+                    <Ionicons name="star" size={12} color={colors.warning} />
+                    <Text style={styles.ownerText}>Proprietário</Text>
+                  </View>
+                )}
+              </View>
+
+              {canSelect && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={sizes.icon.md}
+                  color={colors.textLight}
+                  accessibilityElementsHidden
+                />
+              )}
             </View>
-            <StatusBadge
-              status={getStatusVariant(item.member.status)}
-              label={getStatusLabel(item.member.status)}
-              size="sm"
-            />
-          </View>
-          
-          {item.member.isOwner && (
-            <View style={styles.ownerBadge}>
-              <Ionicons name="star" size={12} color={colors.warning} />
-              <Text style={styles.ownerText}>Proprietário</Text>
-            </View>
-          )}
-          
-          {canSelect && (
-            <View style={styles.selectIndicator}>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </View>
-          )}
-          
-          {isSelected && (
-            <View style={styles.loadingOverlay}>
-              <LoadingState size="small" text="Selecionando..." />
-            </View>
-          )}
+
+            {isSelected && (
+              <View style={styles.loadingOverlay}>
+                <LoadingState size="small" text="Selecionando..." />
+              </View>
+            )}
+          </AppCard>
         </Pressable>
       );
     },
@@ -208,7 +230,7 @@ export default function SelectCompanyScreen() {
   return (
     <ScreenContainer padding={false}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Selecionar empresa</Text>
+        <Text style={styles.headerTitle}>Selecione sua empresa</Text>
         <Text style={styles.headerSubtitle}>
           Escolha a empresa que deseja acessar
         </Text>
@@ -260,13 +282,13 @@ export default function SelectCompanyScreen() {
 const styles = StyleSheet.create({
   header: {
     padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: spacing.md,
   },
   headerTitle: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: typography.sizes.sm,
@@ -276,32 +298,48 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.md,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+  cardPressable: {
+    minHeight: sizes.touchTarget,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+  },
+  cardPressed: {
+    opacity: 0.92,
+  },
+  card: {
     position: 'relative',
   },
   cardSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primarySoft,
   },
   cardBlocked: {
     opacity: 0.6,
   },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   cardHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  companyInfo: {
-    flex: 1,
-    marginRight: spacing.md,
+    gap: spacing.sm,
   },
   companyName: {
+    flex: 1,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.text,
@@ -309,24 +347,16 @@ const styles = StyleSheet.create({
   companyDocument: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
   },
   ownerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
   },
   ownerText: {
     fontSize: typography.sizes.xs,
     color: colors.warning,
     marginLeft: spacing.xs,
     fontWeight: typography.weights.medium,
-  },
-  selectIndicator: {
-    position: 'absolute',
-    right: spacing.lg,
-    top: '50%',
-    marginTop: -10,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -340,7 +370,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorBanner: {
-    backgroundColor: '#FEE2E2', // Light red background
+    backgroundColor: colors.dangerSoft,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,

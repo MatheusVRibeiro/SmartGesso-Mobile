@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { colors, sizes, spacing, typography } from '../../theme';
+import { colors, radius, sizes, spacing, typography } from '../../theme';
 import AppButton from './AppButton';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -22,7 +22,7 @@ function EmptyState({
   title,
   description,
   icon = 'file-tray-outline',
-  iconColor = colors.textLight,
+  iconColor = colors.primary,
   actionLabel,
   onAction,
   style,
@@ -30,12 +30,14 @@ function EmptyState({
 }: EmptyStateProps) {
   return (
     <View testID={testID} style={[styles.container, style]}>
-      <Ionicons
-        name={icon}
-        size={sizes.icon.xl * 2}
-        color={iconColor}
-        accessibilityElementsHidden
-      />
+      <View style={styles.iconCircle}>
+        <Ionicons
+          name={icon}
+          size={sizes.icon.xl}
+          color={iconColor}
+          accessibilityElementsHidden
+        />
+      </View>
       <Text style={styles.title}>{title}</Text>
       {description ? (
         <Text style={styles.description}>{description}</Text>
@@ -62,16 +64,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing['3xl'],
   },
+  iconCircle: {
+    width: sizes.iconCircle,
+    height: sizes.iconCircle,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     marginTop: spacing.lg,
     fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
+    fontWeight: typography.weights.bold,
     color: colors.text,
     textAlign: 'center',
   },
   description: {
     marginTop: spacing.sm,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
     color: colors.textSecondary,
     textAlign: 'center',
   },

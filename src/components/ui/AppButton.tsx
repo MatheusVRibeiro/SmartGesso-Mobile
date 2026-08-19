@@ -6,7 +6,7 @@ import {
   Text,
   ViewStyle,
 } from 'react-native';
-import { colors, radius, sizes, typography } from '../../theme';
+import { borders, colors, radius, sizes, typography } from '../../theme';
 
 export type AppButtonVariant =
   | 'primary'
@@ -31,10 +31,14 @@ export interface AppButtonProps {
 
 const VARIANT_STYLES: Record<AppButtonVariant, ViewStyle> = {
   primary: { backgroundColor: colors.primary },
-  secondary: { backgroundColor: colors.secondary },
+  secondary: {
+    backgroundColor: colors.transparent,
+    borderWidth: borders.width.thin,
+    borderColor: colors.inputBorder,
+  },
   outline: {
     backgroundColor: colors.transparent,
-    borderWidth: 1,
+    borderWidth: borders.width.thin,
     borderColor: colors.primary,
   },
   danger: { backgroundColor: colors.danger },
@@ -43,7 +47,7 @@ const VARIANT_STYLES: Record<AppButtonVariant, ViewStyle> = {
 
 const TEXT_COLORS: Record<AppButtonVariant, string> = {
   primary: colors.textOnPrimary,
-  secondary: colors.textOnSecondary,
+  secondary: colors.text,
   outline: colors.primary,
   danger: colors.textOnPrimary,
   ghost: colors.primary,
@@ -89,6 +93,7 @@ function AppButton({
         SIZE_STYLES[size],
         isDisabled && styles.disabled,
         pressed && !isDisabled && styles.pressed,
+        pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
         style,
       ]}
     >
@@ -117,13 +122,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
-    minHeight: sizes.touchTarget,
   },
   disabled: {
-    backgroundColor: colors.disabled,
+    backgroundColor: colors.disabledBackground,
   },
   pressed: {
     opacity: 0.85,
+  },
+  pressedPrimary: {
+    backgroundColor: colors.primaryDark,
   },
   label: {
     fontWeight: typography.weights.semibold,

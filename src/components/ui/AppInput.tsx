@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
   KeyboardTypeOptions,
   ReturnKeyTypeOptions,
@@ -28,6 +28,8 @@ export interface AppInputProps {
   returnKeyType?: ReturnKeyTypeOptions;
   onSubmitEditing?: () => void;
   accessibilityLabel?: string;
+  /** Elemento renderizado à esquerda do campo (ex.: ícone de busca). */
+  leftAccessory?: React.ReactNode;
   /** Elemento renderizado à direita do campo (ex.: toggle de senha). */
   rightAccessory?: React.ReactNode;
   style?: ViewStyle;
@@ -53,6 +55,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
     returnKeyType,
     onSubmitEditing,
     accessibilityLabel,
+    leftAccessory,
     rightAccessory,
     style,
     inputStyle,
@@ -60,6 +63,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
   },
   ref
 ) {
+  const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
 
   return (
@@ -72,13 +76,18 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
       ) : null}
 
       <View style={styles.inputWrapper}>
+        {leftAccessory != null ? (
+          <View style={styles.leftAccessory}>{leftAccessory}</View>
+        ) : null}
         <TextInput
           ref={ref}
           testID={testID}
           style={[
             styles.input,
+            focused && !hasError && styles.inputFocused,
             hasError && styles.inputError,
             editable === false && styles.inputDisabled,
+            leftAccessory != null && styles.inputWithLeftAccessory,
             rightAccessory != null && styles.inputWithAccessory,
             inputStyle,
           ]}
@@ -94,6 +103,8 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
           maxLength={maxLength}
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           accessibilityLabel={accessibilityLabel ?? label}
           accessibilityState={{ disabled: !editable }}
         />
@@ -120,8 +131,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   required: {
     color: colors.danger,
@@ -131,7 +142,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   input: {
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.surface,
     borderWidth: borders.width.thin,
     borderColor: colors.inputBorder,
     borderRadius: radius.md,
@@ -140,6 +151,10 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     color: colors.text,
   },
+  inputFocused: {
+    borderColor: colors.inputFocus,
+    boxShadow: `0px 0px 0px 3px ${colors.focusRing}`,
+  },
   inputError: {
     borderColor: colors.danger,
     borderWidth: borders.width.regular,
@@ -147,6 +162,16 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: colors.disabledBackground,
     color: colors.disabledText,
+  },
+  inputWithLeftAccessory: {
+    paddingLeft: 48,
+  },
+  leftAccessory: {
+    position: 'absolute',
+    left: spacing.sm,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   inputWithAccessory: {
     paddingRight: 48,

@@ -8,10 +8,12 @@ export const sizes = {
   inputHeight: 48,
   /** Alturas de botão por tamanho. */
   buttonHeight: {
-    sm: 36,
-    md: 44,
+    sm: 40,
+    md: 48,
     lg: 52,
   },
+  /** Diâmetro do círculo de ícone de estados (EmptyState/ErrorState). */
+  iconCircle: 56,
   /** Tamanhos de ícone. */
   icon: {
     sm: 16,

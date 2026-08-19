@@ -3,8 +3,15 @@ import { Text, StyleSheet, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScreenContainer, PasswordInput, AppButton, AppSnackbar } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
+import {
+  ScreenContainer,
+  AppCard,
+  PasswordInput,
+  AppButton,
+  AppSnackbar,
+} from '../../src/components/ui';
+import { BackButton } from '../../src/components/navigation/BackButton';
+import { colors, spacing, typography, radius, sizes } from '../../src/theme';
 import { resetPasswordSchema, type ResetPasswordFormData } from '../../src/validation/schemas';
 import { authService } from '../../src/services/api/auth';
 
@@ -66,14 +73,19 @@ export default function ResetPasswordScreen() {
     return (
       <ScreenContainer scroll padding>
         <View style={styles.errorContainer}>
+          <View style={styles.errorCircle}>
+            <Text style={styles.errorCircleText}>!</Text>
+          </View>
           <Text style={styles.errorTitle}>Token inválido</Text>
           <Text style={styles.errorSubtitle}>
             O link de redefinição de senha é inválido ou expirou.
           </Text>
           <AppButton
             title="Voltar para o login"
+            size="lg"
             onPress={() => router.replace('/(auth)/login')}
             accessibilityLabel="Voltar para o login"
+            style={styles.errorButton}
           />
         </View>
       </ScreenContainer>
@@ -82,13 +94,22 @@ export default function ResetPasswordScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenContainer scroll padding>
+      <ScreenContainer scroll padding keyboard>
+        <View style={styles.topBar}>
+          <BackButton />
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Nova senha</Text>
           <Text style={styles.subtitle}>Defina uma nova senha para sua conta</Text>
         </View>
 
-        <View style={styles.form}>
+        <AppCard
+          padding={spacing['2xl']}
+          radius={radius.xl}
+          shadow="medium"
+          style={styles.card}
+        >
           <Controller
             control={control}
             name="password"
@@ -122,14 +143,15 @@ export default function ResetPasswordScreen() {
           />
 
           <AppButton
-            title="Redefinir"
+            title="Salvar nova senha"
+            size="lg"
             loading={loading}
             disabled={loading}
-            accessibilityLabel="Redefinir senha"
+            accessibilityLabel="Salvar nova senha"
             onPress={handleSubmit(onSubmit)}
             style={styles.submitButton}
           />
-        </View>
+        </AppCard>
       </ScreenContainer>
 
       <AppSnackbar
@@ -143,26 +165,32 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    paddingTop: spacing.md,
+  },
   header: {
-    marginTop: spacing['4xl'],
+    marginTop: spacing['3xl'],
     marginBottom: spacing['3xl'],
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['3xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
-    marginBottom: spacing.sm,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
     lineHeight: 24,
   },
-  form: {
-    flex: 1,
+  card: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
   },
   submitButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   errorContainer: {
     flex: 1,
@@ -170,10 +198,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing['3xl'],
   },
+  errorCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  errorCircleText: {
+    fontSize: typography.sizes['3xl'],
+    fontWeight: typography.weights.bold,
+    color: colors.danger,
+  },
   errorTitle: {
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    color: colors.danger,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   errorSubtitle: {
@@ -182,5 +224,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing['2xl'],
     lineHeight: 24,
+  },
+  errorButton: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
   },
 });

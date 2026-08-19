@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -155,8 +156,19 @@ export default function ClienteDetailScreen() {
       <Stack.Screen options={{ title: 'Cliente' }} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Editar cliente</Text>
-        <Text style={styles.subtitle}>Atualize os dados do cliente.</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Editar cliente</Text>
+          <Text style={styles.subtitle}>Atualize os dados do cliente.</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Excluir cliente"
+          onPress={() => setDeleteDialogVisible(true)}
+          hitSlop={8}
+          style={styles.headerAction}
+        >
+          <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+        </Pressable>
       </View>
 
       <Controller
@@ -300,16 +312,6 @@ export default function ClienteDetailScreen() {
         style={styles.submitButton}
       />
 
-      <AppButton
-        title="Excluir cliente"
-        variant="danger"
-        size="lg"
-        onPress={() => setDeleteDialogVisible(true)}
-        disabled={deleteMutation.isPending}
-        accessibilityLabel="Excluir cliente"
-        style={styles.deleteButton}
-      />
-
       <ConfirmDialog
         visible={deleteDialogVisible}
         title="Excluir cliente"
@@ -334,7 +336,20 @@ export default function ClienteDetailScreen() {
 
 const styles = StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.xl,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: typography.sizes.xl,
@@ -395,8 +410,5 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.sm,
-  },
-  deleteButton: {
-    marginTop: spacing.md,
   },
 });

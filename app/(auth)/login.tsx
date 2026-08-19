@@ -3,8 +3,16 @@ import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ScreenContainer, AppInput, PasswordInput, AppButton, AppSnackbar } from '../../src/components/ui';
-import { colors, spacing, typography, radius } from '../../src/theme';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  ScreenContainer,
+  AppCard,
+  AppInput,
+  PasswordInput,
+  AppButton,
+  AppSnackbar,
+} from '../../src/components/ui';
+import { colors, spacing, typography, radius, sizes } from '../../src/theme';
 import { loginSchema, type LoginFormData } from '../../src/validation/schemas';
 import { authService } from '../../src/services/api/auth';
 import { SecureTokenStorage } from '../../src/services/auth/SecureTokenStorage';
@@ -86,13 +94,26 @@ export default function LoginScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenContainer scroll padding>
+      <ScreenContainer scroll padding keyboard>
         <View style={styles.header}>
+          <View style={styles.logoCircle}>
+            <Ionicons
+              name="business-outline"
+              size={sizes.icon.xl}
+              color={colors.textOnPrimary}
+              accessibilityElementsHidden
+            />
+          </View>
           <Text style={styles.logo}>SmartGesso</Text>
           <Text style={styles.subtitle}>Acesse sua conta</Text>
         </View>
 
-        <View style={styles.form}>
+        <AppCard
+          padding={spacing['2xl']}
+          radius={radius.xl}
+          shadow="medium"
+          style={styles.card}
+        >
           <Controller
             control={control}
             name="email"
@@ -129,7 +150,8 @@ export default function LoginScreen() {
           />
 
           <AppButton
-            title="Entrar"
+            title="Entrar na conta"
+            size="lg"
             loading={loading}
             disabled={loading}
             accessibilityLabel="Entrar na conta"
@@ -142,10 +164,11 @@ export default function LoginScreen() {
             accessibilityRole="button"
             accessibilityLabel="Esqueci a senha"
             style={styles.forgotButton}
+            hitSlop={8}
           >
             <Text style={styles.forgotText}>Esqueci a senha</Text>
           </Pressable>
-        </View>
+        </AppCard>
       </ScreenContainer>
 
       <AppSnackbar
@@ -164,26 +187,39 @@ const styles = StyleSheet.create({
     marginTop: spacing['4xl'],
     marginBottom: spacing['3xl'],
   },
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
   logo: {
-    fontSize: typography.sizes['2xl'],
+    fontSize: typography.sizes['3xl'],
     fontWeight: typography.weights.bold,
-    color: colors.primary,
-    marginBottom: spacing.sm,
+    color: colors.text,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
   },
-  form: {
-    flex: 1,
+  card: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
   },
   submitButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   forgotButton: {
     alignItems: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    minHeight: sizes.touchTarget,
   },
   forgotText: {
     fontSize: typography.sizes.sm,

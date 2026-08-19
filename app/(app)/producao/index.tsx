@@ -14,7 +14,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { productionOrdersService } from '../../../src/services/api/productionOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { ProductionOrder, ProductionOrderStatus } from '../../../src/types/serviceOrder';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -69,44 +69,64 @@ function ProductionOrderCard({ order, onPress }: ProductionOrderCardProps) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            PO #{order.code}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
-
-        <View style={styles.cardRow}>
-          <Ionicons
-            name="person-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
-            accessibilityElementsHidden
-          />
-          <Text style={styles.cardText} numberOfLines={1}>
-            {order.responsiblePerson?.trim() || 'Responsável não informado'}
-          </Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <View style={styles.cardRow}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
             <Ionicons
-              name="calendar-outline"
-              size={sizes.icon.sm}
-              color={colors.textSecondary}
+              name="layers-outline"
+              size={sizes.icon.md}
+              color={colors.primary}
               accessibilityElementsHidden
             />
-            <Text style={styles.cardDate}>
-              {order.dueDate
-                ? `Prazo: ${formatDate(order.dueDate)}`
-                : 'Sem prazo definido'}
-            </Text>
           </View>
-          {order.items && order.items.length > 0 ? (
-            <Text style={styles.cardItems}>
-              {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
-            </Text>
-          ) : null}
+
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                PO #{order.code}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
+
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="person-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardText} numberOfLines={1}>
+                {order.responsiblePerson?.trim() || 'Responsável não informado'}
+              </Text>
+            </View>
+
+            <View style={styles.cardFooter}>
+              <View style={styles.cardRow}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={sizes.icon.sm}
+                  color={colors.textSecondary}
+                  accessibilityElementsHidden
+                />
+                <Text style={styles.cardDate}>
+                  {order.dueDate
+                    ? `Prazo: ${formatDate(order.dueDate)}`
+                    : 'Sem prazo definido'}
+                </Text>
+              </View>
+              {order.items && order.items.length > 0 ? (
+                <Text style={styles.cardItems}>
+                  {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
+            accessibilityElementsHidden
+          />
         </View>
       </Pressable>
     </AppCard>
@@ -212,6 +232,23 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',

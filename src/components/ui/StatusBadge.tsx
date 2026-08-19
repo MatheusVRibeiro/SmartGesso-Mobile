@@ -7,7 +7,8 @@ export type StatusBadgeVariant =
   | 'warning'
   | 'suspended'
   | 'cancelled'
-  | 'expired';
+  | 'expired'
+  | 'info';
 
 export type StatusBadgeSize = 'sm' | 'md';
 
@@ -15,11 +16,12 @@ const STATUS_CONFIG: Record<
   StatusBadgeVariant,
   { label: string; backgroundColor: string; color: string }
 > = {
-  active: { label: 'Ativo', backgroundColor: colors.success, color: colors.white },
-  warning: { label: 'Atenção', backgroundColor: colors.warning, color: colors.white },
-  suspended: { label: 'Suspenso', backgroundColor: colors.danger, color: colors.white },
-  cancelled: { label: 'Cancelado', backgroundColor: colors.disabled, color: colors.text },
-  expired: { label: 'Expirado', backgroundColor: colors.border, color: colors.textSecondary },
+  active: { label: 'Ativo', backgroundColor: colors.successSoft, color: colors.success },
+  warning: { label: 'Atenção', backgroundColor: colors.warningSoft, color: colors.warning },
+  suspended: { label: 'Suspenso', backgroundColor: colors.dangerSoft, color: colors.danger },
+  cancelled: { label: 'Cancelado', backgroundColor: colors.dangerSoft, color: colors.danger },
+  expired: { label: 'Expirado', backgroundColor: colors.dangerSoft, color: colors.danger },
+  info: { label: 'Informação', backgroundColor: colors.infoSoft, color: colors.info },
 };
 
 export interface StatusBadgeProps {
@@ -78,7 +80,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeMd: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
   text: {

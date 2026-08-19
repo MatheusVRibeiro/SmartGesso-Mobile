@@ -122,6 +122,17 @@ export default function DetalhePagamentoScreen() {
             <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
           </Pressable>
           <Text style={styles.title}>Detalhe do pagamento</Text>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Excluir pagamento"
+              onPress={() => setConfirmDeleteVisible(true)}
+              hitSlop={8}
+              style={styles.headerAction}
+            >
+              <Ionicons name="trash-outline" size={sizes.icon.lg} color={colors.danger} />
+            </Pressable>
+          </View>
         </View>
 
         {paymentQuery.isLoading ? (
@@ -135,90 +146,65 @@ export default function DetalhePagamentoScreen() {
           <>
             <AppCard shadow="light" style={styles.paymentCard}>
               <View style={styles.paymentHeader}>
-                <Text style={styles.paymentAmount}>
-                  {formatCurrency(payment.amount)}
-                </Text>
+                <View style={styles.paymentHeaderLeft}>
+                  <Text style={styles.paymentLabel}>Valor recebido</Text>
+                  <Text style={styles.paymentAmount}>
+                    {formatCurrency(payment.amount)}
+                  </Text>
+                </View>
                 {statusBadge && (
                   <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
                 )}
               </View>
 
-              <View style={styles.paymentRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.paymentText}>
+              <View style={styles.divider} />
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Cliente</Text>
+                <Text style={styles.fieldValue}>
                   {payment.client?.name ?? 'Cliente não informado'}
                 </Text>
               </View>
 
-              <View style={styles.paymentRow}>
-                <Ionicons
-                  name="wallet-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.paymentText}>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Método de pagamento</Text>
+                <Text style={styles.fieldValue}>
                   {PAYMENT_METHOD_LABELS[payment.paymentMethod]}
                 </Text>
               </View>
 
-              <View style={styles.paymentRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.paymentText}>
+              <View style={styles.divider} />
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Data do pagamento</Text>
+                <Text style={styles.fieldValue}>
                   {payment.paymentDate
-                    ? `Pago em: ${formatDate(payment.paymentDate)}`
-                    : 'Data de pagamento não informada'}
+                    ? formatDate(payment.paymentDate)
+                    : 'Não informada'}
                 </Text>
               </View>
 
-              {payment.dueDate && (
-                <View style={styles.paymentRow}>
-                  <Ionicons
-                    name="alarm-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.paymentText}>
-                    Vencimento: {formatDate(payment.dueDate)}
+              {payment.dueDate ? (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Vencimento</Text>
+                  <Text style={styles.fieldValue}>{formatDate(payment.dueDate)}</Text>
+                </View>
+              ) : null}
+
+              {payment.quoteId ? (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Orçamento</Text>
+                  <Text style={styles.fieldValue}>
+                    #{payment.quoteId.slice(0, 8).toUpperCase()}
                   </Text>
                 </View>
-              )}
+              ) : null}
 
-              {payment.quoteId && (
-                <View style={styles.paymentRow}>
-                  <Ionicons
-                    name="document-text-outline"
-                    size={sizes.icon.sm}
-                    color={colors.textSecondary}
-                    accessibilityElementsHidden
-                  />
-                  <Text style={styles.paymentText}>
-                    Orçamento: #{payment.quoteId.slice(0, 8).toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <View style={styles.divider} />
 
-              <View style={styles.paymentRow}>
-                <Ionicons
-                  name="time-outline"
-                  size={sizes.icon.sm}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text style={styles.paymentText}>
-                  Registrado em: {formatDate(payment.createdAt)}
-                </Text>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Registrado em</Text>
+                <Text style={styles.fieldValue}>{formatDate(payment.createdAt)}</Text>
               </View>
             </AppCard>
 
@@ -235,22 +221,13 @@ export default function DetalhePagamentoScreen() {
               {canConfirm(payment.status) && (
                 <AppButton
                   title="Confirmar pagamento"
-                  size="md"
+                  size="lg"
                   accessibilityLabel="Confirmar pagamento"
                   onPress={() => confirmMutation.mutate()}
                   loading={confirmMutation.isPending}
                   disabled={confirmMutation.isPending}
-                  style={styles.actionButton}
                 />
               )}
-              <AppButton
-                title="Excluir"
-                variant="danger"
-                size="md"
-                accessibilityLabel="Excluir pagamento"
-                onPress={() => setConfirmDeleteVisible(true)}
-                style={styles.actionButton}
-              />
             </View>
           </>
         ) : null}
@@ -297,35 +274,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAction: {
+    minWidth: sizes.touchTarget,
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   paymentCard: {
-    padding: spacing.md,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
   },
   paymentHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  paymentHeaderLeft: {
+    flex: 1,
+  },
+  paymentLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   paymentAmount: {
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
+    fontWeight: typography.weights.semibold,
+    color: colors.success,
   },
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
+  divider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.lg,
   },
-  paymentText: {
-    flex: 1,
+  field: {
+    marginBottom: spacing.md,
+  },
+  fieldLabel: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  fieldValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   sectionLabel: {
     fontSize: typography.sizes.sm,
@@ -347,8 +350,5 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.lg,
     marginBottom: spacing['3xl'],
-  },
-  actionButton: {
-    marginBottom: spacing.xs,
   },
 });

@@ -213,6 +213,14 @@ export default function ClientesListScreen() {
         accessibilityLabel="Buscar clientes"
         autoCapitalize="none"
         autoCorrect={false}
+        leftAccessory={
+          <Ionicons
+            name="search"
+            size={sizes.icon.md}
+            color={colors.textLight}
+            accessibilityElementsHidden
+          />
+        }
         rightAccessory={
           searchInput.length > 0 ? (
             <TouchableOpacity
@@ -228,14 +236,7 @@ export default function ClientesListScreen() {
                 accessibilityElementsHidden
               />
             </TouchableOpacity>
-          ) : (
-            <Ionicons
-              name="search"
-              size={sizes.icon.md}
-              color={colors.textLight}
-              accessibilityElementsHidden
-            />
-          )
+          ) : undefined
         }
       />
 
@@ -289,10 +290,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary + '15',
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

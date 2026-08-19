@@ -1,10 +1,17 @@
-import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { AppInput } from '../../../src/components/ui/AppInput';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
@@ -14,7 +21,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Expense, ExpenseCategory } from '../../../src/types/finance';
 import { formatCurrency } from '../../../src/utils/format';
 
@@ -65,7 +72,7 @@ function ExpenseCard({ expense, onPress }: ExpenseCardProps) {
   const badge = EXPENSE_CATEGORY_BADGE[expense.category];
 
   return (
-    <AppCard shadow="light" style={styles.card}>
+    <AppCard shadow="light" radius={radius.md} style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Ver despesa ${expense.description}`}
@@ -75,24 +82,45 @@ function ExpenseCard({ expense, onPress }: ExpenseCardProps) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {expense.description}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
-
-        <View style={styles.cardFooter}>
-          <View style={styles.cardDate}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
             <Ionicons
-              name="calendar-outline"
-              size={sizes.icon.sm}
-              color={colors.textLight}
+              name="receipt-outline"
+              size={sizes.icon.md}
+              color={colors.primary}
               accessibilityElementsHidden
             />
-            <Text style={styles.cardDateText}>{formatDate(expense.expenseDate)}</Text>
           </View>
-          <Text style={styles.cardAmount}>{formatCurrency(expense.amount)}</Text>
+
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {expense.description}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
+
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="calendar-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardText} numberOfLines={1}>
+                {formatDate(expense.expenseDate)}
+              </Text>
+            </View>
+
+            <Text style={styles.cardAmount}>{formatCurrency(expense.amount)}</Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
+            accessibilityElementsHidden
+          />
         </View>
       </Pressable>
     </AppCard>
@@ -104,6 +132,7 @@ function ExpenseCard({ expense, onPress }: ExpenseCardProps) {
 export default function DespesasScreen() {
   const router = useRouter();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+  const [search, setSearch] = useState('');
 
   const {
     data: expenses,
@@ -119,18 +148,49 @@ export default function DespesasScreen() {
     enabled: Boolean(companyId),
   });
 
+  // Busca client-side por descrição ou categoria (a API não expõe ?search=).
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return expenses ?? [];
+    return (expenses ?? []).filter((expense) => {
+      const description = expense.description.toLowerCase();
+      const categoryLabel = EXPENSE_CATEGORY_BADGE[expense.category].label.toLowerCase();
+      return description.includes(term) || categoryLabel.includes(term);
+    });
+  }, [expenses, search]);
+
   return (
     <ScreenContainer padding={false} keyboard={false}>
       <Stack.Screen options={{ title: 'Despesas', headerShown: true }} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Despesas</Text>
-        <AppButton
-          title="+"
-          size="md"
-          accessibilityLabel="Nova despesa"
+        <TouchableOpacity
           onPress={() => router.push('/despesas/novo')}
+          accessibilityRole="button"
+          accessibilityLabel="Nova despesa"
           style={styles.addButton}
+        >
+          <Ionicons name="add" size={sizes.icon.lg} color={colors.white} accessibilityElementsHidden />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchWrapper}>
+        <AppInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar por descrição ou categoria"
+          accessibilityLabel="Buscar despesas"
+          autoCapitalize="none"
+          autoCorrect={false}
+          leftAccessory={
+            <Ionicons
+              name="search"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          }
         />
       </View>
 
@@ -138,17 +198,25 @@ export default function DespesasScreen() {
         <LoadingState text="Carregando despesas..." />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
-      ) : expenses && expenses.length === 0 ? (
-        <EmptyState
-          title="Nenhuma despesa"
-          description="Comece registrando sua primeira despesa"
-          icon="wallet-outline"
-          actionLabel="Nova despesa"
-          onAction={() => router.push('/despesas/novo')}
-        />
+      ) : filtered.length === 0 ? (
+        search.trim() ? (
+          <EmptyState
+            title="Nenhuma despesa encontrada"
+            description={`Nenhum resultado para "${search.trim()}". Tente outro termo.`}
+            icon="search-outline"
+          />
+        ) : (
+          <EmptyState
+            title="Nenhuma despesa"
+            description="Comece registrando sua primeira despesa"
+            icon="wallet-outline"
+            actionLabel="Nova despesa"
+            onAction={() => router.push('/despesas/novo')}
+          />
+        )
       ) : (
         <FlatList
-          data={expenses ?? []}
+          data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <ExpenseCard
@@ -182,8 +250,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   addButton: {
-    minWidth: sizes.touchTarget,
-    paddingHorizontal: 0,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchWrapper: {
+    paddingHorizontal: sizes.screenPadding,
   },
   listContent: {
     padding: sizes.screenPadding,
@@ -199,6 +274,23 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.7,
   },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,24 +303,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  cardDate: {
+  cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  cardDateText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
+  cardText: {
+    flex: 1,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   cardAmount: {
     fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
+    fontWeight: typography.weights.semibold,
     color: colors.text,
   },
 });

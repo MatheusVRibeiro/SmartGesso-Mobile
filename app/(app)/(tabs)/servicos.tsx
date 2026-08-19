@@ -14,7 +14,7 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { ServiceOrder, ServiceOrderStatus } from '../../../src/types/serviceOrder';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -67,37 +67,57 @@ function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
           pressed && styles.cardPressed,
         ]}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            OS #{order.code}
-          </Text>
-          <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.cardIcon}>
+            <Ionicons
+              name="hammer-outline"
+              size={sizes.icon.md}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+          </View>
 
-        <View style={styles.cardRow}>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                OS #{order.code}
+              </Text>
+              <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+            </View>
+
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="person-outline"
+                size={sizes.icon.sm}
+                color={colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.cardText} numberOfLines={1}>
+                {order.client?.name ?? 'Cliente não informado'}
+              </Text>
+            </View>
+
+            <View style={styles.cardFooter}>
+              <Text style={styles.cardDate}>
+                {order.scheduledDate
+                  ? formatDate(order.scheduledDate)
+                  : formatDate(order.createdAt)}
+              </Text>
+              {order.materials && order.materials.length > 0 ? (
+                <Text style={styles.cardMaterials}>
+                  {order.materials.length}{' '}
+                  {order.materials.length === 1 ? 'material' : 'materiais'}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
           <Ionicons
-            name="person-outline"
-            size={sizes.icon.sm}
-            color={colors.textSecondary}
+            name="chevron-forward"
+            size={sizes.icon.md}
+            color={colors.textLight}
             accessibilityElementsHidden
           />
-          <Text style={styles.cardText} numberOfLines={1}>
-            {order.client?.name ?? 'Cliente não informado'}
-          </Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.cardDate}>
-            {order.scheduledDate
-              ? formatDate(order.scheduledDate)
-              : formatDate(order.createdAt)}
-          </Text>
-          {order.materials && order.materials.length > 0 ? (
-            <Text style={styles.cardMaterials}>
-              {order.materials.length}{' '}
-              {order.materials.length === 1 ? 'material' : 'materiais'}
-            </Text>
-          ) : null}
         </View>
       </Pressable>
     </AppCard>
@@ -203,6 +223,23 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',

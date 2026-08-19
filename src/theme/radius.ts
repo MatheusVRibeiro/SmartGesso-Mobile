@@ -1,6 +1,6 @@
 /**
  * SmartGesso Mobile — Tokens de raio (cantos arredondados).
- * Referência: DESIGN.md (cards ≤16, pills/badges full).
+ * Escala refinada do design system indigo.
  */
 export const radius = {
   sm: 8,
@@ -9,5 +9,6 @@ export const radius = {
   xl: 24,
   full: 999,
 } as const;
+
 export type Radius = typeof radius;
 export type RadiusKey = keyof Radius;

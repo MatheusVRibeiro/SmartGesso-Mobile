@@ -1,16 +1,15 @@
 import React, { useCallback } from 'react';
-import { RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
-import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { dashboardService } from '../../../src/services/api/dashboard';
-import { colors, radius, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
 // Formatação BRL
 const formatCurrency = (value: number): string => {
@@ -18,11 +17,6 @@ const formatCurrency = (value: number): string => {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
-};
-
-// Formatação data
-const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat('pt-BR').format(new Date(dateString));
 };
 
 // Status do orçamento → StatusBadge variant
@@ -67,105 +61,130 @@ export default function HomeScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <ScreenContainer>
+      <SafeAreaView style={styles.safeArea}>
         <LoadingState text="Carregando dashboard..." />
-      </ScreenContainer>
+      </SafeAreaView>
     );
   }
 
   // Error state
   if (isError) {
     return (
-      <ScreenContainer>
+      <SafeAreaView style={styles.safeArea}>
         <ErrorState
           message={error?.message || 'Erro ao carregar dados do dashboard'}
           onRetry={refetch}
         />
-      </ScreenContainer>
+      </SafeAreaView>
     );
   }
 
+  const toReceiveCount = metrics?.toReceive?.count ?? 0;
+  const todayServicesCount = metrics?.todayServices?.count ?? 0;
+
   return (
-    <ScreenContainer scroll padding keyboard={false}>
-      <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Saudação */}
+        <View style={styles.header}>
+          <Text style={styles.greeting}>Olá, {userName}</Text>
+          <Text style={styles.companyName}>{companyName}</Text>
+        </View>
 
-      {/* Saudação */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Olá, {userName}</Text>
-        <Text style={styles.companyName}>{companyName}</Text>
-      </View>
-
-      <View style={styles.metricsContainer}>
-        {/* Card: A Receber */}
-        <AppCard shadow="light" radius={radius.md} style={styles.metricCard}>
-          <View style={styles.metricHeader}>
-            <View style={styles.metricIconContainer}>
-              <Ionicons name="cash-outline" size={20} color={colors.primary} />
+        {/* Métricas */}
+        <View style={styles.metricsContainer}>
+          {/* Card: A Receber */}
+          <AppCard shadow="light" radius={radius.lg} style={styles.metricCard}>
+            <View style={styles.metricHeader}>
+              <View style={[styles.metricIconContainer, styles.metricIconSuccess]}>
+                <Ionicons
+                  name="cash-outline"
+                  size={sizes.icon.md}
+                  color={colors.success}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <StatusBadge
+                status={toReceiveCount > 0 ? 'warning' : 'active'}
+                label={toReceiveCount > 0 ? 'Pendente' : 'Quitado'}
+                size="sm"
+              />
             </View>
-            <StatusBadge
-              status={metrics?.toReceive?.total && metrics.toReceive.total > 0 ? 'warning' : 'active'}
-              label={metrics?.toReceive?.count && metrics.toReceive.count > 0 ? 'Pendente' : 'Quitado'}
-              size="sm"
-            />
-          </View>
-          <Text style={styles.metricTitle}>A receber</Text>
-          <Text style={styles.metricValue}>
-            {formatCurrency(metrics?.toReceive?.total ?? 0)}
-          </Text>
-          <Text style={styles.metricSubtitle}>
-            {metrics?.toReceive?.count && metrics.toReceive.count > 0
-              ? `${metrics.toReceive.count} pagamentos pendentes`
-              : 'Nenhum pagamento pendente'}
-          </Text>
-        </AppCard>
+            <Text style={styles.metricTitle}>A receber</Text>
+            <Text style={styles.metricValue}>
+              {formatCurrency(metrics?.toReceive?.total ?? 0)}
+            </Text>
+            <Text style={styles.metricSubtitle}>
+              {toReceiveCount > 0
+                ? `${toReceiveCount} pagamentos pendentes`
+                : 'Nenhum pagamento pendente'}
+            </Text>
+          </AppCard>
 
-        {/* Card: Serviços do Dia */}
-        <AppCard shadow="light" radius={radius.md} style={styles.metricCard}>
-          <View style={styles.metricHeader}>
-            <View style={styles.metricIconContainer}>
-              <Ionicons name="hammer-outline" size={20} color={colors.primary} />
+          {/* Card: Serviços do Dia */}
+          <AppCard shadow="light" radius={radius.lg} style={styles.metricCard}>
+            <View style={styles.metricHeader}>
+              <View style={[styles.metricIconContainer, styles.metricIconPrimary]}>
+                <Ionicons
+                  name="hammer-outline"
+                  size={sizes.icon.md}
+                  color={colors.primary}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <StatusBadge
+                status={todayServicesCount > 0 ? 'warning' : 'active'}
+                label={todayServicesCount > 0 ? 'Agendado' : 'Sem serviços'}
+                size="sm"
+              />
             </View>
-            <StatusBadge
-              status={metrics?.todayServices?.count && metrics.todayServices.count > 0 ? 'warning' : 'active'}
-              label={metrics?.todayServices?.count && metrics.todayServices.count > 0 ? 'Agendado' : 'Sem serviços'}
-              size="sm"
-            />
-          </View>
-          <Text style={styles.metricTitle}>Serviços do dia</Text>
-          <Text style={styles.metricValue}>
-            {metrics?.todayServices?.count ?? 0}
-          </Text>
-          <Text style={styles.metricSubtitle}>
-            {metrics?.todayServices?.count && metrics.todayServices.count > 0
-              ? `${metrics.todayServices.count} serviços agendados`
-              : 'Nenhum serviço hoje'}
-          </Text>
-        </AppCard>
+            <Text style={styles.metricTitle}>Serviços do dia</Text>
+            <Text style={styles.metricValue}>{todayServicesCount}</Text>
+            <Text style={styles.metricSubtitle}>
+              {todayServicesCount > 0
+                ? `${todayServicesCount} serviços agendados`
+                : 'Nenhum serviço hoje'}
+            </Text>
+          </AppCard>
+        </View>
 
-        {/* Card: Orçamentos Recentes */}
-        <AppCard shadow="light" radius={radius.md} style={styles.metricCard}>
-          <View style={styles.metricHeader}>
-            <View style={styles.metricIconContainer}>
-              <Ionicons name="document-text-outline" size={20} color={colors.primary} />
-            </View>
-          </View>
-          <Text style={styles.metricTitle}>Orçamentos recentes</Text>
-          
+        {/* Seção: Orçamentos Recentes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Orçamentos recentes</Text>
+          <Text style={styles.sectionSubtitle}>Últimos orçamentos da empresa</Text>
+
           {!metrics?.recentQuotes || metrics.recentQuotes.length === 0 ? (
-            <EmptyState
-              title="Nenhum orçamento recente"
-              icon="document-text-outline"
-              style={styles.emptyState}
-            />
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+              <Text style={styles.emptyText}>Nenhum orçamento recente</Text>
+            </AppCard>
           ) : (
-            <View style={styles.listContainer}>
-              {metrics.recentQuotes.slice(0, 5).map((quote) => {
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+              {metrics.recentQuotes.slice(0, 5).map((quote, index, array) => {
                 const badge = getQuoteStatusBadge(quote.status);
                 return (
-                  <View key={quote.id} style={styles.listItem}>
+                  <View
+                    key={quote.id}
+                    style={[
+                      styles.listItem,
+                      index < array.length - 1 && styles.listItemBorder,
+                    ]}
+                  >
                     <View style={styles.listItemContent}>
                       <Text style={styles.listItemTitle}>
-                        #{quote.quoteNumber} v{quote.version} — {quote.client?.name ?? 'Cliente'}
+                        #{quote.quoteNumber} v{quote.version} —{' '}
+                        {quote.client?.name ?? 'Cliente'}
                       </Text>
                       <Text style={styles.listItemValue}>
                         {formatCurrency(quote.total)}
@@ -175,29 +194,31 @@ export default function HomeScreen() {
                   </View>
                 );
               })}
-            </View>
+            </AppCard>
           )}
-        </AppCard>
+        </View>
 
-        {/* Card: Alertas de Estoque */}
-        <AppCard shadow="light" radius={radius.md} style={styles.metricCard}>
-          <View style={styles.metricHeader}>
-            <View style={styles.metricIconContainer}>
-              <Ionicons name="alert-circle-outline" size={20} color={colors.warning} />
-            </View>
-          </View>
-          <Text style={styles.metricTitle}>Alertas de estoque</Text>
-          
+        {/* Seção: Alertas de Estoque */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Alertas de estoque</Text>
+          <Text style={styles.sectionSubtitle}>Materiais abaixo do estoque mínimo</Text>
+
           {!metrics?.stockAlerts || metrics.stockAlerts.length === 0 ? (
-            <EmptyState
-              title="Nenhum alerta de estoque"
-              icon="alert-circle-outline"
-              style={styles.emptyState}
-            />
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+              <Text style={styles.emptyText}>Nenhum alerta de estoque</Text>
+            </AppCard>
           ) : (
-            <View style={styles.listContainer}>
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
               {metrics.stockAlerts.map((alert) => (
-                <View key={alert.id} style={styles.listItem}>
+                <View key={alert.id} style={[styles.listItem, styles.listItemAlert]}>
+                  <View style={styles.alertIconContainer}>
+                    <Ionicons
+                      name="alert"
+                      size={sizes.icon.md}
+                      color={colors.danger}
+                      accessibilityElementsHidden
+                    />
+                  </View>
                   <View style={styles.listItemContent}>
                     <Text style={styles.listItemTitle}>{alert.name}</Text>
                     <Text style={styles.listItemValue}>
@@ -211,15 +232,23 @@ export default function HomeScreen() {
                   />
                 </View>
               ))}
-            </View>
+            </AppCard>
           )}
-        </AppCard>
-      </View>
-    </ScreenContainer>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: sizes.screenPadding,
+    paddingBottom: spacing['3xl'],
+  },
   header: {
     marginBottom: spacing['2xl'],
     paddingTop: spacing.md,
@@ -237,6 +266,7 @@ const styles = StyleSheet.create({
   },
   metricsContainer: {
     gap: spacing.md,
+    marginBottom: spacing['2xl'],
   },
   metricCard: {
     padding: spacing.lg,
@@ -250,10 +280,15 @@ const styles = StyleSheet.create({
   metricIconContainer: {
     width: 44,
     height: 44,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary + '15',
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  metricIconSuccess: {
+    backgroundColor: colors.successSoft,
+  },
+  metricIconPrimary: {
+    backgroundColor: colors.primarySoft,
   },
   metricTitle: {
     fontSize: typography.sizes.md,
@@ -272,16 +307,39 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 20,
   },
-  listContainer: {
-    marginTop: spacing.md,
+  section: {
+    marginBottom: spacing['2xl'],
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  sectionSubtitle: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  sectionCard: {
+    padding: spacing.lg,
+  },
+  emptyText: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   listItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  listItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.divider,
+  },
+  listItemAlert: {
+    gap: spacing.md,
   },
   listItemContent: {
     flex: 1,
@@ -297,7 +355,12 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
   },
-  emptyState: {
-    paddingVertical: spacing.lg,
+  alertIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

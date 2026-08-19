@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
@@ -9,7 +9,7 @@ import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
 import { queryClient } from '../../../src/lib/queryClient';
-import { colors, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -19,7 +19,6 @@ interface MenuItem {
   icon: IconName;
   section: string;
   action?: () => void;
-  isDanger?: boolean;
 }
 
 export default function MaisScreen() {
@@ -152,16 +151,6 @@ export default function MaisScreen() {
       section: 'Suporte',
       action: () => router.replace('/(company)/select-company'),
     },
-
-    // Conta
-    {
-      id: 'sair',
-      title: 'Sair',
-      icon: 'log-out-outline',
-      section: 'Conta',
-      action: () => setLogoutDialogVisible(true),
-      isDanger: true,
-    },
   ];
 
   const sections = Array.from(new Set(menuItems.map((item) => item.section)));
@@ -175,7 +164,7 @@ export default function MaisScreen() {
       {sections.map((section) => (
         <View key={section} style={styles.section}>
           <Text style={styles.sectionTitle}>{section}</Text>
-          <AppCard shadow="light" style={styles.sectionCard}>
+          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
             {menuItems
               .filter((item) => item.section === section)
               .map((item, index, array) => (
@@ -190,26 +179,57 @@ export default function MaisScreen() {
                   accessibilityRole="button"
                 >
                   <View style={styles.menuItemContent}>
-                    <Ionicons
-                      name={item.icon}
-                      size={22}
-                      color={item.isDanger ? colors.danger : colors.text}
-                    />
-                    <Text
-                      style={[
-                        styles.menuItemTitle,
-                        item.isDanger && styles.menuItemTitleDanger,
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
+                    <View style={styles.menuItemIcon}>
+                      <Ionicons
+                        name={item.icon}
+                        size={sizes.icon.md}
+                        color={colors.textSecondary}
+                        accessibilityElementsHidden
+                      />
+                    </View>
+                    <Text style={styles.menuItemTitle}>{item.title}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={sizes.icon.md}
+                    color={colors.textLight}
+                    accessibilityElementsHidden
+                  />
                 </TouchableOpacity>
               ))}
           </AppCard>
         </View>
       ))}
+
+      {/* Sair */}
+      <View style={styles.section}>
+        <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+          <TouchableOpacity
+            onPress={() => setLogoutDialogVisible(true)}
+            style={styles.menuItem}
+            accessibilityLabel="Sair"
+            accessibilityRole="button"
+          >
+            <View style={styles.menuItemContent}>
+              <View style={[styles.menuItemIcon, styles.logoutIcon]}>
+                <Ionicons
+                  name="log-out-outline"
+                  size={sizes.icon.md}
+                  color={colors.danger}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <Text style={[styles.menuItemTitle, styles.logoutTitle]}>Sair</Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          </TouchableOpacity>
+        </AppCard>
+      </View>
 
       <ConfirmDialog
         visible={logoutDialogVisible}
@@ -230,7 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes['2xl'],
     fontWeight: typography.weights.bold,
     color: colors.text,
   },
@@ -238,11 +258,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
@@ -262,15 +282,31 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.divider,
   },
   menuItemContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  menuItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuItemTitle: {
     fontSize: typography.sizes.md,
     color: colors.text,
   },
-  menuItemTitleDanger: {
+  logoutIcon: {
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.dangerSoft,
+  },
+  logoutTitle: {
     color: colors.danger,
+    fontWeight: typography.weights.semibold,
   },
 });
