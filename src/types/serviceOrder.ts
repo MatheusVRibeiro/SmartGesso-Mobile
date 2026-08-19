@@ -1,6 +1,12 @@
 // ─── Ordens de Serviço (Fase 5) ────────────────────────────────────────────
 
-export type ServiceOrderStatus = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
+export type ServiceOrderStatus =
+  | 'PENDENTE'
+  | 'EM_DESLOCAMENTO'
+  | 'EM_ANDAMENTO'
+  | 'PAUSADA'
+  | 'CONCLUIDA'
+  | 'CANCELADA';
 
 export interface ServiceOrderMaterial {
   id: string;

@@ -115,18 +115,25 @@ export default function MaisScreen() {
 
     // Configuração
     {
+      id: 'configuracoes',
+      title: 'Configurações',
+      icon: 'settings-outline',
+      section: 'Configuração',
+      action: () => router.push('/configuracoes'),
+    },
+    {
       id: 'usuarios',
       title: 'Usuários',
       icon: 'people-circle-outline',
       section: 'Configuração',
-      action: () => handleModuleNotImplemented('Usuários'),
+      action: () => router.push('/usuarios'),
     },
     {
       id: 'empresa',
       title: 'Empresa',
       icon: 'business-outline',
       section: 'Configuração',
-      action: () => handleModuleNotImplemented('Empresa'),
+      action: () => router.push('/configuracoes/empresa'),
     },
     {
       id: 'perfil',

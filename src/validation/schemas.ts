@@ -247,3 +247,54 @@ export const createExpenseSchema = z.object({
 });
 
 export type CreateExpenseFormData = z.infer<typeof createExpenseSchema>;
+
+// ─── Configurações (Fase 7) ─────────────────────────────────────────────────
+
+export const companySettingsSchema = z.object({
+  tradeName: z.string().trim().min(1, 'Nome fantasia é obrigatório'),
+  document: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  email: z.string().trim().email('E-mail inválido').optional().or(z.literal('')),
+  address: z.object({
+    zipCode: z.string().trim().optional(),
+    street: z.string().trim().optional(),
+    number: z.string().trim().optional(),
+    complement: z.string().trim().optional(),
+    neighborhood: z.string().trim().optional(),
+    city: z.string().trim().optional(),
+    state: z.string().trim().optional(),
+  }),
+});
+
+export type CompanySettingsFormData = z.infer<typeof companySettingsSchema>;
+
+export const quoteSettingsSchema = z.object({
+  numberingPrefix: z
+    .string()
+    .trim()
+    .min(1, 'Prefixo é obrigatório')
+    .max(10, 'Máximo de 10 caracteres'),
+  defaultLossPct: z.coerce
+    .number()
+    .min(0, 'Perda não pode ser negativa')
+    .max(100, 'Perda máxima de 100%'),
+  warrantyDays: z.coerce
+    .number()
+    .int('Use números inteiros')
+    .min(0, 'Garantia não pode ser negativa'),
+  paymentMethods: z
+    .array(
+      z.enum([
+        'AVISTA',
+        'AVISTA_DESCONTO',
+        'ENTRADA_SALDO',
+        'QUINZENAL_2X',
+        'MENSAL',
+        'PARCELADO',
+        'PERSONALIZADO',
+      ])
+    )
+    .min(1, 'Selecione pelo menos uma forma de pagamento'),
+});
+
+export type QuoteSettingsFormData = z.infer<typeof quoteSettingsSchema>;

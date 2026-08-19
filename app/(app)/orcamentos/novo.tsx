@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComponentProps } from 'react';
 import {
   FlatList,
   Modal,
@@ -10,8 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
@@ -22,30 +21,78 @@ import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
+import { StatusBadge } from '../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
-import { worksService } from '../../../src/services/api/works';
+import { compositionsService } from '../../../src/services/api/compositions';
+import { measurementsService } from '../../../src/services/api/measurements';
 import { quotesService } from '../../../src/services/api/quotes';
+import { worksService } from '../../../src/services/api/works';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type { Client } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
-import type { QuoteItemType, QuotePaymentMethod } from '../../../src/types/quote';
+import type { CreateQuoteInput, QuotePaymentMethod } from '../../../src/types/quote';
+import type {
+  Measurement,
+  MeasurementApplicationType,
+} from '../../../src/types/measurement';
+import type {
+  CalculateMaterialsInput,
+  CalculateMaterialsResponse,
+} from '../../../src/types/composition';
 import { z } from 'zod';
 import { createQuoteSchema } from '../../../src/validation/schemas';
+
+// ─── Tipos do wizard ────────────────────────────────────────────────────────
+
+type StepKey =
+  | 'cliente'
+  | 'medicoes'
+  | 'materiais'
+  | 'servicos'
+  | 'valores'
+  | 'pagamento'
+  | 'revisao';
+
+interface ServiceDraft {
+  id: string;
+  name: string;
+  unitPrice: string;
+}
+
+interface MaterialDraft {
+  key: string;
+  materialType: string;
+  name: string;
+  unit: string;
+  quantity: string;
+  unitPrice?: number | null;
+  total?: number | null;
+}
+
+interface QuoteDraft {
+  clientId: string;
+  workId: string;
+  selectedMeasurementIds: string[];
+  materials: MaterialDraft[];
+  services: ServiceDraft[];
+  discount: string;
+  marginPct: string;
+  paymentMethod: QuotePaymentMethod;
+  observations: string;
+}
+
+type ServiceErrors = Record<string, { name?: string; unitPrice?: string }>;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * Tipo de entrada do schema (campos com .default() ficam opcionais antes do default).
- * O zodResolver tipa o formulário pelo input do schema.
- */
-type QuoteFormValues = z.input<typeof createQuoteSchema>;
-
-/**
- * A API real retorna array puro em GET /clients e GET /works (Prisma findMany),
- * enquanto o tipo declarado é { data, total }. Normaliza ambos os formatos.
+ * A API real retorna array puro em GET /clients, /works e
+ * /works/:workId/measurements (Prisma findMany), enquanto os tipos
+ * declarados são { data, total }. Normaliza ambos os formatos.
  */
 function toArray<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[];
@@ -55,13 +102,34 @@ function toArray<T>(result: unknown): T[] {
   return [];
 }
 
-const ITEM_TYPE_OPTIONS: { value: QuoteItemType; label: string }[] = [
-  { value: 'PRODUTO', label: 'Produto' },
-  { value: 'SERVICO', label: 'Serviço' },
-  { value: 'MATERIAL', label: 'Material' },
-  { value: 'MAO_DE_OBRA', label: 'Mão de obra' },
-  { value: 'TRANSPORTE', label: 'Transporte' },
-];
+/** Converte texto digitado (pt-BR) em número. Aceita vírgula decimal. */
+function parseNumber(value: string): number {
+  const normalized = String(value).trim().replace(',', '.');
+  if (normalized === '') return 0;
+  const n = Number(normalized);
+  return Number.isNaN(n) ? NaN : n;
+}
+
+/** Monta o payload de cálculo de materiais a partir das medições selecionadas. */
+function buildCalculateInput(measurements: Measurement[]): CalculateMaterialsInput {
+  return {
+    applicationType: measurements[0]?.applicationType ?? 'DRYWALL',
+    measurements: measurements.map((m) => ({
+      length: m.length ?? undefined,
+      width: m.width ?? undefined,
+      area: m.area ?? undefined,
+      perimeter: m.perimeter ?? undefined,
+    })),
+  };
+}
+
+let serviceIdCounter = 0;
+function nextServiceId(): string {
+  serviceIdCounter += 1;
+  return `servico-${serviceIdCounter}`;
+}
+
+// ─── Constantes ─────────────────────────────────────────────────────────────
 
 const PAYMENT_METHOD_OPTIONS: { value: QuotePaymentMethod; label: string }[] = [
   { value: 'AVISTA', label: 'À vista' },
@@ -72,6 +140,60 @@ const PAYMENT_METHOD_OPTIONS: { value: QuotePaymentMethod; label: string }[] = [
   { value: 'PARCELADO', label: 'Parcelado' },
   { value: 'PERSONALIZADO', label: 'Personalizado' },
 ];
+
+const APPLICATION_TYPE_BADGE: Record<
+  MeasurementApplicationType,
+  { variant: StatusBadgeVariant; label: string }
+> = {
+  DRYWALL: { variant: 'active', label: 'Drywall' },
+  FORRO: { variant: 'warning', label: 'Forro' },
+  PAREDE: { variant: 'active', label: 'Parede' },
+  SANCA: { variant: 'expired', label: 'Sanca' },
+  REBAIXAMENTO: { variant: 'warning', label: 'Rebaixamento' },
+  OUTRO: { variant: 'cancelled', label: 'Outro' },
+};
+
+const STEP_META: {
+  key: StepKey;
+  title: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
+}[] = [
+  { key: 'cliente', title: 'Cliente', icon: 'person-outline' },
+  { key: 'medicoes', title: 'Medições', icon: 'resize-outline' },
+  { key: 'materiais', title: 'Materiais', icon: 'cube-outline' },
+  { key: 'servicos', title: 'Serviços', icon: 'construct-outline' },
+  { key: 'valores', title: 'Valores', icon: 'calculator-outline' },
+  { key: 'pagamento', title: 'Pagamento', icon: 'card-outline' },
+  { key: 'revisao', title: 'Revisão', icon: 'document-text-outline' },
+];
+
+// ─── Validação por etapa (zod) ──────────────────────────────────────────────
+
+const stepClienteSchema = z.object({
+  clientId: z.string().min(1, 'Selecione um cliente para continuar'),
+});
+
+const serviceRowSchema = z.object({
+  name: z.string().trim().min(1, 'Descrição é obrigatória'),
+  unitPrice: z
+    .string()
+    .trim()
+    .min(1, 'Informe o valor do serviço')
+    .refine((v) => !Number.isNaN(parseNumber(v)), 'Valor inválido')
+    .refine((v) => parseNumber(v) >= 0, 'Valor não pode ser negativo'),
+});
+
+const stepValoresSchema = z.object({
+  discount: z
+    .string()
+    .refine((v) => !Number.isNaN(parseNumber(v)), 'Desconto inválido')
+    .refine((v) => parseNumber(v) >= 0, 'Desconto não pode ser negativo'),
+  marginPct: z
+    .string()
+    .refine((v) => !Number.isNaN(parseNumber(v)), 'Margem inválida')
+    .refine((v) => parseNumber(v) >= 0, 'Margem não pode ser negativa')
+    .refine((v) => parseNumber(v) <= 100, 'Margem deve ser no máximo 100%'),
+});
 
 // ─── Modal de seleção de cliente ────────────────────────────────────────────
 
@@ -325,12 +447,83 @@ function WorkPickerModal({
   );
 }
 
+// ─── Indicador de progresso das etapas ──────────────────────────────────────
+
+function StepProgress({ current }: { current: number }) {
+  return (
+    <View style={styles.progressWrap}>
+      <View style={styles.progressRow}>
+        {STEP_META.map((step, index) => {
+          const isDone = index < current;
+          const isCurrent = index === current;
+          return (
+            <React.Fragment key={step.key}>
+              {index > 0 ? (
+                <View
+                  style={[
+                    styles.progressLine,
+                    (isDone || isCurrent) && styles.progressLineActive,
+                  ]}
+                />
+              ) : null}
+              <View
+                accessibilityRole="text"
+                accessibilityLabel={`Etapa ${index + 1}: ${step.title}${
+                  isDone ? ', concluída' : isCurrent ? ', atual' : ''
+                }`}
+                style={[
+                  styles.progressDot,
+                  isCurrent && styles.progressDotCurrent,
+                  isDone && styles.progressDotDone,
+                ]}
+              >
+                {isDone ? (
+                  <Ionicons
+                    name="checkmark"
+                    size={14}
+                    color={colors.textOnPrimary}
+                    accessibilityElementsHidden
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.progressNumber,
+                      isCurrent && styles.progressNumberCurrent,
+                    ]}
+                  >
+                    {index + 1}
+                  </Text>
+                )}
+              </View>
+            </React.Fragment>
+          );
+        })}
+      </View>
+      <View style={styles.progressCaptionRow}>
+        <Ionicons
+          name={STEP_META[current].icon}
+          size={sizes.icon.sm}
+          color={colors.primary}
+          accessibilityElementsHidden
+        />
+        <Text style={styles.progressCaption}>
+          Etapa {current + 1} de {STEP_META.length} · {STEP_META[current].title}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function NovoOrcamentoScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [serviceErrors, setServiceErrors] = useState<ServiceErrors>({});
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [workModalVisible, setWorkModalVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -338,50 +531,26 @@ export default function NovoOrcamentoScreen() {
     message: string;
   } | null>(null);
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-  } = useForm<QuoteFormValues>({
-    resolver: zodResolver(createQuoteSchema),
-    defaultValues: {
-      clientId: '',
-      workId: '',
-      discount: 0,
-      marginPct: 0,
-      paymentMethod: 'AVISTA',
-      observations: '',
-      items: [{ itemType: 'SERVICO', name: '', quantity: 1, unit: 'un', unitPrice: 0 }],
-    },
+  const [draft, setDraft] = useState<QuoteDraft>({
+    clientId: '',
+    workId: '',
+    selectedMeasurementIds: [],
+    materials: [],
+    services: [],
+    discount: '',
+    marginPct: '',
+    paymentMethod: 'AVISTA',
+    observations: '',
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items',
-  });
+  const [materialsCalc, setMaterialsCalc] = useState<{
+    key: string;
+    result: CalculateMaterialsResponse;
+  } | null>(null);
+  const [materialsCalcPending, setMaterialsCalcPending] = useState(false);
+  const [materialsCalcError, setMaterialsCalcError] = useState<string | null>(null);
 
-  // Observa os itens para calcular o subtotal em tempo real
-  const watchedItems = useWatch({ control, name: 'items' });
-
-  const itemsTotal = useMemo(() => {
-    if (!watchedItems) return 0;
-    return watchedItems.reduce((sum, item) => {
-      const qty = parseFloat(String(item.quantity)) || 0;
-      const price = parseFloat(String(item.unitPrice)) || 0;
-      return sum + qty * price;
-    }, 0);
-  }, [watchedItems]);
-
-  // Observa desconto e margem para o TOTAL em tempo real
-  const watchedDiscount = useWatch({ control, name: 'discount' });
-  const watchedMargin = useWatch({ control, name: 'marginPct' });
-
-  const quoteTotal = useMemo(() => {
-    const subtotal = itemsTotal;
-    const discount = parseFloat(String(watchedDiscount)) || 0;
-    const marginPct = parseFloat(String(watchedMargin)) || 0;
-    return subtotal - discount + (subtotal * marginPct) / 100;
-  }, [itemsTotal, watchedDiscount, watchedMargin]);
+  // ── Queries ────────────────────────────────────────────────────────────────
 
   const clientsQuery = useQuery({
     queryKey: ['company', companyId, 'clients'],
@@ -397,27 +566,121 @@ export default function NovoOrcamentoScreen() {
     enabled: Boolean(companyId),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: QuoteFormValues) => {
-      // Clean payload: strip empty strings → undefined for optional fields
-      const payload = {
-        clientId: data.clientId,
-        workId: data.workId?.trim() || undefined,
-        discount: data.discount ?? 0,
-        marginPct: data.marginPct ?? 0,
-        paymentMethod: data.paymentMethod ?? 'AVISTA',
-        observations: data.observations?.trim() || undefined,
-        items: (data.items ?? []).map((item) => ({
-          itemType: item.itemType,
-          name: item.name.trim(),
-          description: item.description?.trim() || undefined,
-          quantity: parseFloat(String(item.quantity)) || 0,
-          unit: item.unit?.trim() || 'un',
-          unitPrice: parseFloat(String(item.unitPrice)) || 0,
-        })),
-      };
-      return quotesService.create(payload);
+  const measurementsQuery = useQuery({
+    queryKey: ['company', companyId, 'works', draft.workId, 'measurements'],
+    queryFn: () => measurementsService.listByWork(draft.workId as string),
+    select: (result) => toArray<Measurement>(result),
+    enabled: Boolean(companyId && draft.workId),
+  });
+
+  // ── Derivados ──────────────────────────────────────────────────────────────
+
+  const selectedClient = useMemo(
+    () => clientsQuery.data?.find((client) => client.id === draft.clientId),
+    [clientsQuery.data, draft.clientId],
+  );
+
+  const selectedWork = useMemo(
+    () => worksQuery.data?.find((work) => work.id === draft.workId),
+    [worksQuery.data, draft.workId],
+  );
+
+  /** Obras filtradas pelo cliente selecionado (quando houver). */
+  const clientWorks = useMemo(() => {
+    const all = worksQuery.data ?? [];
+    if (!draft.clientId) return all;
+    return all.filter((work) => work.clientId === draft.clientId);
+  }, [worksQuery.data, draft.clientId]);
+
+  const measurements = measurementsQuery.data ?? [];
+
+  const selectedMeasurements = useMemo(
+    () => measurements.filter((m) => draft.selectedMeasurementIds.includes(m.id)),
+    [measurements, draft.selectedMeasurementIds],
+  );
+
+  const selectedMeasurementNames = useMemo(
+    () => selectedMeasurements.map((m) => m.environmentName),
+    [selectedMeasurements],
+  );
+
+  const calcKey = useMemo(
+    () => draft.selectedMeasurementIds.slice().sort().join('|'),
+    [draft.selectedMeasurementIds],
+  );
+
+  const materialsTotal = useMemo(
+    () =>
+      draft.materials.reduce((sum, m) => {
+        const qty = parseNumber(m.quantity);
+        const price = m.unitPrice ?? 0;
+        return sum + qty * price;
+      }, 0),
+    [draft.materials],
+  );
+
+  const servicesTotal = useMemo(
+    () => draft.services.reduce((sum, s) => sum + parseNumber(s.unitPrice), 0),
+    [draft.services],
+  );
+
+  const itemsTotal = materialsTotal + servicesTotal;
+
+  const quoteTotal = useMemo(() => {
+    const discount = parseNumber(draft.discount);
+    const marginPct = parseNumber(draft.marginPct);
+    return itemsTotal - discount + (itemsTotal * marginPct) / 100;
+  }, [itemsTotal, draft.discount, draft.marginPct]);
+
+  // ── Cálculo de materiais (Etapa 3) ─────────────────────────────────────────
+
+  const runMaterialsCalculation = useCallback(
+    (measurementsToCalc: Measurement[], key: string) => {
+      if (measurementsToCalc.length === 0) return;
+      setMaterialsCalcPending(true);
+      setMaterialsCalcError(null);
+      compositionsService
+        .calculate(buildCalculateInput(measurementsToCalc))
+        .then((result) => {
+          setMaterialsCalc({ key, result });
+          setDraft((d) => ({
+            ...d,
+            materials: result.items.map((item, index) => ({
+              key: `${item.materialType}-${item.name}-${index}`,
+              materialType: item.materialType,
+              name: item.name,
+              unit: item.unit,
+              quantity: String(item.quantity),
+              unitPrice: item.unitPrice,
+              total: item.total,
+            })),
+          }));
+        })
+        .catch((error: unknown) => {
+          setMaterialsCalcError(toApiError(error).message);
+        })
+        .finally(() => setMaterialsCalcPending(false));
     },
+    [],
+  );
+
+  useEffect(() => {
+    if (currentStep !== 2) return;
+    const key = calcKey;
+    if (key === '') {
+      setMaterialsCalc(null);
+      setDraft((d) => (d.materials.length > 0 ? { ...d, materials: [] } : d));
+      return;
+    }
+    if (materialsCalc?.key === key) return;
+    if (selectedMeasurements.length === 0) return; // medições ainda carregando
+    runMaterialsCalculation(selectedMeasurements, key);
+  }, [currentStep, calcKey, selectedMeasurements, materialsCalc, runMaterialsCalculation]);
+
+  // ── Mutation ───────────────────────────────────────────────────────────────
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateQuoteInput) => quotesService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'quotes'],
@@ -430,12 +693,807 @@ export default function NovoOrcamentoScreen() {
     },
   });
 
-  function onSubmit(data: QuoteFormValues) {
-    createMutation.mutate(data);
+  // ── Handlers do wizard ─────────────────────────────────────────────────────
+
+  function goNext() {
+    setStepError(null);
+    const stepKey = STEP_META[currentStep].key;
+
+    if (stepKey === 'cliente') {
+      const parsed = stepClienteSchema.safeParse({ clientId: draft.clientId });
+      if (!parsed.success) {
+        setStepError(parsed.error.issues[0]?.message ?? 'Verifique os dados');
+        return;
+      }
+    }
+
+    if (stepKey === 'materiais') {
+      const invalid = draft.materials.filter((m) => {
+        const qty = parseNumber(m.quantity);
+        return Number.isNaN(qty) || qty <= 0;
+      });
+      if (invalid.length > 0) {
+        setStepError(
+          `Quantidade inválida em ${invalid.length} ${
+            invalid.length === 1 ? 'material' : 'materiais'
+          }`,
+        );
+        return;
+      }
+    }
+
+    if (stepKey === 'servicos') {
+      const errors: ServiceErrors = {};
+      let hasError = false;
+      for (const service of draft.services) {
+        const parsed = serviceRowSchema.safeParse(service);
+        if (!parsed.success) {
+          hasError = true;
+          const row: { name?: string; unitPrice?: string } = {};
+          for (const issue of parsed.error.issues) {
+            const field = issue.path[0] as 'name' | 'unitPrice';
+            row[field] = issue.message;
+          }
+          errors[service.id] = row;
+        }
+      }
+      setServiceErrors(errors);
+      if (hasError) return;
+      if (draft.services.length === 0 && draft.materials.length === 0) {
+        setStepError('Adicione ao menos um material (Etapa 3) ou um serviço');
+        return;
+      }
+    }
+
+    if (stepKey === 'valores') {
+      const parsed = stepValoresSchema.safeParse({
+        discount: draft.discount,
+        marginPct: draft.marginPct,
+      });
+      if (!parsed.success) {
+        setStepError(parsed.error.issues[0]?.message ?? 'Verifique os valores');
+        return;
+      }
+    }
+
+    setCurrentStep((s) => Math.min(s + 1, STEP_META.length - 1));
   }
 
-  function addItem() {
-    append({ itemType: 'SERVICO', name: '', quantity: 1, unit: 'un', unitPrice: 0 });
+  function goBack() {
+    setStepError(null);
+    setCurrentStep((s) => Math.max(s - 1, 0));
+  }
+
+  function handleSelectClient(clientId: string) {
+    setDraft((d) => {
+      const workStillValid =
+        d.workId &&
+        worksQuery.data?.some(
+          (work) => work.id === d.workId && work.clientId === clientId,
+        );
+      return {
+        ...d,
+        clientId,
+        workId: workStillValid ? d.workId : '',
+        selectedMeasurementIds: [],
+      };
+    });
+    setMaterialsCalc(null);
+    setClientModalVisible(false);
+  }
+
+  function handleSelectWork(workId: string) {
+    setDraft((d) => ({ ...d, workId, selectedMeasurementIds: [] }));
+    setMaterialsCalc(null);
+    setWorkModalVisible(false);
+  }
+
+  function toggleMeasurement(id: string) {
+    setDraft((d) => ({
+      ...d,
+      selectedMeasurementIds: d.selectedMeasurementIds.includes(id)
+        ? d.selectedMeasurementIds.filter((x) => x !== id)
+        : [...d.selectedMeasurementIds, id],
+    }));
+  }
+
+  function updateMaterialQuantity(key: string, quantity: string) {
+    setDraft((d) => ({
+      ...d,
+      materials: d.materials.map((m) =>
+        m.key === key ? { ...m, quantity } : m,
+      ),
+    }));
+  }
+
+  function handleRecalculate() {
+    if (selectedMeasurements.length === 0 || calcKey === '') return;
+    runMaterialsCalculation(selectedMeasurements, calcKey);
+  }
+
+  function addService() {
+    setDraft((d) => ({
+      ...d,
+      services: [...d.services, { id: nextServiceId(), name: '', unitPrice: '' }],
+    }));
+  }
+
+  function updateService(id: string, field: 'name' | 'unitPrice', value: string) {
+    setDraft((d) => ({
+      ...d,
+      services: d.services.map((s) =>
+        s.id === id ? { ...s, [field]: value } : s,
+      ),
+    }));
+    setServiceErrors((prev) => {
+      const row = prev[id];
+      if (!row) return prev;
+      const next = { ...row, [field]: undefined };
+      if (next.name == null && next.unitPrice == null) {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      }
+      return { ...prev, [id]: next };
+    });
+  }
+
+  function removeService(id: string) {
+    setDraft((d) => ({
+      ...d,
+      services: d.services.filter((s) => s.id !== id),
+    }));
+    setServiceErrors((prev) => {
+      if (!prev[id]) return prev;
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
+  }
+
+  // ── Submit (Etapa 7) ───────────────────────────────────────────────────────
+
+  /** Monta o DTO final — mesmo formato do formulário anterior (não quebra a API). */
+  function buildPayload(): CreateQuoteInput {
+    const items: CreateQuoteInput['items'] = [
+      ...draft.materials.map((m) => ({
+        itemType: 'MATERIAL' as const,
+        name: m.name.trim(),
+        quantity: parseNumber(m.quantity),
+        unit: m.unit.trim() || 'un',
+        unitPrice: m.unitPrice ?? 0,
+      })),
+      ...draft.services.map((s) => ({
+        itemType: 'SERVICO' as const,
+        name: s.name.trim(),
+        quantity: 1,
+        unit: 'un',
+        unitPrice: parseNumber(s.unitPrice),
+      })),
+    ];
+    return {
+      clientId: draft.clientId,
+      workId: draft.workId?.trim() || undefined,
+      discount: parseNumber(draft.discount),
+      marginPct: parseNumber(draft.marginPct),
+      paymentMethod: draft.paymentMethod,
+      observations: draft.observations?.trim() || undefined,
+      items,
+    };
+  }
+
+  function handleSubmit() {
+    const payload = buildPayload();
+    const parsed = createQuoteSchema.safeParse(payload);
+    if (!parsed.success) {
+      setSnackbar({
+        type: 'error',
+        message: parsed.error.issues[0]?.message ?? 'Verifique os dados do orçamento',
+      });
+      return;
+    }
+    createMutation.mutate(payload);
+  }
+
+  // ── Renderização das etapas ────────────────────────────────────────────────
+
+  function renderStepContent() {
+    const stepKey = STEP_META[currentStep].key;
+
+    if (stepKey === 'cliente') {
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>Cliente</Text>
+          <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
+            <View style={styles.clientCardContent}>
+              <View style={styles.clientIcon}>
+                <Ionicons
+                  name="person-outline"
+                  size={sizes.icon.md}
+                  color={colors.primary}
+                  accessibilityElementsHidden
+                />
+              </View>
+              <View style={styles.clientInfo}>
+                <Text style={styles.clientLabel}>Cliente</Text>
+                <Text
+                  style={[
+                    styles.clientName,
+                    draft.clientId === '' && styles.selectorPlaceholder,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {selectedClient?.name ?? 'Selecione um cliente'}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Trocar cliente"
+                onPress={() => setClientModalVisible(true)}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.clientChangeButton,
+                  pressed && styles.clientChangeButtonPressed,
+                ]}
+              >
+                <Text style={styles.clientChangeText}>Trocar</Text>
+              </Pressable>
+            </View>
+          </AppCard>
+
+          <Text style={styles.sectionLabel}>Obra (opcional)</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Selecionar obra"
+            onPress={() => setWorkModalVisible(true)}
+            style={styles.selectorField}
+          >
+            <Ionicons
+              name="construct-outline"
+              size={sizes.icon.md}
+              color={colors.textSecondary}
+              accessibilityElementsHidden
+            />
+            <Text
+              style={[
+                styles.selectorText,
+                draft.workId === '' && styles.selectorPlaceholder,
+              ]}
+              numberOfLines={1}
+            >
+              {selectedWork?.name ?? 'Selecione uma obra (opcional)'}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={sizes.icon.md}
+              color={colors.textLight}
+              accessibilityElementsHidden
+            />
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (stepKey === 'medicoes') {
+      if (!draft.workId) {
+        return (
+          <AppCard shadow="light" style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Ionicons
+                name="information-circle-outline"
+                size={sizes.icon.lg}
+                color={colors.info}
+                accessibilityElementsHidden
+              />
+              <Text style={styles.infoText}>
+                Selecione uma obra na Etapa 1 para carregar os ambientes
+                medidos. Você pode continuar sem medições.
+              </Text>
+            </View>
+          </AppCard>
+        );
+      }
+
+      if (measurementsQuery.isLoading) {
+        return <LoadingState text="Carregando ambientes..." />;
+      }
+
+      if (measurementsQuery.isError) {
+        return (
+          <ErrorState
+            message={toApiError(measurementsQuery.error).message}
+            onRetry={measurementsQuery.refetch}
+          />
+        );
+      }
+
+      if (measurements.length === 0) {
+        return (
+          <EmptyState
+            title="Nenhuma medição nesta obra"
+            description="Esta obra ainda não possui ambientes medidos. Você pode continuar sem medições."
+            icon="resize-outline"
+          />
+        );
+      }
+
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>Ambientes da obra</Text>
+          {measurements.map((measurement) => {
+            const selected = draft.selectedMeasurementIds.includes(
+              measurement.id,
+            );
+            const badge = APPLICATION_TYPE_BADGE[measurement.applicationType];
+            const dims =
+              measurement.length != null && measurement.width != null
+                ? `${formatNumber(measurement.length)} × ${formatNumber(
+                    measurement.width,
+                  )} m`
+                : null;
+            return (
+              <Pressable
+                key={measurement.id}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selected }}
+                accessibilityLabel={`Selecionar ambiente ${measurement.environmentName}`}
+                onPress={() => toggleMeasurement(measurement.id)}
+                style={({ pressed }) => [
+                  styles.measurementOption,
+                  selected && styles.measurementOptionSelected,
+                  pressed && styles.clientOptionPressed,
+                ]}
+              >
+                <Ionicons
+                  name={selected ? 'checkbox' : 'square-outline'}
+                  size={22}
+                  color={selected ? colors.primary : colors.textLight}
+                  accessibilityElementsHidden
+                />
+                <View style={styles.measurementInfo}>
+                  <Text style={styles.measurementName} numberOfLines={1}>
+                    {measurement.environmentName}
+                  </Text>
+                  <Text style={styles.measurementMeta} numberOfLines={1}>
+                    {[dims, measurement.area != null ? `${formatNumber(measurement.area)} m²` : null]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <StatusBadge status={badge.variant} label={badge.label} size="sm" />
+              </Pressable>
+            );
+          })}
+          <Text style={styles.selectionCount}>
+            {draft.selectedMeasurementIds.length}{' '}
+            {draft.selectedMeasurementIds.length === 1
+              ? 'ambiente selecionado'
+              : 'ambientes selecionados'}
+          </Text>
+        </View>
+      );
+    }
+
+    if (stepKey === 'materiais') {
+      if (draft.selectedMeasurementIds.length === 0) {
+        return (
+          <EmptyState
+            title="Nenhum ambiente selecionado"
+            description="Selecione ao menos um ambiente na Etapa 2 para calcular os materiais da composição."
+            icon="cube-outline"
+          />
+        );
+      }
+
+      if (materialsCalcPending) {
+        return <LoadingState text="Calculando materiais..." />;
+      }
+
+      if (materialsCalcError) {
+        return (
+          <ErrorState message={materialsCalcError} onRetry={handleRecalculate} />
+        );
+      }
+
+      if (!materialsCalc) {
+        return <LoadingState text="Preparando materiais..." />;
+      }
+
+      const result = materialsCalc.result;
+
+      return (
+        <View>
+          <AppCard shadow="light" style={styles.compositionCard}>
+            <View style={styles.compositionRow}>
+              <Text style={styles.compositionCode}>{result.composition.code}</Text>
+              <StatusBadge
+                status="active"
+                label={`v${result.composition.version}`}
+                size="sm"
+              />
+            </View>
+            <Text style={styles.compositionName} numberOfLines={2}>
+              {result.composition.name}
+            </Text>
+          </AppCard>
+
+          <Text style={styles.sectionLabel}>Materiais calculados</Text>
+          {draft.materials.length === 0 ? (
+            <EmptyState
+              title="Nenhum material calculado"
+              description="A composição não retornou materiais para os ambientes selecionados."
+              icon="cube-outline"
+            />
+          ) : (
+            draft.materials.map((material) => (
+              <AppCard
+                key={material.key}
+                shadow="light"
+                style={styles.materialCard}
+              >
+                <View style={styles.materialRow}>
+                  <View style={styles.materialInfo}>
+                    <Text style={styles.materialName} numberOfLines={2}>
+                      {material.name}
+                    </Text>
+                    <Text style={styles.materialMeta} numberOfLines={1}>
+                      {material.unitPrice != null
+                        ? `${formatCurrency(material.unitPrice)}/${material.unit}`
+                        : 'Preço não cadastrado'}
+                    </Text>
+                  </View>
+                  <View style={styles.materialQtyField}>
+                    <AppInput
+                      label="Qtd"
+                      value={material.quantity}
+                      onChangeText={(text) =>
+                        updateMaterialQuantity(material.key, text)
+                      }
+                      keyboardType="decimal-pad"
+                      placeholder="0"
+                      accessibilityLabel={`Quantidade de ${material.name}`}
+                      style={styles.materialQtyInput}
+                    />
+                  </View>
+                </View>
+                <View style={styles.itemSubtotalRow}>
+                  <Text style={styles.itemSubtotalLabel}>
+                    Total ({material.unit})
+                  </Text>
+                  <Text style={styles.itemSubtotalValue}>
+                    {formatCurrency(
+                      parseNumber(material.quantity) * (material.unitPrice ?? 0),
+                    )}
+                  </Text>
+                </View>
+              </AppCard>
+            ))
+          )}
+
+          <AppCard shadow="light" style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Resumo</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Área total</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(result.totalArea)} m²
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Custo estimado</Text>
+              <Text style={styles.summaryCost}>
+                {formatCurrency(result.estimatedCost)}
+              </Text>
+            </View>
+          </AppCard>
+
+          <AppButton
+            title="Calcular novamente"
+            variant="outline"
+            size="lg"
+            loading={materialsCalcPending}
+            onPress={handleRecalculate}
+            accessibilityLabel="Calcular novamente"
+            style={styles.recalculateButton}
+          />
+        </View>
+      );
+    }
+
+    if (stepKey === 'servicos') {
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>Serviços</Text>
+          {draft.services.length === 0 ? (
+            <EmptyState
+              title="Nenhum serviço adicionado"
+              description="Adicione os serviços que serão executados (ex.: instalação de forro de drywall)."
+              icon="construct-outline"
+            />
+          ) : (
+            draft.services.map((service) => {
+              const errors = serviceErrors[service.id] ?? {};
+              return (
+                <AppCard
+                  key={service.id}
+                  shadow="light"
+                  style={styles.serviceCard}
+                >
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemLabel}>Serviço</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Remover serviço"
+                      onPress={() => removeService(service.id)}
+                      hitSlop={8}
+                      style={styles.removeItemButton}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={sizes.icon.sm}
+                        color={colors.error}
+                      />
+                    </Pressable>
+                  </View>
+                  <AppInput
+                    label="Descrição"
+                    required
+                    value={service.name}
+                    onChangeText={(text) =>
+                      updateService(service.id, 'name', text)
+                    }
+                    placeholder="Ex.: Instalação de forro de drywall"
+                    error={errors.name}
+                    accessibilityLabel="Descrição do serviço"
+                  />
+                  <AppInput
+                    label="Valor (R$)"
+                    required
+                    value={service.unitPrice}
+                    onChangeText={(text) =>
+                      updateService(service.id, 'unitPrice', text)
+                    }
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    error={errors.unitPrice}
+                    accessibilityLabel="Valor do serviço"
+                  />
+                </AppCard>
+              );
+            })
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Adicionar serviço"
+            onPress={addService}
+            style={({ pressed }) => [
+              styles.addItemButton,
+              pressed && styles.addItemButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="add"
+              size={sizes.icon.md}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+            <Text style={styles.addItemText}>Adicionar serviço</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (stepKey === 'valores') {
+      return (
+        <View>
+          <AppCard shadow="light" style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Resumo dos valores</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Materiais</Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(materialsTotal)}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Serviços</Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(servicesTotal)}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(itemsTotal)}
+              </Text>
+            </View>
+
+            <View style={styles.summaryFieldsRow}>
+              <View style={styles.itemFieldHalf}>
+                <AppInput
+                  label="Desconto (R$)"
+                  value={draft.discount}
+                  onChangeText={(text) =>
+                    setDraft((d) => ({ ...d, discount: text }))
+                  }
+                  placeholder="0,00"
+                  keyboardType="decimal-pad"
+                  accessibilityLabel="Desconto"
+                  style={styles.summaryInput}
+                />
+              </View>
+              <View style={styles.itemFieldHalf}>
+                <AppInput
+                  label="Margem (%)"
+                  value={draft.marginPct}
+                  onChangeText={(text) =>
+                    setDraft((d) => ({ ...d, marginPct: text }))
+                  }
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  accessibilityLabel="Margem percentual"
+                  style={styles.summaryInput}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.summaryRow, styles.totalRow]}>
+              <Text style={styles.totalLabel}>TOTAL</Text>
+              <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>
+            </View>
+          </AppCard>
+        </View>
+      );
+    }
+
+    if (stepKey === 'pagamento') {
+      return (
+        <View>
+          <Text style={styles.sectionLabel}>Forma de pagamento</Text>
+          <View style={styles.paymentRow}>
+            {PAYMENT_METHOD_OPTIONS.map((option) => {
+              const selected = option.value === draft.paymentMethod;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Forma de pagamento ${option.label}`}
+                  accessibilityState={{ selected }}
+                  onPress={() =>
+                    setDraft((d) => ({ ...d, paymentMethod: option.value }))
+                  }
+                  style={[
+                    styles.paymentChip,
+                    selected && styles.paymentChipSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.paymentChipText,
+                      selected && styles.paymentChipTextSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      );
+    }
+
+    // Etapa 7 — Revisão
+    const paymentLabel =
+      PAYMENT_METHOD_OPTIONS.find((o) => o.value === draft.paymentMethod)?.label ??
+      draft.paymentMethod;
+
+    return (
+      <View>
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>Cliente</Text>
+          <Text style={styles.reviewValue}>
+            {selectedClient?.name ?? '—'}
+          </Text>
+          {selectedClient?.document ? (
+            <Text style={styles.reviewMeta}>{selectedClient.document}</Text>
+          ) : null}
+
+          <View style={styles.reviewDivider} />
+          <Text style={styles.reviewSectionTitle}>Obra</Text>
+          <Text style={styles.reviewValue}>
+            {selectedWork?.name ?? 'Sem obra vinculada'}
+          </Text>
+
+          <View style={styles.reviewDivider} />
+          <Text style={styles.reviewSectionTitle}>Ambientes medidos</Text>
+          <Text style={styles.reviewValue}>
+            {selectedMeasurementNames.length > 0
+              ? selectedMeasurementNames.join(', ')
+              : 'Nenhum ambiente selecionado'}
+          </Text>
+        </AppCard>
+
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>
+            Materiais ({draft.materials.length})
+          </Text>
+          {draft.materials.length === 0 ? (
+            <Text style={styles.reviewValue}>Nenhum material</Text>
+          ) : (
+            draft.materials.map((material) => (
+              <View key={material.key} style={styles.reviewItemRow}>
+                <Text style={styles.reviewItemName} numberOfLines={1}>
+                  {material.name}
+                </Text>
+                <Text style={styles.reviewItemQty}>
+                  {formatNumber(parseNumber(material.quantity))} {material.unit}
+                </Text>
+              </View>
+            ))
+          )}
+        </AppCard>
+
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>
+            Serviços ({draft.services.length})
+          </Text>
+          {draft.services.length === 0 ? (
+            <Text style={styles.reviewValue}>Nenhum serviço</Text>
+          ) : (
+            draft.services.map((service) => (
+              <View key={service.id} style={styles.reviewItemRow}>
+                <Text style={styles.reviewItemName} numberOfLines={1}>
+                  {service.name}
+                </Text>
+                <Text style={styles.reviewItemQty}>
+                  {formatCurrency(parseNumber(service.unitPrice))}
+                </Text>
+              </View>
+            ))
+          )}
+        </AppCard>
+
+        <AppCard shadow="light" style={styles.reviewCard}>
+          <Text style={styles.reviewSectionTitle}>Valores</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(itemsTotal)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Desconto</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(parseNumber(draft.discount))}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Margem</Text>
+            <Text style={styles.summaryValue}>
+              {formatNumber(parseNumber(draft.marginPct))}%
+            </Text>
+          </View>
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>TOTAL</Text>
+            <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>
+          </View>
+
+          <View style={styles.reviewDivider} />
+          <Text style={styles.reviewSectionTitle}>Pagamento</Text>
+          <Text style={styles.reviewValue}>{paymentLabel}</Text>
+        </AppCard>
+
+        <AppInput
+          label="Observações"
+          value={draft.observations}
+          onChangeText={(text) =>
+            setDraft((d) => ({ ...d, observations: text }))
+          }
+          placeholder="Observações adicionais (opcional)"
+          accessibilityLabel="Observações"
+          multiline
+        />
+      </View>
+    );
   }
 
   return (
@@ -455,379 +1513,59 @@ export default function NovoOrcamentoScreen() {
           </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.title}>Novo orçamento</Text>
-            <Text style={styles.subtitle}>Preencha os dados e adicione itens</Text>
+            <Text style={styles.subtitle}>
+              Preencha os dados e avance pelas etapas
+            </Text>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Cliente</Text>
-        <Controller
-          control={control}
-          name="clientId"
-          render={({ field, fieldState }) => {
-            const selectedClient = clientsQuery.data?.find(
-              (client) => client.id === field.value,
-            );
-            return (
-              <>
-                <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
-                  <View style={styles.clientCardContent}>
-                    <View style={styles.clientIcon}>
-                      <Ionicons
-                        name="person-outline"
-                        size={sizes.icon.md}
-                        color={colors.primary}
-                        accessibilityElementsHidden
-                      />
-                    </View>
-                    <View style={styles.clientInfo}>
-                      <Text style={styles.clientLabel}>Cliente</Text>
-                      <Text
-                        style={[
-                          styles.clientName,
-                          field.value === '' && styles.selectorPlaceholder,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {selectedClient?.name ?? 'Selecione um cliente'}
-                      </Text>
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Trocar cliente"
-                      onPress={() => setClientModalVisible(true)}
-                      hitSlop={8}
-                      style={({ pressed }) => [
-                        styles.clientChangeButton,
-                        pressed && styles.clientChangeButtonPressed,
-                      ]}
-                    >
-                      <Text style={styles.clientChangeText}>Trocar</Text>
-                    </Pressable>
-                  </View>
-                </AppCard>
-                {fieldState.error ? (
-                  <Text style={styles.fieldError}>
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </>
-            );
-          }}
-        />
+        <StepProgress current={currentStep} />
 
-        <Text style={styles.sectionLabel}>Obra (opcional)</Text>
-        <Controller
-          control={control}
-          name="workId"
-          render={({ field }) => {
-            const selectedWork = worksQuery.data?.find(
-              (work) => work.id === field.value,
-            );
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Selecionar obra"
-                onPress={() => setWorkModalVisible(true)}
-                style={styles.selectorField}
-              >
-                <Ionicons
-                  name="construct-outline"
-                  size={sizes.icon.md}
-                  color={colors.textSecondary}
-                  accessibilityElementsHidden
-                />
-                <Text
-                  style={[
-                    styles.selectorText,
-                    !field.value && styles.selectorPlaceholder,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {selectedWork?.name ?? 'Selecione uma obra (opcional)'}
-                </Text>
-                <Ionicons
-                  name="chevron-down"
-                  size={sizes.icon.md}
-                  color={colors.textLight}
-                  accessibilityElementsHidden
-                />
-              </Pressable>
-            );
-          }}
-        />
+        {renderStepContent()}
 
-        <Text style={styles.sectionLabel}>Itens do orçamento</Text>
-        {fields.map((field, index) => (
-          <AppCard key={field.id} shadow="light" style={styles.itemCard}>
-            <View style={styles.itemHeader}>
-              <Text style={styles.itemLabel}>Item {index + 1}</Text>
-              {fields.length > 1 && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remover item ${index + 1}`}
-                  onPress={() => remove(index)}
-                  style={styles.removeItemButton}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={sizes.icon.sm}
-                    color={colors.error}
-                  />
-                </Pressable>
-              )}
-            </View>
-
-            <Controller
-              control={control}
-              name={`items.${index}.itemType`}
-              render={({ field: itemTypeField }) => (
-                <View style={styles.itemTypeRow}>
-                  {ITEM_TYPE_OPTIONS.map((option) => {
-                    const selected = option.value === itemTypeField.value;
-                    return (
-                      <Pressable
-                        key={option.value}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Tipo ${option.label}`}
-                        accessibilityState={{ selected }}
-                        onPress={() => itemTypeField.onChange(option.value)}
-                        style={[
-                          styles.itemTypeChip,
-                          selected && styles.itemTypeChipSelected,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.itemTypeChipText,
-                            selected && styles.itemTypeChipTextSelected,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
+        {stepError ? (
+          <View style={styles.stepErrorRow}>
+            <Ionicons
+              name="alert-circle-outline"
+              size={sizes.icon.sm}
+              color={colors.error}
+              accessibilityElementsHidden
             />
-
-            <Controller
-              control={control}
-              name={`items.${index}.name`}
-              render={({ field: nameField, fieldState }) => (
-                <AppInput
-                  label="Descrição"
-                  required
-                  value={nameField.value}
-                  onChangeText={nameField.onChange}
-                  placeholder="Ex.: Instalação de forro"
-                  error={fieldState.error?.message}
-                  accessibilityLabel={`Descrição do item ${index + 1}`}
-                />
-              )}
-            />
-
-            <View style={styles.itemRow}>
-              <Controller
-                control={control}
-                name={`items.${index}.quantity`}
-                render={({ field: qtyField, fieldState }) => (
-                  <View style={styles.itemFieldHalf}>
-                    <AppInput
-                      label="Qtd"
-                      required
-                      value={qtyField.value == null ? '' : String(qtyField.value)}
-                      onChangeText={(text) => qtyField.onChange(text)}
-                      placeholder="1"
-                      keyboardType="decimal-pad"
-                      error={fieldState.error?.message}
-                      accessibilityLabel={`Quantidade do item ${index + 1}`}
-                    />
-                  </View>
-                )}
-              />
-
-              <Controller
-                control={control}
-                name={`items.${index}.unit`}
-                render={({ field: unitField }) => (
-                  <View style={styles.itemFieldSmall}>
-                    <AppInput
-                      label="Un"
-                      value={unitField.value ?? 'un'}
-                      onChangeText={unitField.onChange}
-                      placeholder="un"
-                      accessibilityLabel={`Unidade do item ${index + 1}`}
-                    />
-                  </View>
-                )}
-              />
-
-              <Controller
-                control={control}
-                name={`items.${index}.unitPrice`}
-                render={({ field: priceField, fieldState }) => (
-                  <View style={styles.itemFieldHalf}>
-                    <AppInput
-                      label="Preço unit."
-                      required
-                      value={priceField.value == null ? '' : String(priceField.value)}
-                      onChangeText={(text) => priceField.onChange(text)}
-                      placeholder="0,00"
-                      keyboardType="decimal-pad"
-                      error={fieldState.error?.message}
-                      accessibilityLabel={`Preço unitário do item ${index + 1}`}
-                    />
-                  </View>
-                )}
-              />
-            </View>
-
-            <View style={styles.itemSubtotalRow}>
-              <Text style={styles.itemSubtotalLabel}>
-                {formatNumber(parseFloat(String(watchedItems?.[index]?.quantity)) || 0)} ×{' '}
-                {formatCurrency(parseFloat(String(watchedItems?.[index]?.unitPrice)) || 0)}
-              </Text>
-              <Text style={styles.itemSubtotalValue}>
-                {formatCurrency(
-                  (parseFloat(String(watchedItems?.[index]?.quantity)) || 0) *
-                    (parseFloat(String(watchedItems?.[index]?.unitPrice)) || 0),
-                )}
-              </Text>
-            </View>
-          </AppCard>
-        ))}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Adicionar item ao orçamento"
-          onPress={addItem}
-          style={({ pressed }) => [
-            styles.addItemButton,
-            pressed && styles.addItemButtonPressed,
-          ]}
-        >
-          <Ionicons
-            name="add"
-            size={sizes.icon.md}
-            color={colors.primary}
-            accessibilityElementsHidden
-          />
-          <Text style={styles.addItemText}>Adicionar item</Text>
-        </Pressable>
-
-        <Text style={styles.sectionLabel}>Totais</Text>
-        <AppCard shadow="light" style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(itemsTotal)}</Text>
+            <Text style={styles.stepErrorText}>{stepError}</Text>
           </View>
+        ) : null}
 
-          <View style={styles.summaryFieldsRow}>
-            <Controller
-              control={control}
-              name="discount"
-              render={({ field: discountField }) => (
-                <View style={styles.itemFieldHalf}>
-                  <AppInput
-                    label="Desconto (R$)"
-                    value={discountField.value == null ? '' : String(discountField.value)}
-                    onChangeText={(text) => discountField.onChange(text)}
-                    placeholder="0,00"
-                    keyboardType="decimal-pad"
-                    accessibilityLabel="Desconto"
-                    style={styles.summaryInput}
-                  />
-                </View>
-              )}
+        <View style={styles.footer}>
+          {currentStep > 0 ? (
+            <AppButton
+              title="Voltar"
+              variant="outline"
+              size="lg"
+              onPress={goBack}
+              accessibilityLabel="Voltar para a etapa anterior"
+              style={styles.footerButton}
             />
-
-            <Controller
-              control={control}
-              name="marginPct"
-              render={({ field: marginField }) => (
-                <View style={styles.itemFieldHalf}>
-                  <AppInput
-                    label="Margem (%)"
-                    value={marginField.value == null ? '' : String(marginField.value)}
-                    onChangeText={(text) => marginField.onChange(text)}
-                    placeholder="0"
-                    keyboardType="decimal-pad"
-                    accessibilityLabel="Margem percentual"
-                    style={styles.summaryInput}
-                  />
-                </View>
-              )}
+          ) : null}
+          {currentStep < STEP_META.length - 1 ? (
+            <AppButton
+              title="Continuar"
+              size="lg"
+              onPress={goNext}
+              accessibilityLabel="Continuar para a próxima etapa"
+              style={styles.footerButton}
             />
-          </View>
-
-          <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>TOTAL</Text>
-            <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>
-          </View>
-        </AppCard>
-
-        <Text style={styles.sectionLabel}>Forma de pagamento</Text>
-        <Controller
-          control={control}
-          name="paymentMethod"
-          render={({ field: paymentField }) => (
-            <View style={styles.paymentRow}>
-              {PAYMENT_METHOD_OPTIONS.map((option) => {
-                const selected = option.value === paymentField.value;
-                return (
-                  <Pressable
-                    key={option.value}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Forma de pagamento ${option.label}`}
-                    accessibilityState={{ selected }}
-                    onPress={() => paymentField.onChange(option.value)}
-                    style={[
-                      styles.paymentChip,
-                      selected && styles.paymentChipSelected,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.paymentChipText,
-                        selected && styles.paymentChipTextSelected,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-        />
-
-        <Text style={styles.sectionLabel}>Observações</Text>
-        <Controller
-          control={control}
-          name="observations"
-          render={({ field: obsField }) => (
-            <AppInput
-              label="Observações"
-              value={obsField.value ?? ''}
-              onChangeText={obsField.onChange}
-              placeholder="Observações adicionais (opcional)"
-              accessibilityLabel="Observações"
+          ) : (
+            <AppButton
+              title="Gerar orçamento"
+              size="lg"
+              onPress={handleSubmit}
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending}
+              accessibilityLabel="Gerar orçamento"
+              style={styles.footerButton}
             />
           )}
-        />
-
-        <AppButton
-          title="Salvar orçamento"
-          size="lg"
-          accessibilityLabel="Salvar orçamento"
-          onPress={handleSubmit(onSubmit)}
-          loading={createMutation.isPending}
-          disabled={createMutation.isPending}
-          style={styles.saveButton}
-        />
+        </View>
       </ScreenContainer>
 
       <ClientPickerModal
@@ -837,24 +1575,18 @@ export default function NovoOrcamentoScreen() {
         isError={clientsQuery.isError}
         errorMessage={clientsQuery.isError ? toApiError(clientsQuery.error).message : ''}
         onRetry={clientsQuery.refetch}
-        onSelect={(clientId) => {
-          setValue('clientId', clientId, { shouldValidate: true, shouldDirty: true });
-          setClientModalVisible(false);
-        }}
+        onSelect={handleSelectClient}
         onClose={() => setClientModalVisible(false)}
       />
 
       <WorkPickerModal
         visible={workModalVisible}
-        works={worksQuery.data ?? []}
+        works={clientWorks}
         isLoading={worksQuery.isLoading}
         isError={worksQuery.isError}
         errorMessage={worksQuery.isError ? toApiError(worksQuery.error).message : ''}
         onRetry={worksQuery.refetch}
-        onSelect={(workId) => {
-          setValue('workId', workId, { shouldDirty: true });
-          setWorkModalVisible(false);
-        }}
+        onSelect={handleSelectWork}
         onClose={() => setWorkModalVisible(false)}
       />
 
@@ -878,7 +1610,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   backButton: {
     minWidth: sizes.touchTarget,
@@ -906,6 +1638,60 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
+  // Progresso
+  progressWrap: {
+    marginBottom: spacing.lg,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.border,
+  },
+  progressLineActive: {
+    backgroundColor: colors.primary,
+  },
+  progressDot: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressDotCurrent: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  progressDotDone: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  progressNumber: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
+    color: colors.textLight,
+  },
+  progressNumberCurrent: {
+    color: colors.textOnPrimary,
+  },
+  progressCaptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  progressCaption: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  // Etapa 1 — Cliente
   clientCard: {
     padding: spacing.md,
     marginBottom: spacing.xs,
@@ -970,63 +1756,105 @@ const styles = StyleSheet.create({
   selectorPlaceholder: {
     color: colors.textLight,
   },
-  fieldError: {
-    fontSize: typography.sizes.xs,
-    color: colors.error,
+  // Etapa 2 — Medições
+  infoCard: {
+    marginBottom: spacing.md,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  measurementOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  measurementOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  measurementInfo: {
+    flex: 1,
+  },
+  measurementName: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  measurementMeta: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  selectionCount: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  itemCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
+  // Etapa 3 — Materiais
+  compositionCard: {
+    marginBottom: spacing.lg,
   },
-  itemHeader: {
+  compositionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  itemLabel: {
-    fontSize: typography.sizes.sm,
+  compositionCode: {
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  removeItemButton: {
-    padding: spacing.xs,
-  },
-  itemTypeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  itemTypeChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  itemTypeChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  itemTypeChipText: {
-    fontSize: typography.sizes.xs,
+  compositionName: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  itemTypeChipTextSelected: {
-    color: colors.textOnPrimary,
+  materialCard: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
   },
-  itemRow: {
+  materialRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
-  itemFieldHalf: {
+  materialInfo: {
     flex: 1,
   },
-  itemFieldSmall: {
-    width: 60,
+  materialName: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  materialMeta: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: 2,
+  },
+  materialQtyField: {
+    width: 96,
+  },
+  materialQtyInput: {
+    marginBottom: spacing.xs,
   },
   itemSubtotalRow: {
     flexDirection: 'row',
@@ -1045,6 +1873,89 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.primary,
+  },
+  summaryCard: {
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  summaryTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.md,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  summaryFieldsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  itemFieldHalf: {
+    flex: 1,
+  },
+  summaryInput: {
+    marginBottom: spacing.xs,
+  },
+  summaryLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
+  },
+  summaryValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  summaryCost: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
+  totalRow: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginBottom: 0,
+  },
+  totalLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  totalValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  recalculateButton: {
+    marginBottom: spacing.sm,
+  },
+  // Etapa 4 — Serviços
+  serviceCard: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  itemLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+  },
+  removeItemButton: {
+    padding: spacing.xs,
   },
   addItemButton: {
     flexDirection: 'row',
@@ -1067,51 +1978,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.primary,
   },
-  summaryCard: {
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  summaryFieldsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  summaryInput: {
-    marginBottom: spacing.xs,
-  },
-  summaryLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.textSecondary,
-  },
-  summaryValue: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  totalRow: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginBottom: 0,
-  },
-  totalLabel: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  totalValue: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
+  // Etapa 6 — Pagamento
   paymentRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1136,9 +2003,72 @@ const styles = StyleSheet.create({
   paymentChipTextSelected: {
     color: colors.textOnPrimary,
   },
-  saveButton: {
+  // Etapa 7 — Revisão
+  reviewCard: {
+    marginBottom: spacing.md,
+  },
+  reviewSectionTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  reviewValue: {
+    fontSize: typography.sizes.md,
+    color: colors.text,
+  },
+  reviewMeta: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  reviewDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginVertical: spacing.md,
+  },
+  reviewItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  reviewItemName: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    color: colors.text,
+  },
+  reviewItemQty: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  // Erro da etapa + rodapé de navegação
+  stepErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.dangerSoft,
+  },
+  stepErrorText: {
+    flex: 1,
+    fontSize: typography.sizes.sm,
+    color: colors.error,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     marginTop: spacing.xl,
     marginBottom: spacing['3xl'],
+  },
+  footerButton: {
+    flex: 1,
   },
   // Modal styles
   modalSafe: {

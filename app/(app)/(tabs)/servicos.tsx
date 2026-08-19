@@ -24,7 +24,9 @@ const SERVICE_ORDER_STATUS_BADGE: Record<
   { variant: StatusBadgeVariant; label: string }
 > = {
   PENDENTE: { variant: 'expired', label: 'Pendente' },
+  EM_DESLOCAMENTO: { variant: 'info', label: 'Em deslocamento' },
   EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento' },
+  PAUSADA: { variant: 'suspended', label: 'Pausada' },
   CONCLUIDA: { variant: 'active', label: 'Concluída' },
   CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
 };

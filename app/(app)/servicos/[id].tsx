@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,12 +16,14 @@ import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
+import { clientsService } from '../../../src/services/api/clients';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import type {
   RegisterServiceOrderResultInput,
+  ServiceOrder,
   ServiceOrderStatus,
 } from '../../../src/types/serviceOrder';
 
@@ -31,23 +33,74 @@ const SERVICE_ORDER_STATUS_BADGE: Record<
   ServiceOrderStatus,
   { variant: StatusBadgeVariant; label: string }
 > = {
-  PENDENTE: { variant: 'expired', label: 'Pendente' },
+  PENDENTE: { variant: 'expired', label: 'Agendado' },
+  EM_DESLOCAMENTO: { variant: 'info', label: 'Em deslocamento' },
   EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento' },
+  PAUSADA: { variant: 'suspended', label: 'Pausado' },
   CONCLUIDA: { variant: 'active', label: 'Concluída' },
   CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
 };
 
+/** Etapas do status expandido — ordem de exibição no timeline. */
+const SERVICE_ORDER_STATUS_STEPS: Array<{
+  status: ServiceOrderStatus;
+  label: string;
+}> = [
+  { status: 'PENDENTE', label: 'Agendado' },
+  { status: 'EM_DESLOCAMENTO', label: 'Em deslocamento' },
+  { status: 'EM_ANDAMENTO', label: 'Em andamento' },
+  { status: 'PAUSADA', label: 'Pausado' },
+  { status: 'CONCLUIDA', label: 'Concluído' },
+];
+
+/** Itens padrão do checklist de execução da OS. */
+const CHECKLIST_ITEMS = [
+  'Material carregado',
+  'Local protegido',
+  'Estrutura instalada',
+  'Placas instaladas',
+  'Acabamento',
+  'Limpeza',
+] as const;
+
+/** Slots de fotos (antes/durante/depois) — estrutura visual sem câmera. */
+const PHOTO_SLOTS = [
+  { key: 'antes', label: 'Antes' },
+  { key: 'durante', label: 'Durante' },
+  { key: 'depois', label: 'Depois' },
+] as const;
+
+interface StatusTransition {
+  to: ServiceOrderStatus;
+  label: string;
+  completedDate?: boolean;
+}
+
+/** Transições de status disponíveis a partir do status atual. */
+function getStatusTransitions(status: ServiceOrderStatus): StatusTransition[] {
+  switch (status) {
+    case 'PENDENTE':
+      return [
+        { to: 'EM_DESLOCAMENTO', label: 'Iniciar deslocamento' },
+        { to: 'EM_ANDAMENTO', label: 'Iniciar serviço' },
+      ];
+    case 'EM_DESLOCAMENTO':
+      return [{ to: 'EM_ANDAMENTO', label: 'Iniciar serviço' }];
+    case 'EM_ANDAMENTO':
+      return [
+        { to: 'PAUSADA', label: 'Pausar' },
+        { to: 'CONCLUIDA', label: 'Concluir', completedDate: true },
+      ];
+    case 'PAUSADA':
+      return [{ to: 'EM_ANDAMENTO', label: 'Retomar' }];
+    default:
+      return [];
+  }
+}
+
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString('pt-BR');
-}
-
-function canStart(status: ServiceOrderStatus): boolean {
-  return status === 'PENDENTE';
-}
-
-function canComplete(status: ServiceOrderStatus): boolean {
-  return status === 'PENDENTE' || status === 'EM_ANDAMENTO';
 }
 
 // ─── Modal de registro de resultado ─────────────────────────────────────────
@@ -151,37 +204,72 @@ export default function DetalheOrdemServicoScreen() {
     enabled: Boolean(companyId && orderId),
   });
 
-  const startMutation = useMutation({
-    mutationFn: () =>
+  const statusMutation = useMutation({
+    mutationFn: (transition: StatusTransition) =>
       serviceOrdersService.update(orderId as string, {
-        status: 'EM_ANDAMENTO',
+        status: transition.to,
+        ...(transition.completedDate
+          ? { completedDate: new Date().toISOString() }
+          : {}),
       }),
-    onSuccess: () => {
+    onSuccess: (_data, transition) => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'service-orders'],
       });
-      setSnackbar({ type: 'success', message: 'Serviço iniciado com sucesso' });
+      setSnackbar({
+        type: 'success',
+        message: transition.to === 'CONCLUIDA'
+          ? 'Ordem de serviço concluída com sucesso'
+          : 'Status atualizado com sucesso',
+      });
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
     },
   });
 
-  const completeMutation = useMutation({
-    mutationFn: () =>
-      serviceOrdersService.update(orderId as string, {
-        status: 'CONCLUIDA',
-        completedDate: new Date().toISOString(),
-      }),
-    onSuccess: () => {
+  const checklistMutation = useMutation({
+    mutationFn: (checklist: Record<string, boolean>) =>
+      serviceOrdersService.update(orderId as string, { checklist }),
+    onMutate: async (checklist) => {
+      await queryClient.cancelQueries({
+        queryKey: ['company', companyId, 'service-orders', orderId],
+      });
+      const previous = queryClient.getQueryData<ServiceOrder>([
+        'company',
+        companyId,
+        'service-orders',
+        orderId,
+      ]);
+      if (previous) {
+        queryClient.setQueryData<ServiceOrder>(
+          ['company', companyId, 'service-orders', orderId],
+          { ...previous, checklist },
+        );
+      }
+      return { previous };
+    },
+    onError: (error: unknown, _checklist, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ['company', companyId, 'service-orders', orderId],
+          context.previous,
+        );
+      }
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'service-orders'],
       });
-      setSnackbar({ type: 'success', message: 'Ordem de serviço concluída com sucesso' });
     },
-    onError: (error: unknown) => {
-      setSnackbar({ type: 'error', message: toApiError(error).message });
-    },
+  });
+
+  // Cliente completo (telefone/WhatsApp/endereço) para as ações rápidas.
+  const clientQuery = useQuery({
+    queryKey: ['company', companyId, 'clients', orderQuery.data?.clientId],
+    queryFn: () => clientsService.getById(orderQuery.data!.clientId),
+    enabled: Boolean(companyId && orderQuery.data?.clientId),
   });
 
   const registerResultMutation = useMutation({
@@ -227,6 +315,60 @@ export default function DetalheOrdemServicoScreen() {
   const order = orderQuery.data;
   const statusBadge = order ? SERVICE_ORDER_STATUS_BADGE[order.status] : null;
 
+  // Cliente completo (telefone/WhatsApp/endereço) — ações rápidas
+  const client = clientQuery.data;
+  const phone = client?.phone ?? null;
+  const whatsapp = client?.whatsapp ?? null;
+
+  function openRoute() {
+    const address = [
+      client?.street,
+      client?.number,
+      client?.district,
+      client?.city,
+      client?.state,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    const query = address.trim() || client?.name?.trim() || '';
+    if (!query) {
+      setSnackbar({ type: 'error', message: 'Cliente sem endereço para traçar a rota' });
+      return;
+    }
+    Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+    ).catch(() => {
+      setSnackbar({ type: 'error', message: 'Não foi possível abrir o mapa' });
+    });
+  }
+
+  function openPhone() {
+    if (!phone) {
+      setSnackbar({ type: 'error', message: 'Cliente sem telefone cadastrado' });
+      return;
+    }
+    Linking.openURL(`tel:${phone.replace(/[^\d+]/g, '')}`).catch(() => {
+      setSnackbar({ type: 'error', message: 'Não foi possível abrir o discador' });
+    });
+  }
+
+  function openWhatsApp() {
+    const number = (whatsapp ?? phone)?.replace(/\D/g, '') ?? '';
+    if (!number) {
+      setSnackbar({ type: 'error', message: 'Cliente sem WhatsApp cadastrado' });
+      return;
+    }
+    Linking.openURL(`https://wa.me/${number}`).catch(() => {
+      setSnackbar({ type: 'error', message: 'Não foi possível abrir o WhatsApp' });
+    });
+  }
+
+  function toggleChecklistItem(item: string) {
+    if (!order) return;
+    const current = order.checklist ?? {};
+    checklistMutation.mutate({ ...current, [item]: !current[item] });
+  }
+
   // Resultado do serviço (custo × venda → lucro/margem)
   const hasResult = order != null && order.cost != null && order.saleValue != null;
   const showResultSection =
@@ -238,6 +380,12 @@ export default function DetalheOrdemServicoScreen() {
   const marginPct = saleValue > 0 ? (profit / saleValue) * 100 : 0;
   const profitColor =
     profit > 0 ? colors.success : profit < 0 ? colors.danger : colors.text;
+
+  // Índice do status atual no timeline expandido (para o stepper)
+  const currentStepIndex = order
+    ? SERVICE_ORDER_STATUS_STEPS.findIndex((s) => s.status === order.status)
+    : -1;
+  const statusTransitions = order ? getStatusTransitions(order.status) : [];
 
   return (
     <View style={styles.screen}>
@@ -360,6 +508,208 @@ export default function DetalheOrdemServicoScreen() {
               )}
             </AppCard>
 
+            <Text style={styles.sectionLabel}>Ações rápidas</Text>
+            <View style={styles.quickActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Abrir rota no mapa"
+                onPress={openRoute}
+                style={({ pressed }) => [
+                  styles.quickAction,
+                  pressed && styles.quickActionPressed,
+                ]}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.primarySoft }]}>
+                  <Ionicons
+                    name="navigate"
+                    size={sizes.icon.md}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <Text style={styles.quickActionLabel}>Rota</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ligar para o cliente"
+                onPress={openPhone}
+                style={({ pressed }) => [
+                  styles.quickAction,
+                  pressed && styles.quickActionPressed,
+                ]}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.successSoft }]}>
+                  <Ionicons
+                    name="call"
+                    size={sizes.icon.md}
+                    color={colors.success}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <Text style={styles.quickActionLabel}>Ligar</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Abrir conversa no WhatsApp"
+                onPress={openWhatsApp}
+                style={({ pressed }) => [
+                  styles.quickAction,
+                  pressed && styles.quickActionPressed,
+                ]}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.successSoft }]}>
+                  <Ionicons
+                    name="logo-whatsapp"
+                    size={sizes.icon.md}
+                    color={colors.success}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <Text style={styles.quickActionLabel}>WhatsApp</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.sectionLabel}>Status</Text>
+            <AppCard shadow="light" style={styles.statusCard}>
+              {order.status === 'CANCELADA' ? (
+                <Text style={styles.statusCancelledText}>
+                  Esta ordem de serviço foi cancelada.
+                </Text>
+              ) : (
+                <>
+                  {SERVICE_ORDER_STATUS_STEPS.map((step, index) => {
+                    const isDone = currentStepIndex > index;
+                    const isCurrent = currentStepIndex === index;
+                    const iconName = isDone
+                      ? 'checkmark-circle'
+                      : isCurrent
+                        ? 'radio-button-on'
+                        : 'ellipse-outline';
+                    const iconColor = isDone
+                      ? colors.success
+                      : isCurrent
+                        ? colors.primary
+                        : colors.textLight;
+                    return (
+                      <View key={step.status} style={styles.statusStep}>
+                        <Ionicons
+                          name={iconName}
+                          size={sizes.icon.md}
+                          color={iconColor}
+                          accessibilityElementsHidden
+                        />
+                        <Text
+                          style={[
+                            styles.statusStepLabel,
+                            isCurrent && styles.statusStepLabelCurrent,
+                          ]}
+                        >
+                          {step.label}
+                        </Text>
+                        {isCurrent && (
+                          <View style={styles.statusCurrentBadge}>
+                            <Text style={styles.statusCurrentBadgeText}>Atual</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+
+                  {statusTransitions.length > 0 && (
+                    <View style={styles.statusActions}>
+                      {statusTransitions.map((transition) => (
+                        <AppButton
+                          key={transition.to}
+                          title={transition.label}
+                          variant={
+                            transition.to === 'CONCLUIDA' ? 'primary' : 'outline'
+                          }
+                          size="md"
+                          accessibilityLabel={transition.label}
+                          onPress={() => statusMutation.mutate(transition)}
+                          loading={statusMutation.isPending}
+                          disabled={statusMutation.isPending}
+                          style={styles.statusActionButton}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+            </AppCard>
+
+            <Text style={styles.sectionLabel}>Checklist de execução</Text>
+            <AppCard shadow="light" style={styles.checklistCard}>
+              {CHECKLIST_ITEMS.map((item) => {
+                const checked = order.checklist?.[item] === true;
+                return (
+                  <Pressable
+                    key={item}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={item}
+                    accessibilityState={{ checked }}
+                    onPress={() => toggleChecklistItem(item)}
+                    disabled={checklistMutation.isPending}
+                    style={({ pressed }) => [
+                      styles.checklistItem,
+                      pressed && styles.checklistItemPressed,
+                    ]}
+                  >
+                    <Ionicons
+                      name={checked ? 'checkbox' : 'square-outline'}
+                      size={sizes.icon.lg}
+                      color={checked ? colors.success : colors.textLight}
+                      accessibilityElementsHidden
+                    />
+                    <Text
+                      style={[
+                        styles.checklistItemLabel,
+                        checked && styles.checklistItemLabelChecked,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              <Text style={styles.checklistHint}>
+                {Object.values(order.checklist ?? {}).filter(Boolean).length} de{' '}
+                {CHECKLIST_ITEMS.length} itens concluídos
+              </Text>
+            </AppCard>
+
+            <Text style={styles.sectionLabel}>Fotos</Text>
+            <View style={styles.photoSlots}>
+              {PHOTO_SLOTS.map((slot) => (
+                <Pressable
+                  key={slot.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Fotos ${slot.label}`}
+                  onPress={() =>
+                    setSnackbar({
+                      type: 'info',
+                      message: 'Registro de fotos disponível em breve',
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.photoSlot,
+                    pressed && styles.photoSlotPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name="camera-outline"
+                    size={sizes.icon.lg}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                  <Text style={styles.photoSlotLabel}>{slot.label}</Text>
+                  <Text style={styles.photoSlotHint}>Em breve</Text>
+                </Pressable>
+              ))}
+            </View>
+
             <Text style={styles.sectionLabel}>Materiais usados</Text>
             {!order.materials || order.materials.length === 0 ? (
               <Text style={styles.emptyText}>Nenhum material adicionado</Text>
@@ -436,34 +786,6 @@ export default function DetalheOrdemServicoScreen() {
                   />
                 )}
               </>
-            )}
-
-            {(canStart(order.status) || canComplete(order.status)) && (
-              <View style={styles.actions}>
-                {canStart(order.status) && (
-                  <AppButton
-                    title="Iniciar serviço"
-                    variant="outline"
-                    size="md"
-                    accessibilityLabel="Iniciar ordem de serviço"
-                    onPress={() => startMutation.mutate()}
-                    loading={startMutation.isPending}
-                    disabled={startMutation.isPending}
-                    style={styles.actionButton}
-                  />
-                )}
-                {canComplete(order.status) && (
-                  <AppButton
-                    title="Concluir"
-                    size="md"
-                    accessibilityLabel="Concluir ordem de serviço"
-                    onPress={() => completeMutation.mutate()}
-                    loading={completeMutation.isPending}
-                    disabled={completeMutation.isPending}
-                    style={styles.actionButton}
-                  />
-                )}
-              </View>
             )}
           </>
         ) : null}
@@ -672,13 +994,138 @@ const styles = StyleSheet.create({
   resultCtaButton: {
     marginBottom: spacing.lg,
   },
-  actions: {
+  // Ações rápidas (rota / ligar / WhatsApp)
+  quickActions: {
+    flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.lg,
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing.sm,
   },
-  actionButton: {
+  quickAction: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  quickActionPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  // Status expandido (timeline + transições)
+  statusCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  statusStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  statusStepLabel: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    color: colors.textSecondary,
+  },
+  statusStepLabelCurrent: {
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  statusCurrentBadge: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  statusCurrentBadgeText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  statusActions: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  statusActionButton: {
     marginBottom: spacing.xs,
+  },
+  statusCancelledText: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  // Checklist interativo
+  checklistCard: {
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    minHeight: sizes.touchTarget,
+    borderRadius: radius.sm,
+  },
+  checklistItemPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  checklistItemLabel: {
+    flex: 1,
+    fontSize: typography.sizes.md,
+    color: colors.text,
+  },
+  checklistItemLabelChecked: {
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  checklistHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
+    marginTop: spacing.sm,
+  },
+  // Fotos (antes / durante / depois)
+  photoSlots: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  photoSlot: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.inputBorder,
+  },
+  photoSlotPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  photoSlotLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
+  },
+  photoSlotHint: {
+    fontSize: typography.sizes.xs,
+    color: colors.textLight,
   },
   // Modal styles
   modalSafe: {
