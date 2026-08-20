@@ -1,8 +1,9 @@
 /**
  * SmartGesso Mobile — Serviço de Notificações (V3 §79).
  *
- * As notificações são calculadas LOCALMENTE a partir das APIs existentes
- * (sem endpoint dedicado de notificações no backend):
+ * `loadNotifications()` prioriza a API dedicada (GET /notifications) e cai
+ * para o cálculo LOCAL a partir das APIs existentes quando a API retorna
+ * vazio ou falha (endpoint ainda em implantação):
  * - Orçamentos vencendo (validade do orçamento próxima);
  * - Visitas hoje (agenda — quotes com visitDate);
  * - Serviço amanhã (service orders com scheduledDate);
@@ -10,12 +11,15 @@
  * - Pagamento vencendo (payments PENDENTE com dueDate próximo);
  * - Estoque baixo (materiais com stockQty <= minStockQty).
  *
- * Push: `registerForPushNotifications()` é um placeholder — solicita
- * permissão e obtém o token Expo, mas NÃO envia para nenhum servidor push.
+ * Push: `registerForPushNotifications()` solicita permissão, obtém o token
+ * Expo e o registra no backend (POST /notifications/tokens) — chamado após
+ * o login quando há empresa ativa.
  */
 import * as Notifications from 'expo-notifications';
 import { agendaService } from './api/agenda';
 import { catalogService } from './api/catalog';
+import { notificationsApi } from './api/notifications';
+import type { ApiNotification } from './api/notifications';
 import { paymentsService } from './api/payments';
 import { quotesService } from './api/quotes';
 import { serviceOrdersService } from './api/serviceOrders';
@@ -308,4 +312,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   DELIVERY_SOON: 'Entrega próxima',
   PAYMENT_DUE: 'Pagamento vencendo',
   LOW_STOCK: 'Estoque baixo',
+  GENERIC: 'Notificação',
 };

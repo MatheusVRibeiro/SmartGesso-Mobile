@@ -52,6 +52,7 @@ const NOTIFICATION_TYPE_CONFIG: Record<
   DELIVERY_SOON: { icon: 'cube-outline', backgroundColor: colors.warningSoft, color: colors.warning },
   PAYMENT_DUE: { icon: 'card-outline', backgroundColor: colors.dangerSoft, color: colors.danger },
   LOW_STOCK: { icon: 'alert-circle-outline', backgroundColor: colors.dangerSoft, color: colors.danger },
+  GENERIC: { icon: 'notifications-outline', backgroundColor: colors.primarySoft, color: colors.primary },
 };
 
 // ─── Card de notificação ────────────────────────────────────────────────────

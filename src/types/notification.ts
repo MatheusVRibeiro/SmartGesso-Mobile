@@ -11,7 +11,8 @@ export type NotificationType =
   | 'SERVICE_TOMORROW'
   | 'DELIVERY_SOON'
   | 'PAYMENT_DUE'
-  | 'LOW_STOCK';
+  | 'LOW_STOCK'
+  | 'GENERIC';
 
 export interface Notificacao {
   id: string;
