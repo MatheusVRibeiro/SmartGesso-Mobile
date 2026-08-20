@@ -646,9 +646,8 @@ function QuickClientModal({ visible, loading, onSave, onClose }: QuickClientModa
                 label="CEP"
                 value={zipCode}
                 onChangeText={setZipCode}
+                mask="cep"
                 placeholder="00000-000"
-                keyboardType="number-pad"
-                maxLength={9}
                 accessibilityLabel="CEP do cliente"
               />
             </View>
@@ -1459,9 +1458,8 @@ export default function NovoOrcamentoScreen() {
                 label="CEP"
                 value={local.zipCode}
                 onChangeText={(text) => setLocal('zipCode', text)}
+                mask="cep"
                 placeholder="00000-000"
-                keyboardType="number-pad"
-                maxLength={9}
                 accessibilityLabel="CEP"
               />
             </View>

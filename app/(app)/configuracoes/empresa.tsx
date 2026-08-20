@@ -212,10 +212,9 @@ export default function ConfiguracoesEmpresaScreen() {
                 label="Telefone"
                 value={value ?? ''}
                 onChangeText={onChange}
+                mask="phone"
                 placeholder="(00) 00000-0000"
                 error={errors.phone?.message}
-                keyboardType="phone-pad"
-                maxLength={16}
               />
             )}
           />
@@ -248,10 +247,9 @@ export default function ConfiguracoesEmpresaScreen() {
                 label="CEP"
                 value={value ?? ''}
                 onChangeText={onChange}
+                mask="cep"
                 placeholder="00000-000"
                 error={errors.address?.zipCode?.message}
-                keyboardType="numbers-and-punctuation"
-                maxLength={9}
               />
             )}
           />

@@ -629,9 +629,8 @@ export default function PerfilObraScreen() {
                     label="CEP"
                     value={field.value ?? ''}
                     onChangeText={field.onChange}
+                    mask="cep"
                     placeholder="00000-000"
-                    keyboardType="number-pad"
-                    maxLength={9}
                     error={fieldState.error?.message}
                     accessibilityLabel="CEP"
                   />
