@@ -35,6 +35,7 @@ import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
+import { parseCurrencyInput } from '../../../src/utils/masks';
 import type { Client, CreateClientInput } from '../../../src/types/client';
 import type { Work } from '../../../src/types/work';
 import type { CreateQuoteInput, QuotePaymentMethod } from '../../../src/types/quote';
@@ -1294,7 +1295,7 @@ export default function NovoOrcamentoScreen() {
         name: s.name.trim(),
         quantity: 1,
         unit: 'un',
-        unitPrice: parseNumber(s.unitPrice),
+        unitPrice: parseCurrencyInput(s.unitPrice),
       })),
     ];
 
@@ -1800,8 +1801,8 @@ export default function NovoOrcamentoScreen() {
                     onChangeText={(text) =>
                       updateService(service.id, 'unitPrice', text)
                     }
+                    mask="currency"
                     placeholder="0,00"
-                    keyboardType="decimal-pad"
                     error={errors.unitPrice}
                     accessibilityLabel="Valor do serviço"
                   />

@@ -182,6 +182,7 @@ export default function NovoClienteScreen() {
             label="CPF / CNPJ"
             value={value ?? ''}
             onChangeText={onChange}
+            mask="cpfCnpj"
             placeholder="000.000.000-00 ou 00.000.000/0000-00"
             error={errors.document?.message}
             accessibilityLabel="CPF ou CNPJ do cliente"
@@ -197,8 +198,8 @@ export default function NovoClienteScreen() {
             label="Telefone"
             value={value ?? ''}
             onChangeText={onChange}
+            mask="phone"
             placeholder="(00) 0000-0000"
-            keyboardType="phone-pad"
             error={errors.phone?.message}
             accessibilityLabel="Telefone do cliente"
           />
@@ -213,8 +214,8 @@ export default function NovoClienteScreen() {
             label="WhatsApp"
             value={value ?? ''}
             onChangeText={onChange}
+            mask="phone"
             placeholder="(00) 00000-0000"
-            keyboardType="phone-pad"
             error={errors.whatsapp?.message}
             accessibilityLabel="WhatsApp do cliente"
           />
@@ -251,9 +252,8 @@ export default function NovoClienteScreen() {
             label="CEP"
             value={value ?? ''}
             onChangeText={onChange}
+            mask="cep"
             placeholder="00000-000"
-            keyboardType="number-pad"
-            maxLength={9}
             accessibilityLabel="CEP do cliente"
           />
         )}

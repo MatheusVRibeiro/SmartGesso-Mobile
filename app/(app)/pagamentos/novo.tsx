@@ -29,6 +29,7 @@ import { useSessionStore } from '../../../src/store/useSessionStore';
 import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
+import { parseCurrencyInput } from '../../../src/utils/masks';
 import type { Client } from '../../../src/types/client';
 import type { CreatePaymentInput, PaymentMethod } from '../../../src/types/finance';
 import { z } from 'zod';
@@ -582,10 +583,10 @@ export default function NovoPagamentoScreen() {
             <AppInput
               label="Valor (R$)"
               required
-              value={field.value == null ? '' : String(field.value)}
-              onChangeText={field.onChange}
+              value={field.value == null ? '' : formatCurrency(field.value)}
+              onChangeText={(t) => field.onChange(parseCurrencyInput(t))}
+              mask="currency"
               placeholder="0,00"
-              keyboardType="decimal-pad"
               error={fieldState.error?.message}
               accessibilityLabel="Valor do pagamento"
             />

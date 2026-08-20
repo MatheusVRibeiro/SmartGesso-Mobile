@@ -10,6 +10,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borders, colors, radius, sizes, spacing, typography } from '../../theme';
+import { applyMask, maskKeyboardType, type InputMask } from '../../utils/masks';
 
 export interface AppInputProps {
   label?: string;
@@ -20,6 +21,8 @@ export interface AppInputProps {
   helper?: string;
   required?: boolean;
   keyboardType?: KeyboardTypeOptions;
+  /** Máscara de entrada com auto-correção (CPF/CNPJ, telefone, CEP, moeda). */
+  mask?: InputMask;
   secureTextEntry?: boolean;
   editable?: boolean;
   autoCapitalize?: TextInputProps['autoCapitalize'];
@@ -51,6 +54,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
     helper,
     required = false,
     keyboardType,
+    mask,
     secureTextEntry = false,
     editable = true,
     autoCapitalize,
@@ -99,10 +103,13 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
             inputStyle,
           ]}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={(text) => {
+            // Máscara com auto-correção: formata antes de propagar.
+            onChangeText(mask ? applyMask(mask, text) : text);
+          }}
           placeholder={placeholder}
           placeholderTextColor={colors.textLight}
-          keyboardType={keyboardType}
+          keyboardType={mask ? (maskKeyboardType(mask) as KeyboardTypeOptions) : keyboardType}
           secureTextEntry={secureTextEntry}
           editable={editable}
           autoCapitalize={autoCapitalize}
