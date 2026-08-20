@@ -1,5 +1,19 @@
 import { authService } from './auth';
+import { getApiClient } from './client';
 import type { CompanyResult } from '../../types/company';
+
+/** Branding da empresa ativa (contatos comerciais exibidos na tela Ajuda). */
+export interface CompanyBranding {
+  displayName?: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  commercialEmail?: string | null;
+  commercialPhone?: string | null;
+  commercialWhatsapp?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  quoteFooter?: string | null;
+}
 
 /**
  * Company convenience module.
@@ -29,5 +43,12 @@ export const companyService = {
   async getById(id: string): Promise<CompanyResult | undefined> {
     const companies = await authService.companies();
     return companies.find((c) => c.company.id === id);
+  },
+
+  /** GET /companies/branding — contatos comerciais da empresa ativa. */
+  async getBranding(): Promise<CompanyBranding> {
+    const client = getApiClient();
+    const { data } = await client.get<CompanyBranding>('/companies/branding');
+    return data;
   },
 };

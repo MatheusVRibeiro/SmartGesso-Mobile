@@ -3,16 +3,18 @@ import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { config } from '../../../src/constants/config';
+import { companyService } from '../../../src/services/api/companies';
+import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-// ─── Dados de contato ───────────────────────────────────────────────────────
-// TODO: substituir pelos contatos reais do suporte SmartGesso.
-const CONTACT = {
+// ─── Dados de contato (fallback — substituídos pelo branding da empresa) ────
+const CONTACT_FALLBACK = {
   whatsapp: {
     label: 'WhatsApp',
     value: '+55 (11) 99999-9999',
@@ -97,7 +99,39 @@ export default function AjudaScreen() {
     }
   };
 
-  const contactItems = [CONTACT.whatsapp, CONTACT.email, CONTACT.phone];
+  const activeCompanyId = useSessionStore((s) => s.activeCompany?.company.id);
+
+  // Contatos reais da empresa ativa (branding) com fallback.
+  const { data: branding } = useQuery({
+    queryKey: ['company', activeCompanyId, 'branding'],
+    queryFn: () => companyService.getBranding(),
+    enabled: Boolean(activeCompanyId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const contactItems = [
+    branding?.commercialWhatsapp
+      ? {
+          ...CONTACT_FALLBACK.whatsapp,
+          value: branding.commercialWhatsapp,
+          url: `https://wa.me/${branding.commercialWhatsapp.replace(/\D/g, '')}`,
+        }
+      : CONTACT_FALLBACK.whatsapp,
+    branding?.commercialEmail
+      ? {
+          ...CONTACT_FALLBACK.email,
+          value: branding.commercialEmail,
+          url: `mailto:${branding.commercialEmail}`,
+        }
+      : CONTACT_FALLBACK.email,
+    branding?.commercialPhone
+      ? {
+          ...CONTACT_FALLBACK.phone,
+          value: branding.commercialPhone,
+          url: `tel:${branding.commercialPhone.replace(/\D/g, '')}`,
+        }
+      : CONTACT_FALLBACK.phone,
+  ];
 
   return (
     <ScreenContainer scroll padding keyboard={false}>
