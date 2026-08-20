@@ -159,14 +159,14 @@ export const quoteItemSchema = z.object({
 
 /** Endereço livre do local do serviço (V3 — não exige obra vinculada). */
 const quoteLocalAddressSchema = z.object({
-  zipCode: z.string().trim().optional(),
-  street: z.string().trim().optional(),
-  number: z.string().trim().optional(),
-  complement: z.string().trim().optional(),
-  neighborhood: z.string().trim().optional(),
-  city: z.string().trim().optional(),
-  state: z.string().trim().optional(),
-  reference: z.string().trim().optional(),
+  cep: z.string().trim().optional(),
+  rua: z.string().trim().optional(),
+  numero: z.string().trim().optional(),
+  complemento: z.string().trim().optional(),
+  bairro: z.string().trim().optional(),
+  cidade: z.string().trim().optional(),
+  estado: z.string().trim().optional(),
+  referencia: z.string().trim().optional(),
 });
 
 /** Data no formato AAAA-MM-DD (padrão usado nas telas do app). */

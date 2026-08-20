@@ -1313,14 +1313,14 @@ export default function NovoOrcamentoScreen() {
       workId: draft.workId?.trim() || undefined,
       localAddress: hasLocal
         ? {
-            zipCode: local.zipCode.trim() || undefined,
-            street: local.street.trim() || undefined,
-            number: local.number.trim() || undefined,
-            complement: local.complement.trim() || undefined,
-            neighborhood: local.neighborhood.trim() || undefined,
-            city: local.city.trim() || undefined,
-            state: local.state.trim() || undefined,
-            reference: local.reference.trim() || undefined,
+            cep: local.zipCode.trim() || undefined,
+            rua: local.street.trim() || undefined,
+            numero: local.number.trim() || undefined,
+            complemento: local.complement.trim() || undefined,
+            bairro: local.neighborhood.trim() || undefined,
+            cidade: local.city.trim() || undefined,
+            estado: local.state.trim() || undefined,
+            referencia: local.reference.trim() || undefined,
           }
         : undefined,
       startDate:

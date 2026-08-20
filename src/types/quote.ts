@@ -100,16 +100,17 @@ export interface ConvertToServiceResult {
   observations?: string | null;
 }
 
-/** Endereço/local onde o serviço será realizado (contexto do orçamento). */
+/** Endereço/local onde o serviço será realizado (contexto do orçamento).
+ * Campos em PT-BR — alinhados ao LocalAddressDto da API (create-quote.dto.ts). */
 export interface QuoteLocalAddress {
-  zipCode?: string;
-  street?: string;
-  number?: string;
-  complement?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-  reference?: string;
+  cep?: string;
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  referencia?: string;
 }
 
 export interface CreateQuoteInput {
