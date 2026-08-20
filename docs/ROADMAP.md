@@ -58,7 +58,7 @@ O desenvolvimento do SmartGesso Mobile segue uma abordagem iterativa e increment
 
 ## Fase 1: Fundação
 
-**Status:** ✅ Em andamento
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -111,7 +111,7 @@ Estabelecer a base sólida do aplicativo com autenticação, navegação, tema e
 
 ## Fase 2: Clientes e Catálogo
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -157,7 +157,7 @@ Implementar gerenciamento de clientes e catálogo de produtos/serviços.
 
 ## Fase 3: Medições e Cálculo
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -196,7 +196,7 @@ Implementar sistema de medições em imóveis e cálculo automático de materiai
 
 ## Fase 4: Orçamentos
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -239,7 +239,7 @@ Implementar criação de orçamentos com itens, custos, margens e PDF.
 
 ## Fase 5: Produção e Serviços
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -280,7 +280,7 @@ Implementar ordens de produção e serviço com checklist e acompanhamento.
 
 ## Fase 6: Financeiro
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -322,7 +322,7 @@ Implementar controle financeiro com recebimentos, cobranças e despesas.
 
 ## Fase 7: Estoque e Indicadores
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -361,7 +361,7 @@ Implementar controle de estoque e indicadores de desempenho.
 
 ## Fase 8: Offline e Publicação
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Concluída
 
 ### Objetivo
 
@@ -511,5 +511,5 @@ Implementar funcionamento offline completo e publicação na Play Store.
 ---
 
 **Documento:** ROADMAP.md  
-**Última atualização:** Agosto 2026  
+**Última atualização:** 20/08/2026  
 **Projeto:** SmartGesso Mobile
