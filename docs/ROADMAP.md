@@ -321,7 +321,7 @@ Implementar controle financeiro com recebimentos, cobranças e despesas.
 
 ## Fase 7: Estoque e Indicadores
 
-**Status:** ⚠️ Parcial (6/8 itens — falta meta vs realizado e comparativo períodos)
+**Status:** ✅ Concluída (8/8 itens)
 
 ### Objetivo
 
@@ -335,8 +335,8 @@ Implementar controle de estoque e indicadores de desempenho.
 - [x] Alertas de estoque baixo
 - [x] Dashboard com indicadores
 - [x] Relatórios de desempenho
-- [ ] Meta vs realizado — ❌ ausente
-- [ ] Comparativo entre períodos — ❌ ausente
+- [x] Meta vs realizado — tela meta-realizado.tsx
+- [x] Comparativo entre períodos — tela comparativo.tsx
 
 ### Entregáveis
 
@@ -412,9 +412,9 @@ Implementar funcionamento offline completo e publicação na Play Store.
 | Fase 4: Orçamentos | ✅ Concluída | 19 | 0 | 100% |
 | Fase 5: Produção e Serviços | ✅ Concluída | 17 | 0 | 100% |
 | Fase 6: Financeiro | ✅ Concluída | 12 | 0 | 100% |
-| Fase 7: Estoque e Indicadores | ⚠️ Parcial | 13 | 2 | 87% |
+| Fase 7: Estoque e Indicadores | ✅ Concluída | 15 | 0 | 100% |
 | Fase 8: Offline e Publicação | ❌ Pendente | 0 | 18 | 0% |
-| **TOTAL** | | **129** | **33** | **80%** |
+| **TOTAL** | | **131** | **31** | **81%** |
 
 ### Fases 1-8: Detalhamento
 
