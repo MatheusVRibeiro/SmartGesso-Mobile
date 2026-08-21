@@ -14,7 +14,7 @@ import { getApiClient } from './client';
 import type { PhotoAttachment } from '../../types/photo';
 
 /** Tipos de entidade que recebem fotos (V3 §67). */
-export type UploadEntityType = 'MEDICAO' | 'SERVICO' | 'CLIENTE';
+export type UploadEntityType = 'MEDICAO' | 'SERVICO' | 'CLIENTE' | 'PAGAMENTO' | 'DESPESA';
 
 /** Resposta do POST /uploads. */
 export interface UploadResult {

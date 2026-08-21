@@ -63,7 +63,18 @@ export interface CreatePaymentInput {
   installments?: { amount: number; dueDate: string }[];
 }
 
-export type UpdatePaymentInput = Partial<Omit<CreatePaymentInput, 'clientId'>>;
+export interface UpdatePaymentInput {
+  /** URL do comprovante. */
+  receiptUrl?: string | null;
+  /** Status do pagamento. */
+  status?: PaymentStatus;
+  /** Data do pagamento. */
+  paymentDate?: string;
+  /** Data de vencimento. */
+  dueDate?: string;
+  /** Observações. */
+  notes?: string;
+}
 
 // ─── Despesas ──────────────────────────────────────────────────────────────
 
@@ -110,4 +121,19 @@ export interface CreateExpenseInput {
   serviceOrderId?: string;
 }
 
-export type UpdateExpenseInput = Partial<CreateExpenseInput>;
+export interface UpdateExpenseInput {
+  /** URL do comprovante. */
+  receiptUrl?: string | null;
+  /** Categoria da despesa. */
+  category?: ExpenseCategory;
+  /** Descrição da despesa. */
+  description?: string;
+  /** Valor da despesa. */
+  amount?: number;
+  /** Data da despesa. */
+  expenseDate?: string;
+  /** Observações. */
+  observations?: string;
+  /** Ordem de serviço vinculada. */
+  serviceOrderId?: string;
+}

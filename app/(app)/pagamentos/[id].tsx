@@ -13,6 +13,7 @@ import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
+import { ReceiptUploader } from '../../../src/components/ui/ReceiptUploader';
 import { toApiError } from '../../../src/services/api/client';
 import { paymentsService } from '../../../src/services/api/payments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
@@ -118,6 +119,20 @@ export default function DetalhePagamentoScreen() {
     },
     onError: (error: unknown) => {
       setConfirmDeleteVisible(false);
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const updateReceiptMutation = useMutation({
+    mutationFn: (receiptUrl: string) =>
+      paymentsService.update(paymentId as string, { receiptUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'payments', paymentId],
+      });
+      setSnackbar({ type: 'success', message: 'Comprovante adicionado com sucesso' });
+    },
+    onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
     },
   });
@@ -316,6 +331,14 @@ export default function DetalhePagamentoScreen() {
                 </AppCard>
               </>
             ) : null}
+
+            <ReceiptUploader
+              receiptUrl={payment.receiptUrl}
+              entityType="PAGAMENTO"
+              entityId={paymentId as string}
+              onUploaded={(url) => updateReceiptMutation.mutate(url)}
+              disabled={isOffline}
+            />
 
             <View style={styles.actions}>
               {isOffline && payment.status === 'PENDENTE' ? (

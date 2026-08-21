@@ -12,6 +12,7 @@ import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
+import { ReceiptUploader } from '../../../src/components/ui/ReceiptUploader';
 import { toApiError } from '../../../src/services/api/client';
 import { expensesService } from '../../../src/services/api/expenses';
 import { useSessionStore } from '../../../src/store/useSessionStore';
@@ -78,6 +79,20 @@ export default function DetalheDespesaScreen() {
     },
     onError: (error: unknown) => {
       setConfirmDeleteVisible(false);
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
+  const updateReceiptMutation = useMutation({
+    mutationFn: (receiptUrl: string) =>
+      expensesService.update(expenseId as string, { receiptUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'expenses', expenseId],
+      });
+      setSnackbar({ type: 'success', message: 'Comprovante adicionado com sucesso' });
+    },
+    onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
     },
   });
@@ -183,6 +198,14 @@ export default function DetalheDespesaScreen() {
                 </AppCard>
               </>
             ) : null}
+
+            <ReceiptUploader
+              receiptUrl={expense.receiptUrl}
+              entityType="DESPESA"
+              entityId={expenseId as string}
+              onUploaded={(url) => updateReceiptMutation.mutate(url)}
+              disabled={isOffline}
+            />
           </>
         ) : null}
       </ScreenContainer>
