@@ -294,7 +294,7 @@ export default function NovaDespesaScreen() {
           accessibilityLabel="Salvar despesa"
           onPress={handleSubmit(onSubmit)}
           loading={createMutation.isPending}
-          disabled={createMutation.isPending || isOffline}
+          disabled={createMutation.isPending}
           style={styles.saveButton}
         />
       </ScreenContainer>

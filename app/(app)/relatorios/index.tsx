@@ -18,6 +18,7 @@ import { paymentsService } from '../../../src/services/api/payments';
 import { quotesService } from '../../../src/services/api/quotes';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
+import { usePendingMutationsCount } from '../../../src/hooks/usePendingMutationsCount';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import type { Expense, Payment, PaymentStatus } from '../../../src/types/finance';
 import type { QuoteSummary, QuoteStatus } from '../../../src/types/quote';
@@ -130,6 +131,7 @@ function SummaryCard({
 export default function RelatoriosScreen() {
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
   const router = useRouter();
+  const pendingCount = usePendingMutationsCount();
 
   const {
     data,
@@ -254,6 +256,13 @@ export default function RelatoriosScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Relatórios</Text>
           <Text style={styles.subtitle}>Visão geral financeira</Text>
+          {pendingCount > 0 && (
+            <View style={styles.pendingBadge}>
+              <Text style={styles.pendingBadgeText}>
+                {pendingCount} pendente{pendingCount === 1 ? '' : 's'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {!hasData ? (
@@ -618,6 +627,9 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing['2xl'],
     paddingTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: typography.sizes['2xl'],
@@ -628,6 +640,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: typography.sizes.md,
     color: colors.textSecondary,
+  },
+  pendingBadge: {
+    backgroundColor: colors.warning,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+  },
+  pendingBadgeText: {
+    color: colors.white,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
   },
   metricsGrid: {
     flexDirection: 'row',
