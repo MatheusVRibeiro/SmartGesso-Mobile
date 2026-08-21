@@ -579,6 +579,26 @@ export default function RelatoriosScreen() {
                 style={styles.button}
               />
             </View>
+
+            {/* Botão de navegação para Comparativo */}
+            <View style={styles.buttonContainer}>
+              <AppButton
+                title="Ver Comparativo entre Períodos"
+                variant="secondary"
+                onPress={() => router.push('/(app)/relatorios/comparativo')}
+                style={styles.button}
+              />
+            </View>
+
+            {/* Botão de navegação para Meta vs Realizado */}
+            <View style={styles.buttonContainer}>
+              <AppButton
+                title="Ver Meta vs Realizado"
+                variant="secondary"
+                onPress={() => router.push('/(app)/relatorios/meta-realizado')}
+                style={styles.button}
+              />
+            </View>
           </>
         )}
       </ScrollView>
