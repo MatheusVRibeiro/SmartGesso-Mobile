@@ -13,6 +13,7 @@ export default function RelatoriosLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Relatórios' }} />
+      <Stack.Screen name="fluxo-caixa" options={{ title: 'Fluxo de Caixa' }} />
     </Stack>
   );
 }

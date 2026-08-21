@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
@@ -24,6 +24,7 @@ import type { QuoteSummary, QuoteStatus } from '../../../src/types/quote';
 import type { ServiceOrder, ServiceOrderStatus } from '../../../src/types/serviceOrder';
 import type { MaterialItem } from '../../../src/types/catalog';
 import { formatCurrency } from '../../../src/utils/format';
+import AppButton from '../../../src/components/ui/AppButton';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -128,6 +129,7 @@ function SummaryCard({
 
 export default function RelatoriosScreen() {
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+  const router = useRouter();
 
   const {
     data,
@@ -567,6 +569,16 @@ export default function RelatoriosScreen() {
               </AppCard>
             </View>
             )}
+
+            {/* Botão de navegação para Fluxo de Caixa */}
+            <View style={styles.buttonContainer}>
+              <AppButton
+                title="Ver Fluxo de Caixa"
+                variant="primary"
+                onPress={() => router.push('/(app)/relatorios/fluxo-caixa')}
+                style={styles.button}
+              />
+            </View>
           </>
         )}
       </ScrollView>
@@ -681,5 +693,12 @@ const styles = StyleSheet.create({
   listItemValueSuccess: {
     color: colors.success,
     fontWeight: typography.weights.semibold,
+  },
+  buttonContainer: {
+    marginTop: spacing['2xl'],
+    alignItems: 'center',
+  },
+  button: {
+    width: '100%',
   },
 });
