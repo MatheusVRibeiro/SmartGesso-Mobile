@@ -280,7 +280,7 @@ Implementar ordens de produção e serviço com checklist e acompanhamento.
 
 ## Fase 6: Financeiro
 
-**Status:** ✅ Concluída
+**Status:** ⚠️ Parcial (6/10 itens — falta cobranças, comprovantes, resumo financeiro, fluxo de caixa)
 
 ### Objetivo
 
@@ -295,34 +295,34 @@ Implementar controle financeiro com recebimentos, cobranças e despesas.
 - [x] Criar cobrança
 - [x] Lista de despesas
 - [x] Registrar despesa
-- [x] Anexar comprovantes
-- [x] Resumo financeiro
-- [x] Fluxo de caixa
+- [ ] Anexar comprovantes — ❌ ausente (upload existe mas não integrado em despesas)
+- [ ] Resumo financeiro — ❌ ausente (tela de relatórios tem métricas parciais)
+- [ ] Fluxo de caixa — ❌ ausente
 
 ### Entregáveis
 
-1. Gerenciamento de recebimentos
-2. Controle de cobranças
-3. Registro de despesas
-4. Anexo de comprovantes
-5. Relatórios financeiros
+1. Gerenciamento de recebimentos ✅
+2. Controle de cobranças ✅
+3. Registro de despesas ✅
+4. Anexo de comprovantes ❌
+5. Relatórios financeiros ⚠️ parcial
 
 ### Critérios de Aceite
 
 - [x] Registrar recebimento
 - [x] Criar cobrança
 - [x] Registrar despesa
-- [x] Anexar comprovante
-- [x] Visualizar resumo
+- [ ] Anexar comprovante ❌
+- [ ] Visualizar resumo ⚠️ parcial
 - [x] Testes de valores
 - [x] Integração com API
-- [ ] Offline first para financeiro (com ressalvas) — parcial (banner offline apenas)
+- [ ] Offline first para financeiro (com ressalvas) — banner offline apenas
 
 ---
 
 ## Fase 7: Estoque e Indicadores
 
-**Status:** ✅ Concluída
+**Status:** ⚠️ Parcial (6/8 itens — falta meta vs realizado e comparativo períodos)
 
 ### Objetivo
 
@@ -336,16 +336,16 @@ Implementar controle de estoque e indicadores de desempenho.
 - [x] Alertas de estoque baixo
 - [x] Dashboard com indicadores
 - [x] Relatórios de desempenho
-- [x] Meta vs realizado
-- [x] Comparativo entre períodos
+- [ ] Meta vs realizado — ❌ ausente
+- [ ] Comparativo entre períodos — ❌ ausente
 
 ### Entregáveis
 
-1. Controle de estoque
-2. Movimentações
-3. Alertas
-4. Indicadores
-5. Relatórios
+1. Controle de estoque ✅
+2. Movimentações ✅
+3. Alertas ✅
+4. Indicadores ✅
+5. Relatórios ✅
 
 ### Critérios de Aceite
 
@@ -403,18 +403,19 @@ Implementar funcionamento offline completo e publicação na Play Store.
 
 ## Status Atual
 
-### Progresso Geral
+### Progresso Geral (auditoria 21/08/2026)
 
-| Fase | Status | Progresso |
-|------|--------|-----------|
-| Fase 1: Fundação | ✅ Concluída | 100% |
-| Fase 2: Clientes e Catálogo | ✅ Concluída | 100% |
-| Fase 3: Medições e Cálculo | ✅ Concluída | 100% |
-| Fase 4: Orçamentos | ✅ Concluída | 100% |
-| Fase 5: Produção e Serviços | ✅ Concluída | 100% |
-| Fase 6: Financeiro | ✅ Concluída | 100% |
-| Fase 7: Estoque e Indicadores | ✅ Concluída | 100% |
-| Fase 8: Offline e Publicação | ✅ Concluída | 100% |
+| Fase | Status | Itens ✅ | Itens ⬜ | % |
+|------|--------|----------|----------|---|
+| Fase 1: Fundação | ✅ Concluída | 25 | 4 | 86% |
+| Fase 2: Clientes e Catálogo | ✅ Concluída | 22 | 0 | 100% |
+| Fase 3: Medições e Cálculo | ✅ Concluída | 15 | 0 | 100% |
+| Fase 4: Orçamentos | ✅ Concluída | 19 | 0 | 100% |
+| Fase 5: Produção e Serviços | ✅ Concluída | 17 | 0 | 100% |
+| Fase 6: Financeiro | ⚠️ Parcial | 12 | 6 | 67% |
+| Fase 7: Estoque e Indicadores | ⚠️ Parcial | 13 | 2 | 87% |
+| Fase 8: Offline e Publicação | ❌ Pendente | 0 | 18 | 0% |
+| **TOTAL** | | **123** | **39** | **76%** |
 
 ### Fases 1-8: Detalhamento
 
