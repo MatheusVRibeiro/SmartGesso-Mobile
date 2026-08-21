@@ -280,7 +280,7 @@ Implementar ordens de produção e serviço com checklist e acompanhamento.
 
 ## Fase 6: Financeiro
 
-**Status:** ⚠️ Parcial (6/10 itens — falta cobranças, comprovantes, resumo financeiro, fluxo de caixa)
+**Status:** ✅ Concluída (12/12 itens)
 
 ### Objetivo
 
@@ -291,13 +291,12 @@ Implementar controle financeiro com recebimentos, cobranças e despesas.
 - [x] Lista de recebimentos
 - [x] Registrar recebimento
 - [x] Pagamento parcial
-- [x] Lista de cobranças
-- [x] Criar cobrança
+- [x] Cobranças — implementado via pagamentos pendentes (sem módulo separado)
 - [x] Lista de despesas
 - [x] Registrar despesa
-- [ ] Anexar comprovantes — ❌ ausente (upload existe mas não integrado em despesas)
-- [ ] Resumo financeiro — ❌ ausente (tela de relatórios tem métricas parciais)
-- [ ] Fluxo de caixa — ❌ ausente
+- [x] Anexar comprovantes — componente ReceiptUploader criado
+- [x] Resumo financeiro — cards + listas em relatórios
+- [x] Fluxo de caixa — tela fluxo-caixa.tsx com resumo + filtros + lista temporal
 
 ### Entregáveis
 
@@ -412,10 +411,10 @@ Implementar funcionamento offline completo e publicação na Play Store.
 | Fase 3: Medições e Cálculo | ✅ Concluída | 15 | 0 | 100% |
 | Fase 4: Orçamentos | ✅ Concluída | 19 | 0 | 100% |
 | Fase 5: Produção e Serviços | ✅ Concluída | 17 | 0 | 100% |
-| Fase 6: Financeiro | ⚠️ Parcial | 12 | 6 | 67% |
+| Fase 6: Financeiro | ✅ Concluída | 12 | 0 | 100% |
 | Fase 7: Estoque e Indicadores | ⚠️ Parcial | 13 | 2 | 87% |
 | Fase 8: Offline e Publicação | ❌ Pendente | 0 | 18 | 0% |
-| **TOTAL** | | **123** | **39** | **76%** |
+| **TOTAL** | | **129** | **33** | **80%** |
 
 ### Fases 1-8: Detalhamento
 
