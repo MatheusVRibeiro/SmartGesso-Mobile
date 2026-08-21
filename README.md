@@ -289,6 +289,35 @@ npm test -- --coverage
 
 **Alvo de cobertura:** 80%+ para componentes e serviços críticos.
 
+### Testes E2E (Playwright)
+
+```bash
+# Instalar dependências
+npm install
+npx playwright install
+
+# Executar todos os testes E2E
+npm run test:e2e
+
+# Interface gráfica (debug)
+npm run test:e2e:ui
+
+# Modo debug (passo a passo)
+npm run test:e2e:debug
+```
+
+**Credenciais de teste:**
+- Email: a.mult@example.com
+- Senha: Senha@123456
+
+**Fluxos testados:**
+- Login e autenticação
+- Criação e edição de orçamentos
+- Aprovação de orçamentos e serviços
+- Modo offline e sincronização
+
+Consulte `e2e/README.md` para documentação completa.
+
 ---
 
 ## EAS Build

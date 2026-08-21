@@ -10,6 +10,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
+import { usePendingMutationsCount } from '../src/hooks/usePendingMutationsCount';
 import { colors } from '../src/theme';
 
 export default function RootLayout() {
@@ -17,6 +18,7 @@ export default function RootLayout() {
   const sessionStatus = useSessionStore((s) => s.sessionStatus);
   const clearSession = useSessionStore((s) => s.clearSession);
   const { isOffline } = useNetworkStatus();
+  const pendingCount = usePendingMutationsCount();
 
   const setAccessStatus = useSessionStore((s) => s.setAccessStatus);
 
@@ -55,7 +57,7 @@ export default function RootLayout() {
           {/* V3 — seção 66: banner offline global (não bloqueia navegação). */}
           {isOffline ? (
             <SafeAreaView edges={['top']} style={{ backgroundColor: colors.warning }}>
-              <OfflineBanner visible />
+              <OfflineBanner visible pendingCount={pendingCount} />
             </SafeAreaView>
           ) : null}
           <Stack screenOptions={{ headerShown: false }} />

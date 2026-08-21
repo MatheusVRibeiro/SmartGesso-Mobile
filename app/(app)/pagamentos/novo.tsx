@@ -27,6 +27,7 @@ import { paymentsService } from '../../../src/services/api/payments';
 import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { useNetworkStatus } from '../../../src/hooks/useNetworkStatus';
+import { addMutation } from '../../../src/services/offline/syncQueue';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
 import { parseCurrencyInput } from '../../../src/utils/masks';
@@ -427,6 +428,21 @@ export default function NovoPagamentoScreen() {
   });
 
   function onSubmit(data: CreatePaymentFormData) {
+    if (isOffline) {
+      // Salvar na fila de sincronização offline
+      addMutation({
+        type: 'payment',
+        endpoint: '/payments',
+        method: 'POST',
+        body: cleanPayload(data, installmentCount),
+      });
+      setSnackbar({
+        type: 'success',
+        message: 'Salvo offline — sincronizará quando conectar',
+      });
+      setTimeout(() => router.back(), 600);
+      return;
+    }
     createMutation.mutate(data);
   }
 
@@ -745,7 +761,7 @@ export default function NovoPagamentoScreen() {
           accessibilityLabel="Salvar pagamento"
           onPress={handleSubmit(onSubmit)}
           loading={createMutation.isPending}
-          disabled={createMutation.isPending || isOffline}
+          disabled={createMutation.isPending}
           style={styles.saveButton}
         />
       </ScreenContainer>

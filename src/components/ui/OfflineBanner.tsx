@@ -5,20 +5,24 @@ import { colors, sizes, spacing, typography } from '../../theme';
 
 export interface OfflineBannerProps {
   visible: boolean;
-  message?: string;
+  pendingCount?: number;
   style?: ViewStyle;
   testID?: string;
 }
 
 function OfflineBanner({
   visible,
-  message = 'Você está offline. Verifique sua conexão.',
+  pendingCount = 0,
   style,
   testID,
 }: OfflineBannerProps) {
   if (!visible) {
     return null;
   }
+
+  const message = pendingCount > 0
+    ? `Offline — ${pendingCount} altera${pendingCount === 1 ? 'ção' : 'ções'} pendente${pendingCount === 1 ? '' : 's'}`
+    : 'Você está offline';
 
   return (
     <View
