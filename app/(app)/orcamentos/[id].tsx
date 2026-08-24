@@ -150,8 +150,8 @@ export default function DetalheOrcamentoScreen() {
       });
       setConfirmApproveVisible(false);
       const message = response.serviceOrderCreated
-        ? 'Orçamento aprovado e Serviço criado.'
-        : 'Orçamento já aprovado. Serviço existente localizado.';
+        ? 'Serviço criado'
+        : 'Serviço já existente';
       setSnackbar({ type: 'success', message });
       // Navegar imediatamente para o serviço
       router.replace({
