@@ -73,20 +73,6 @@ export default function MaisScreen() {
       badge: notificationCount,
     },
     {
-      id: 'orcamentos',
-      title: 'Orçamentos',
-      icon: 'document-text-outline',
-      section: 'Operação',
-      action: () => router.push('/orcamentos'),
-    },
-    {
-      id: 'servicos',
-      title: 'Serviços',
-      icon: 'hammer-outline',
-      section: 'Operação',
-      action: () => router.push('/servicos'),
-    },
-    {
       id: 'producao',
       title: 'Produção',
       icon: 'layers-outline',
@@ -100,64 +86,59 @@ export default function MaisScreen() {
       section: 'Operação',
       action: () => router.push('/catalogo/materiais'),
     },
+
+    // Financeiro
     {
-      id: 'pagamentos',
-      title: 'Pagamentos',
-      icon: 'card-outline',
-      section: 'Operação',
-      action: () => router.push('/pagamentos'),
-    },
-    {
-      id: 'cobrancas',
-      title: 'Cobranças',
-      icon: 'receipt-outline',
-      section: 'Operação',
+      id: 'financeiro',
+      title: 'Financeiro',
+      icon: 'cash-outline',
+      section: 'Financeiro',
       action: () => router.push('/pagamentos'),
     },
     {
       id: 'despesas',
       title: 'Despesas',
       icon: 'wallet-outline',
-      section: 'Operação',
+      section: 'Financeiro',
       action: () => router.push('/despesas'),
     },
 
-    // Relatórios
+    // Gestão
     {
       id: 'relatorios',
       title: 'Relatórios',
       icon: 'bar-chart-outline',
-      section: 'Relatórios',
+      section: 'Gestão',
       action: () => router.push('/relatorios'),
     },
-
-    // Configuração
     {
       id: 'configuracoes',
       title: 'Configurações',
       icon: 'settings-outline',
-      section: 'Configuração',
+      section: 'Gestão',
       action: () => router.push('/configuracoes'),
     },
     {
       id: 'usuarios',
       title: 'Usuários',
       icon: 'people-circle-outline',
-      section: 'Configuração',
+      section: 'Gestão',
       action: () => router.push('/usuarios'),
     },
+
+    // Conta
     {
       id: 'empresa',
       title: 'Empresa',
       icon: 'business-outline',
-      section: 'Configuração',
+      section: 'Conta',
       action: () => router.push('/configuracoes/empresa'),
     },
     {
       id: 'perfil',
       title: 'Perfil',
       icon: 'person-circle-outline',
-      section: 'Configuração',
+      section: 'Conta',
       action: () => router.push('/(app)/profile'),
     },
 

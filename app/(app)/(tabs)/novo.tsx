@@ -46,6 +46,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: 'receipt',
     route: '/despesas/novo',
   },
+  {
+    id: 'producao',
+    title: 'Nova produção',
+    icon: 'layers',
+    route: '/producao/novo',
+  },
 ];
 
 export default function NovoScreen() {
