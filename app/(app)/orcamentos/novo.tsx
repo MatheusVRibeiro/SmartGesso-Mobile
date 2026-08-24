@@ -2456,17 +2456,6 @@ export default function NovoOrcamentoScreen() {
         onClose={() => setQuickClientVisible(false)}
       />
 
-      <WorkPickerModal
-        visible={workModalVisible}
-        works={clientWorks}
-        isLoading={worksQuery.isLoading}
-        isError={worksQuery.isError}
-        errorMessage={worksQuery.isError ? toApiError(worksQuery.error).message : ''}
-        onRetry={worksQuery.refetch}
-        onSelect={handleSelectWork}
-        onClose={() => setWorkModalVisible(false)}
-      />
-
       {snackbar && (
         <AppSnackbar
           visible={true}
@@ -3073,5 +3062,63 @@ const styles = StyleSheet.create({
   },
   quickFormSubmit: {
     marginTop: spacing.sm,
+  },
+  // Etapa 3 — Ambientes
+  environmentCard: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
+  environmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  environmentNameField: {
+    flex: 1,
+  },
+  removeEnvironmentButton: {
+    padding: spacing.xs,
+  },
+  environmentSectionLabel: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  applicationTypeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  applicationTypeChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  applicationTypeChipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  applicationTypeChipText: {
+    fontSize: typography.sizes.xs,
+    color: colors.text,
+  },
+  applicationTypeChipTextSelected: {
+    color: colors.textOnPrimary,
+  },
+  environmentMeasurementRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  environmentMeasurementField: {
+    flex: 1,
   },
 });
