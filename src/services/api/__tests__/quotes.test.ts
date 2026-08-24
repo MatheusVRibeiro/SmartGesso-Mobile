@@ -84,13 +84,34 @@ describe('quotesService', () => {
     expect(result.version).toBe(2);
   });
 
-  it('approve chama POST /quotes/:id/approve', async () => {
-    mockClient.post.mockResolvedValue({ data: { ...mockQuote, status: 'APROVADO' } });
+  it('approve chama POST /quotes/:id/approve e retorna ApproveQuoteResponse', async () => {
+    const approveResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: true,
+    };
+    mockClient.post.mockResolvedValue({ data: approveResponse });
 
     const result = await quotesService.approve('q-1');
 
     expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/approve');
-    expect(result.status).toBe('APROVADO');
+    expect(result.quote.status).toBe('APROVADO');
+    expect(result.serviceOrder.id).toBe('os-1');
+    expect(result.serviceOrderCreated).toBe(true);
+  });
+
+  it('approve retorna serviceOrderCreated=false quando serviço já existe', async () => {
+    const approveResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: false,
+    };
+    mockClient.post.mockResolvedValue({ data: approveResponse });
+
+    const result = await quotesService.approve('q-1');
+
+    expect(result.serviceOrderCreated).toBe(false);
+    expect(result.serviceOrder.id).toBe('os-1');
   });
 
   it('reject chama POST /quotes/:id/reject com a nota', async () => {

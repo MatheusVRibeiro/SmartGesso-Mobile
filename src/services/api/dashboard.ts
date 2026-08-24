@@ -3,6 +3,7 @@ import { paymentsService } from './payments';
 import { quotesService } from './quotes';
 import { expensesService } from './expenses';
 import { serviceOrdersService } from './serviceOrders';
+import { toArray } from '../../types/api';
 import type { Expense, Payment } from '../../types/finance';
 import type { QuoteSummary } from '../../types/quote';
 import type { ServiceOrder } from '../../types/serviceOrder';
@@ -66,26 +67,12 @@ export interface DashboardMetrics {
 
 // ─── Helpers de normalização/fallback ───────────────────────────────────────
 
-/**
- * A API real retorna array puro em algumas listas (Prisma findMany), enquanto
- * os tipos declarados são { data, total }. Normaliza ambos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
-
 function isSameLocalDay(iso?: string | null, ref = new Date()): boolean {
   if (!iso) return false;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
   return (
-    d.getFullYear() === ref.getFullYear() &&
-    d.getMonth() === ref.getMonth() &&
-    d.getDate() === ref.getDate()
+    d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
   );
 }
 
@@ -164,8 +151,7 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
         )
         .sort(
           (a, b) =>
-            new Date(a.scheduledDate ?? 0).getTime() -
-            new Date(b.scheduledDate ?? 0).getTime(),
+            new Date(a.scheduledDate ?? 0).getTime() - new Date(b.scheduledDate ?? 0).getTime(),
         )
         .slice(0, 5)
         .map((o) => ({

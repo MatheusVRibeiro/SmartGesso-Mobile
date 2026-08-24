@@ -1,5 +1,6 @@
 import { getApiClient } from './client';
 import type {
+  ApproveQuoteResponse,
   ConvertToServiceResult,
   Quote,
   QuoteSummary,
@@ -48,9 +49,9 @@ export const quotesService = {
     return response.data;
   },
 
-  /** POST /quotes/:id/approve — aprova o orçamento (status APROVADO). */
-  async approve(id: string): Promise<Quote> {
-    const response = await api().post<Quote>(`/quotes/${id}/approve`);
+  /** POST /quotes/:id/approve — aprova o orçamento (status APROVADO) e retorna serviço. */
+  async approve(id: string): Promise<ApproveQuoteResponse> {
+    const response = await api().post<ApproveQuoteResponse>(`/quotes/${id}/approve`);
     return response.data;
   },
 

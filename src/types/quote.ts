@@ -1,3 +1,4 @@
+import type { ServiceOrderStatus } from './serviceOrder';
 // ─── Orçamentos (Fase 4) ───────────────────────────────────────────────────
 
 export type QuoteStatus =
@@ -98,6 +99,17 @@ export interface ConvertToServiceResult {
   scheduledDate?: string | null;
   saleValue: number;
   observations?: string | null;
+}
+
+/** Resposta de POST /quotes/:id/approve (V4 ETAPA 1). */
+export interface ApproveQuoteResponse {
+  quote: Quote;
+  serviceOrder: {
+    id: string;
+    code: number;
+    status: ServiceOrderStatus;
+  };
+  serviceOrderCreated: boolean;
 }
 
 /** Endereço/local onde o serviço será realizado (contexto do orçamento).

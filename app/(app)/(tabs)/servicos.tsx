@@ -3,7 +3,6 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
@@ -152,13 +151,6 @@ export default function ServicosScreen() {
 
       <View style={styles.header}>
         <Text style={styles.title}>Serviços</Text>
-        <AppButton
-          title="+"
-          size="md"
-          accessibilityLabel="Nova ordem de serviço"
-          onPress={() => router.push('/servicos/novo')}
-          style={styles.addButton}
-        />
       </View>
 
       {isLoading ? (
@@ -168,10 +160,10 @@ export default function ServicosScreen() {
       ) : orders && orders.length === 0 ? (
         <EmptyState
           title="Nenhuma ordem de serviço"
-          description="Comece criando sua primeira ordem de serviço para um cliente"
+          description="Ordens de serviço são geradas automaticamente a partir de orçamentos aprovados"
           icon="hammer-outline"
-          actionLabel="Nova ordem de serviço"
-          onAction={() => router.push('/servicos/novo')}
+          actionLabel="Ver orçamentos"
+          onAction={() => router.push('/orcamentos')}
         />
       ) : (
         <FlatList
@@ -207,10 +199,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     color: colors.text,
-  },
-  addButton: {
-    minWidth: sizes.touchTarget,
-    paddingHorizontal: 0,
   },
   listContent: {
     padding: sizes.screenPadding,

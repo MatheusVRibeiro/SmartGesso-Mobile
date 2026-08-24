@@ -22,6 +22,7 @@ import { useSessionStore } from '../../../src/store/useSessionStore';
 import { colors, radius, shadows, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber, formatQuoteCode } from '../../../src/utils/format';
 import type { QuoteStatus } from '../../../src/types/quote';
+import type { ApproveQuoteResponse } from '../../../src/types/quote';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -89,7 +90,7 @@ export default function DetalheOrcamentoScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [confirmApproveVisible, setConfirmApproveVisible] = useState(false);
-  const [approvedModalVisible, setApprovedModalVisible] = useState(false);
+
   const [rejectVisible, setRejectVisible] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
   const [snackbar, setSnackbar] = useState<{
@@ -140,13 +141,23 @@ export default function DetalheOrcamentoScreen() {
 
   const approveMutation = useMutation({
     mutationFn: () => quotesService.approve(quoteId as string),
-    onSuccess: () => {
+    onSuccess: (response: ApproveQuoteResponse) => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'quotes'],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'service-orders'],
+      });
       setConfirmApproveVisible(false);
-      setSnackbar({ type: 'success', message: 'Orçamento aprovado com sucesso' });
-      setApprovedModalVisible(true);
+      const message = response.serviceOrderCreated
+        ? 'Orçamento aprovado e Serviço criado.'
+        : 'Orçamento já aprovado. Serviço existente localizado.';
+      setSnackbar({ type: 'success', message });
+      // Navegar imediatamente para o serviço
+      router.replace({
+        pathname: '/servicos/[id]',
+        params: { id: response.serviceOrder.id, quoteId },
+      });
     },
     onError: (error: unknown) => {
       setConfirmApproveVisible(false);
@@ -184,27 +195,7 @@ export default function DetalheOrcamentoScreen() {
     },
   });
 
-  const convertMutation = useMutation({
-    mutationFn: () => quotesService.convertToService(quoteId as string),
-    onSuccess: (converted) => {
-      queryClient.invalidateQueries({
-        queryKey: ['company', companyId, 'quotes'],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['company', companyId, 'service-orders'],
-      });
-      setApprovedModalVisible(false);
-      setSnackbar({ type: 'success', message: 'Serviço criado a partir do orçamento' });
-      router.replace({
-        pathname: '/servicos/[id]',
-        params: { id: converted.serviceOrderId, quoteId },
-      });
-    },
-    onError: (error: unknown) => {
-      setApprovedModalVisible(false);
-      setSnackbar({ type: 'error', message: toApiError(error).message });
-    },
-  });
+
 
   async function handleSharePdf() {
     try {
@@ -564,48 +555,7 @@ export default function DetalheOrcamentoScreen() {
         onCancel={() => setConfirmApproveVisible(false)}
       />
 
-      <Modal
-        visible={approvedModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setApprovedModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalIcon}>
-              <Ionicons
-                name="checkmark-circle"
-                size={sizes.icon.xl}
-                color={colors.success}
-                accessibilityElementsHidden
-              />
-            </View>
-            <Text style={styles.modalTitle}>Orçamento aprovado!</Text>
-            <Text style={styles.modalMessage}>
-              Deseja iniciar o planejamento deste serviço? Cliente, itens e valores
-              serão reaproveitados do orçamento.
-            </Text>
-            <View style={styles.modalActions}>
-              <AppButton
-                title="Agora não"
-                variant="ghost"
-                size="sm"
-                onPress={() => setApprovedModalVisible(false)}
-                disabled={convertMutation.isPending}
-                style={styles.modalButton}
-              />
-              <AppButton
-                title="Criar serviço"
-                size="sm"
-                accessibilityLabel="Criar serviço a partir do orçamento"
-                onPress={() => convertMutation.mutate()}
-                loading={convertMutation.isPending}
-                style={styles.modalButton}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+
 
       <Modal
         visible={rejectVisible}
