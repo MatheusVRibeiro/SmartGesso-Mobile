@@ -5,24 +5,24 @@ import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
-import { AppCard } from '../../../src/components/ui/AppCard';
-import { AppInput } from '../../../src/components/ui/AppInput';
-import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
-import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
-import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
-import { ErrorState } from '../../../src/components/ui/ErrorState';
-import { LoadingState } from '../../../src/components/ui/LoadingState';
-import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
-import { StatusBadge } from '../../../src/components/ui/StatusBadge';
-import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
-import { toApiError } from '../../../src/services/api/client';
-import { quotesService } from '../../../src/services/api/quotes';
-import { useSessionStore } from '../../../src/store/useSessionStore';
-import { colors, radius, shadows, sizes, spacing, typography } from '../../../src/theme';
-import { formatCurrency, formatNumber, formatQuoteCode } from '../../../src/utils/format';
-import type { QuoteStatus } from '../../../src/types/quote';
-import type { ApproveQuoteResponse } from '../../../src/types/quote';
+import { AppButton } from '../../../../src/components/ui/AppButton';
+import { AppCard } from '../../../../src/components/ui/AppCard';
+import { AppInput } from '../../../../src/components/ui/AppInput';
+import { AppSnackbar } from '../../../../src/components/ui/AppSnackbar';
+import type { AppSnackbarType } from '../../../../src/components/ui/AppSnackbar';
+import { ConfirmDialog } from '../../../../src/components/ui/ConfirmDialog';
+import { ErrorState } from '../../../../src/components/ui/ErrorState';
+import { LoadingState } from '../../../../src/components/ui/LoadingState';
+import { ScreenContainer } from '../../../../src/components/ui/ScreenContainer';
+import { StatusBadge } from '../../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../../src/components/ui/StatusBadge';
+import { toApiError } from '../../../../src/services/api/client';
+import { quotesService } from '../../../../src/services/api/quotes';
+import { useSessionStore } from '../../../../src/store/useSessionStore';
+import { colors, radius, shadows, sizes, spacing, typography } from '../../../../src/theme';
+import { formatCurrency, formatNumber, formatQuoteCode } from '../../../../src/utils/format';
+import type { QuoteStatus } from '../../../../src/types/quote';
+import type { ApproveQuoteResponse } from '../../../../src/types/quote';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -453,6 +453,14 @@ export default function DetalheOrcamentoScreen() {
             </AppCard>
 
             <View style={styles.actions}>
+              <AppButton
+                title="Follow-ups"
+                variant="secondary"
+                size="lg"
+                accessibilityLabel="Gerenciar follow-ups do orçamento"
+                onPress={() => router.push(`/orcamentos/${quoteId}/follow-ups`)}
+                style={styles.actionButton}
+              />
               {canApprove && (
                 <>
                   <AppButton
