@@ -1,6 +1,6 @@
 # SmartGesso Mobile — Plano de Refatoração e Evolução do Frontend V4
 
-> **Documento de execução técnica e UX**  
+> **Documento de execução técnica e UX para Hermes / implementação incremental**  
 > Repositório: `SmartGesso-Mobile`  
 > Data-base da auditoria: 24/08/2026  
 > Stack atual: Expo 57 + React Native + Expo Router + React Query + Zustand + Axios + Zod  
@@ -10,29 +10,35 @@
 
 # 1. Objetivo deste documento
 
-Este documento organiza as mudanças recomendadas no aplicativo mobile em etapas executáveis, com dependências claras em relação ao backend.
+Este documento é a **especificação autoritativa da refatoração do frontend/mobile**. Ele foi escrito para ser executado em etapas separadas pelo Hermes.
 
-A intenção NÃO é reconstruir o aplicativo. A base atual possui boas decisões de arquitetura, principalmente:
+Fluxo de execução recomendado:
 
-- Expo Router;
-- bottom navigation simples;
-- React Query;
-- SecureStore em Android/iOS;
-- Zustand para sessão;
-- design system próprio;
-- fluxos de autenticação já estruturados;
-- telas separadas por domínio;
-- cadastro rápido de cliente dentro do orçamento.
+```text
+backend estabiliza contrato da etapa
+  ↓
+mobile cria /goal da etapa correspondente
+  ↓
+Hermes analisa código atual
+  ↓
+implementa somente a etapa
+  ↓
+lint + typecheck + testes + validação manual
+  ↓
+revisar diff
+  ↓
+commit/PR
+  ↓
+próxima etapa
+```
 
-O objetivo é **simplificar o fluxo operacional, corrigir inconsistências com a API, reduzir complexidade de manutenção e preparar o aplicativo para financeiro, anexos, aditivos, compras, garantia e features configuráveis**.
-
-A experiência principal desejada permanece:
+Experiência principal a preservar:
 
 ```text
 Início | Orçamentos | + Novo | Serviços | Mais
 ```
 
-E o fluxo de negócio alvo é:
+Fluxo de negócio alvo:
 
 ```text
 Cliente
@@ -48,228 +54,244 @@ Conclusão
 Garantia / Retorno
 ```
 
----
+Princípios obrigatórios:
 
-# 2. Princípios de UX e arquitetura
-
-1. O usuário deve pensar em **Cliente → Orçamento → Serviço**, e não em entidades técnicas do banco.
-2. "Obra" não deve ser um passo obrigatório para criar orçamento.
-3. Um orçamento aprovado deve resultar em serviço sem exigir uma segunda conversão manual.
-4. A tela deve refletir a regra da API, e não manter lógicas paralelas de negócio.
-5. Permissões devem controlar a experiência visual, mas a segurança final pertence ao backend.
-6. Funcionalidades opcionais não devem aparecer para empresas que não as utilizam.
-7. A UI deve separar "valor contratado", "recebido", "a receber", "custo" e "resultado".
-8. Arquivos/fotos devem ser tratados como anexos autenticados.
-9. Operações sensíveis devem ter feedback claro de sucesso, falha e estado offline.
-10. Não duplicar entrada de menu para a mesma funcionalidade.
-11. Arquivos de tela do Expo Router devem ser finos; lógica complexa deve ir para features/hooks/components.
-12. O aplicativo deve reagir a `error.code` padronizado pela API, não depender apenas de status HTTP.
+1. O usuário não deve precisar conhecer a estrutura interna do banco.
+2. `Work/Obra` não deve ser passo obrigatório do novo orçamento.
+3. Aprovar orçamento não exige uma segunda conversão manual.
+4. React Query continua como fonte de server state.
+5. Zustand fica restrito a estado global real, principalmente sessão/contexto.
+6. A UI não duplica regra de negócio do backend.
+7. Contratos da API devem ser tipados e centralizados na camada de service.
+8. Features e permissions são conceitos diferentes.
+9. Operações críticas precisam impedir duplo submit.
+10. Não iniciar a próxima etapa automaticamente.
 
 ---
 
-# 3. Diagnóstico resumido do mobile atual
+# 2. Diagnóstico atual — o que preservar e o que corrigir
 
-## 3.1 Pontos fortes
+## 2.1 Preservar
 
-- Bottom navigation já segue o modelo correto:
+- Expo Router.
+- bottom navigation simples.
+- React Query.
+- Zustand para sessão.
+- Axios com interceptor e fila de refresh.
+- `SecureStore` em native.
+- design system próprio.
+- componentes de loading/error/empty/snackbar/confirm.
+- cadastro rápido de cliente dentro do orçamento.
+- compartilhamento de PDF.
+- acessibilidade já iniciada.
+
+## 2.2 Problemas P0/P1
+
+1. após `approve`, o Mobile ainda chama `convert-to-service`.
+2. tela Serviços permite criação manual normal de OS.
+3. wizard de orçamento ainda depende de Work/Obra.
+4. `novo.tsx` concentra responsabilidades demais.
+5. telas usam adapters como `toArray()` porque contrato da API é inconsistente.
+6. suspensão de empresa é tratada principalmente por status HTTP, não `error.code`.
+7. menu Mais duplica Orçamentos/Serviços e Pagamentos/Cobranças.
+8. Produção/Estoque aparecem mesmo quando empresa não usa.
+9. financeiro ainda não está centrado no Serviço.
+10. anexos/fotos precisam migrar para contrato privado.
+
+---
+
+# 3. Como usar este documento no Hermes
+
+Cada etapa contém um `GOAL HERMES` detalhado.
+
+Use:
 
 ```text
-Início
-Orçamentos
-Novo
-Serviços
-Mais
+/goal draft <conteúdo do bloco>
 ```
 
-- `SecureTokenStorage` utiliza `expo-secure-store` em native.
-- Axios possui interceptors de access token e refresh token.
-- Existe fila para requisições durante refresh.
-- React Query organiza cache e invalidação.
-- Há componentes reutilizáveis como:
-  - `AppButton`;
-  - `AppCard`;
-  - `AppInput`;
-  - `StatusBadge`;
-  - `LoadingState`;
-  - `ErrorState`;
-  - `EmptyState`;
-  - `ConfirmDialog`;
-  - `AppSnackbar`.
-- O fluxo de Novo Orçamento já está estruturado como wizard.
-- Cadastro rápido de cliente acontece sem abandonar o wizard.
-- PDF de orçamento é gerado e compartilhado pelo app.
-- Existe suporte inicial a notificações, offline e testes.
-
-## 3.2 Problemas prioritários
-
-### P0 — fluxo incorreto de aprovação
-
-Após `approve`, o backend atual já cria uma OS, mas o mobile ainda pergunta "Criar serviço" e chama `convert-to-service`, causando conflito.
-
-### P0 — complexidade desnecessária
-
-O wizard de orçamento ainda carrega `Work`/Obra e depende dela para medições.
-
-### P0/P1 — manutenção
-
-`app/(app)/orcamentos/novo.tsx` possui aproximadamente 97 KB e concentra muitas responsabilidades.
-
-### P1 — Serviços
-
-A tela oferece criação manual de OS, mesmo que o fluxo principal deva ser Orçamento aprovado → Serviço.
-
-### P1 — contrato de acesso
-
-O Axios trata 403 como suspensão/acesso negado, mas a API pode responder 402 com `COMPANY_ACCESS_SUSPENDED`.
-
-### P1 — menu
-
-`Mais` repete Orçamentos/Serviços e possui Pagamentos e Cobranças apontando para a mesma rota.
-
-### P1 — features
-
-Produção e Estoque aparecem independentemente da necessidade da empresa.
-
-### P1/P2 — financeiro
-
-A interface atual ainda não é orientada ao resultado real de cada serviço.
-
----
-
-# 4. Matriz de prioridade
-
-| Prioridade | Item | Dependência |
-|---|---|---|
-| P0 | Corrigir aprovação → serviço | Backend Etapa 1 |
-| P0 | Refatorar wizard gigante | Pode iniciar parcialmente |
-| P0 | Corrigir contratos de tipos/listas | OpenAPI/backend |
-| P1 | Remover criação manual normal de OS | Backend estável |
-| P1 | Remover Obra do fluxo | Backend QuoteEnvironment |
-| P1 | Tratar suspensão por `error.code` | Backend error contract |
-| P1 | Menu e feature flags | Backend features endpoint |
-| P1 | Financeiro por Serviço | Backend financeiro |
-| P1 | Anexos privados | Backend Attachment |
-| P2 | Aditivos | Backend ServiceAdditional |
-| P2 | Compras/fornecedores | Backend Purchase/Supplier |
-| P2 | Garantia/retorno | Backend WarrantyReturn |
-| P2 | Follow-up | Backend QuoteFollowUp |
-| P2 | Testes mobile de fluxo | APIs estabilizadas |
-| P2 | Offline seguro | Regras de sincronização |
-
----
-
-# 5. ETAPA 0 — Baseline e preparação
-
-## 5.1 Executar antes de modificar
-
-- [ ] `npm install`/`npm ci` conforme lockfile.
-- [ ] `npm run lint`.
-- [ ] `npm run typecheck`.
-- [ ] `npm test`.
-- [ ] `npm run doctor`.
-- [ ] validar build/execução em Android ou Expo Go/dev build conforme configuração do projeto.
-- [ ] confirmar URL/API de desenvolvimento.
-- [ ] registrar screenshots das telas principais antes da refatoração.
-
-## 5.2 Regra de branches
-
-Cada mudança de domínio deve ter branch/PR própria.
-
-Evitar:
+Durante execução:
 
 ```text
-refatorar orçamento
-+ financeiro
-+ menu
-+ upload
-+ autenticação
+/goal status
 ```
 
-no mesmo PR.
-
-## 5.3 Estratégia de compatibilidade
-
-Sempre que o backend introduzir um contrato novo:
+Se fugir do escopo:
 
 ```text
-Backend compatível com antigo e novo
-  ↓
-Mobile migra
-  ↓
-Telemetria/testes confirmam uso
-  ↓
-Backend remove contrato legado
+/steer Não avance para outra etapa. Conclua somente a etapa atual do documento.
+```
+
+Depois de revisar e validar:
+
+```text
+/goal clear
+```
+
+Não use:
+
+```text
+/goal implemente todo o PLANO_REFATORACAO_FRONTEND_V4.md
 ```
 
 ---
 
-# 6. ETAPA 1 — Corrigir fluxo Aprovar Orçamento → Serviço
+# ETAPA 0 — Baseline técnico e visual
 
-## 6.1 Dependência
+## Objetivo de negócio
 
-Executar depois da **Etapa 1 do backend**, quando `POST /quotes/:id/approve` devolver o serviço criado/existente.
+Garantir que futuras mudanças de UX e integração possam ser comparadas com o comportamento atual e que regressões sejam detectadas cedo.
 
-## 6.2 Comportamento atual a remover
+## Objetivo técnico
 
-Hoje:
+Registrar estado atual de build, testes, rotas, contratos, screenshots e dependências.
 
-```text
-Usuário toca Aprovar
-  ↓
-quotesService.approve()
-  ↓
-modal "Deseja iniciar o planejamento?"
-  ↓
-quotesService.convertToService()
+## Arquivos/domínios a analisar
+
+- `package.json`
+- lockfile
+- `app/**`
+- `src/services/api/**`
+- `src/services/auth/**`
+- `src/store/**`
+- `src/types/**`
+- `src/components/**`
+- `src/theme/**`
+- `docs/**`
+- testes existentes
+
+## Alterações obrigatórias
+
+### 0.1 Executar baseline
+
+Usar scripts reais existentes para:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run doctor
 ```
 
-Esse fluxo não deve continuar.
+Validar execução em pelo menos uma plataforma alvo disponível.
 
-## 6.3 Novo fluxo
+### 0.2 Registrar telas críticas
 
-```text
-Usuário toca Aprovar
-  ↓
-confirmação
-  ↓
-POST /quotes/:id/approve
-  ↓
-API retorna quote + serviceOrder
-  ↓
-Snackbar: "Orçamento aprovado e serviço criado"
-  ↓
-Modal opcional:
-  [Continuar no orçamento]
-  [Abrir serviço]
-```
+- login;
+- seleção de empresa;
+- home;
+- orçamentos;
+- novo orçamento;
+- detalhe do orçamento;
+- serviços;
+- Mais.
 
-Não deve existir nova chamada de conversão.
+### 0.3 Contratos atuais
 
-## 6.4 Arquivos a modificar
-
-Principal:
+Mapear services e responses utilizados principalmente em:
 
 ```text
-app/(app)/orcamentos/[id].tsx
+quotes
+serviceOrders
+clients
+payments
+expenses
+works
+measurements
 ```
 
-Services/types:
+## Não alterar
+
+- não mudar UX;
+- não mudar rotas;
+- não alterar contrato de API;
+- não remover Work;
+- não alterar financeiro.
+
+## Critério de aceite
+
+Baseline executável e documentada sem mudança funcional.
+
+## GOAL HERMES — ETAPA 0
 
 ```text
-src/services/api/quotes.ts
-src/types/quote.ts
+/goal draft
+Você está no repositório SmartGesso-Mobile.
+
+OBJETIVO
+Criar uma baseline técnica e visual confiável antes da refatoração V4, sem alterar regra ou fluxo do produto.
+
+LEIA
+- docs/PLANO_REFATORACAO_FRONTEND_V4.md — ETAPA 0
+- package.json
+- app/**
+- src/services/api/**
+- src/store/**
+- src/types/**
+- testes existentes
+
+FAÇA
+1. Execute lint, typecheck, testes e expo doctor usando scripts reais.
+2. Identifique falhas preexistentes.
+3. Mapeie rotas e contracts usados nos fluxos críticos.
+4. Registre quais telas e services participam de Quote→Service.
+5. Não mude comportamento funcional.
+6. Documente baseline no resumo final.
+
+NÃO FAÇA
+- não refatore telas;
+- não remova código legado;
+- não altere API integration;
+- não avance para Etapa 1.
+
+CRITÉRIO
+A equipe consegue distinguir regressão futura de problema preexistente.
 ```
 
-Possivelmente:
+---
+
+# ETAPA 1 — Corrigir Aprovação de Orçamento → Serviço
+
+## Dependência obrigatória
+
+Executar somente depois que o backend tiver estabilizado `POST /quotes/:id/approve` para devolver o Serviço criado/existente.
+
+## Objetivo de negócio
+
+O usuário toca **Aprovar orçamento** uma vez e o Serviço passa a existir automaticamente.
+
+## Objetivo técnico
+
+Remover a segunda chamada `convert-to-service` do fluxo normal e utilizar o `serviceOrder.id` retornado pelo `approve`.
+
+## Problema atual
 
 ```text
-src/types/serviceOrder.ts
+Aprovar
+→ API já cria Serviço
+→ Mobile abre modal “Criar serviço?”
+→ Mobile chama convert-to-service
+→ conflito/409
 ```
 
-## 6.5 Response type recomendado
+## Arquivos principais
+
+- `app/(app)/orcamentos/[id].tsx`
+- `src/services/api/quotes.ts`
+- `src/types/quote.ts`
+- `src/types/serviceOrder.ts`
+- React Query keys relacionadas
+- testes da tela/service
+
+## Alterações obrigatórias
+
+### 1.1 Tipo do response
+
+Criar tipo real equivalente a:
 
 ```ts
-export interface ApproveQuoteResponse {
+interface ApproveQuoteResponse {
   quote: Quote;
   serviceOrder: {
     id: string;
@@ -280,134 +302,228 @@ export interface ApproveQuoteResponse {
 }
 ```
 
-## 6.6 Invalidações React Query
+### 1.2 Mutation
 
-Após sucesso:
+A mutation de aprovação deve:
+
+1. bloquear duplo clique enquanto pending;
+2. chamar somente `quotesService.approve()`;
+3. receber o Serviço da resposta;
+4. invalidar Quote list/detail e ServiceOrder list;
+5. oferecer ação **Abrir serviço**;
+6. não chamar `convertToService()`.
+
+### 1.3 UX
+
+Se `serviceOrderCreated = true`:
 
 ```text
-['company', companyId, 'quotes']
-['company', companyId, 'quotes', quoteId]
-['company', companyId, 'service-orders']
+Orçamento aprovado e Serviço criado.
 ```
 
-## 6.7 UX de repetição
-
-Se `serviceOrderCreated = false`, mensagem:
+Se `false`:
 
 ```text
-"Orçamento já aprovado. O serviço existente foi localizado."
+Orçamento já aprovado. Serviço existente localizado.
 ```
 
-Botão:
+### 1.4 Código legado
+
+Não apagar `quotesService.convertToService()` ainda se outro ponto do app usar. Marcar para remoção após busca no repositório comprovar ausência de consumidores.
+
+## Não alterar
+
+- não remover Work;
+- não refatorar o wizard completo;
+- não mudar financeiro;
+- não alterar menu Mais.
+
+## Testes obrigatórios
+
+- aprovação com criação nova;
+- aprovação de quote já aprovado;
+- erro da API;
+- botão disabled/pending;
+- navegação para Serviço correto;
+- query invalidation.
+
+## Critério de aceite
+
+A aprovação realiza uma única operação HTTP canônica e nunca chama conversão posterior no fluxo normal.
+
+## GOAL HERMES — ETAPA 1
 
 ```text
-Abrir serviço
-```
+/goal draft
+Leia integralmente docs/PLANO_REFATORACAO_FRONTEND_V4.md e implemente SOMENTE a ETAPA 1.
 
-## 6.8 Critério de aceite
+DEPENDÊNCIA
+Antes de alterar, confirme no código/contrato do SmartGesso-API que POST /quotes/:id/approve devolve quote + serviceOrder + serviceOrderCreated.
 
-- [ ] aprovação não chama `convert-to-service`.
-- [ ] serviço abre pelo ID retornado pela API.
-- [ ] duplo toque não gera erro visual confuso.
-- [ ] listas de orçamento e serviço atualizam.
-- [ ] orçamento já aprovado continua navegável.
+OBJETIVO DE NEGÓCIO
+Ao aprovar um orçamento, o Serviço deve existir automaticamente e o usuário deve poder abri-lo sem uma segunda conversão.
 
-### Prompt de implementação — Etapa 1
+OBJETIVO TÉCNICO
+Remover a chamada convert-to-service do fluxo normal e usar o ID retornado por approve.
 
-```text
-Atue como engenheiro React Native/Expo sênior no SmartGesso-Mobile.
-
-Objetivo: migrar o fluxo de aprovação de orçamento para o novo contrato da API.
-
-Leia:
+ALTERE PRINCIPALMENTE
 - app/(app)/orcamentos/[id].tsx
 - src/services/api/quotes.ts
 - src/types/quote.ts
 - src/types/serviceOrder.ts
-- docs/PLANO_REFATORACAO_FRONTEND_V4.md, Etapa 1
-- contrato atual do endpoint POST /quotes/:id/approve no SmartGesso-API
+- testes relacionados
 
-Regras:
-1. Uma única chamada approve deve aprovar e obter o serviço.
-2. Remover do fluxo normal qualquer chamada posterior a convert-to-service.
-3. Não remover suporte legado do service sem confirmar que nenhum outro código usa.
-4. Atualizar tipos para o response real.
-5. Invalidar queries de quote e service-orders.
-6. Mostrar feedback claro.
-7. Navegar para /servicos/[id] usando o ID retornado pela API.
-8. Manter o design system atual.
-9. Não alterar telas não relacionadas.
-10. Adicionar testes para sucesso, serviço já existente e erro.
-11. Executar lint, typecheck e testes.
+FAÇA
+1. Atualize o tipo real de approve.
+2. Garanta submit único enquanto mutation estiver pending.
+3. Após sucesso, invalide quote list/detail e service-orders.
+4. Mostre feedback diferente para serviço novo ou já existente.
+5. Navegue para /servicos/[id] usando o ID retornado.
+6. Remova a chamada posterior de convertToService do fluxo da tela.
+7. Mantenha o método legado no service apenas se ainda houver consumidores.
+8. Adicione testes de sucesso, idempotência visual, erro e navegação.
+
+NÃO FAÇA
+- não refatore novo.tsx;
+- não remova Work;
+- não altere financeiro;
+- não mexa no menu.
+
+VALIDAÇÃO
+lint + typecheck + testes + validação manual do fluxo de aprovação.
+
+CRITÉRIO
+Uma aprovação no app corresponde a uma única operação canônica e abre o Serviço retornado pela API.
 ```
 
 ---
 
-# 7. ETAPA 2 — Remover criação manual de Serviço do fluxo normal
+# ETAPA 2 — Remover criação manual normal de Serviço
 
-## 7.1 Objetivo
+## Objetivo de negócio
 
-A tela Serviços deve administrar serviços derivados de orçamentos aprovados.
+Evitar que o usuário crie Serviço sem proposta comercial aprovada e perca rastreabilidade de cliente, escopo e valor.
 
-## 7.2 Modificações
+## Objetivo técnico
 
-Arquivo:
+Transformar a tab Serviços em gerenciamento dos Serviços originados de orçamentos aprovados.
 
-```text
-app/(app)/(tabs)/servicos.tsx
-```
+## Arquivos principais
 
-Remover ou ocultar:
+- `app/(app)/(tabs)/servicos.tsx`
+- rota `app/(app)/servicos/novo.tsx` se existir
+- `src/services/api/serviceOrders.ts`
+- navegação/CTAs relacionados
 
-```text
-+
-Nova ordem de serviço
-```
+## Alterações obrigatórias
 
-Alterar empty state atual.
+### 2.1 Tela lista
 
-Em vez de:
+Remover/ocultar:
 
 ```text
-"Comece criando sua primeira ordem de serviço"
++ Nova ordem de serviço
 ```
 
-usar:
+### 2.2 Empty state
+
+Trocar para:
 
 ```text
-"Nenhum serviço em andamento"
-"Quando um orçamento for aprovado, o serviço aparecerá aqui."
+Nenhum serviço em andamento.
+Quando um orçamento for aprovado, o Serviço aparecerá aqui.
 ```
 
-CTA opcional:
+CTA:
 
 ```text
 Ver orçamentos
 ```
 
-## 7.3 Exceção futura
+### 2.3 Rota de criação livre
 
-Se o produto precisar de serviço avulso/emergencial, criar recurso separado:
+Não deletar automaticamente. Primeiro procurar consumidores e decidir:
+
+- retirar da navegação;
+- marcar como legado;
+- remover somente após backend/negócio confirmar que não haverá Serviço avulso.
+
+### 2.4 Serviço avulso futuro
+
+Se for necessário depois, será uma feature explícita, com permissão e origem identificada. Não reutilizar criação livre silenciosamente.
+
+## Testes
+
+- tab não mostra CTA de criação comum;
+- empty state direciona para Orçamentos;
+- serviço retornado da Etapa 1 aparece na lista.
+
+## GOAL HERMES — ETAPA 2
 
 ```text
-Serviço avulso
+/goal draft
+Implemente SOMENTE a ETAPA 2 do plano frontend V4.
+
+OBJETIVO
+Fazer a tela Serviços representar Serviços originados de orçamentos aprovados, removendo criação manual normal da UX.
+
+ALTERE
+- app/(app)/(tabs)/servicos.tsx
+- rotas/CTAs de criação de Serviço apenas quando diretamente relacionados
+- testes
+
+FAÇA
+1. Remova o botão + Nova ordem de serviço da experiência normal.
+2. Atualize empty state para explicar que Serviços surgem de Orçamentos aprovados.
+3. Adicione CTA Ver orçamentos.
+4. Procure consumidores da rota /servicos/novo antes de removê-la.
+5. Não apague código legado sem comprovar ausência de uso.
+
+NÃO FAÇA
+- não altere Quote wizard;
+- não implemente serviço avulso;
+- não altere backend.
+
+CRITÉRIO
+Usuário operacional normal não cria OS sem orçamento por acidente.
 ```
-
-com feature/permissão explícita. Não usar a criação livre atual como regra implícita.
-
-## 7.4 Critério de aceite
-
-Um usuário comum não cria OS acidentalmente sem orçamento.
 
 ---
 
-# 8. ETAPA 3 — Retirar "Obra" do wizard e introduzir Ambientes
+# ETAPA 3 — Remover Work/Obra do novo orçamento e introduzir Ambientes
 
-## 8.1 Dependência
+## Dependência
 
-Backend precisa disponibilizar `QuoteEnvironment` e medições vinculadas ao orçamento/ambiente.
+Backend precisa fornecer `QuoteEnvironment` + `Measurement` vinculada a ambiente/Quote.
 
-## 8.2 Fluxo alvo
+## Objetivo de negócio
+
+Permitir que o usuário faça orçamento no campo de maneira natural:
+
+```text
+Cliente → Local → Ambientes → Medições → Itens
+```
+
+sem cadastrar uma “Obra”.
+
+## Objetivo técnico
+
+Retirar `workId`, `worksService` e `WorkPickerModal` do novo fluxo e substituir por ambientes locais/persistidos.
+
+## Arquivos principais
+
+- `app/(app)/orcamentos/novo.tsx` ou feature já extraída
+- `src/services/api/works.ts`
+- `src/services/api/measurements.ts`
+- novos `quoteEnvironments.ts`
+- `src/types/work.ts`
+- `src/types/measurement.ts`
+- novos tipos de environment
+- compositions service
+
+## Alterações obrigatórias
+
+### 3.1 Novo fluxo
 
 ```text
 1 Cliente
@@ -420,127 +536,111 @@ Backend precisa disponibilizar `QuoteEnvironment` e medições vinculadas ao or�
 8 Revisão
 ```
 
-Não apresentar seleção de Obra.
+### 3.2 Environment
 
-## 8.3 Novo modelo de UX
+Cada ambiente deve suportar:
 
-Exemplo:
+- nome;
+- tipo de aplicação;
+- comprimento/largura/altura quando aplicável;
+- área/perímetro;
+- observações;
+- fotos em etapa posterior;
+- ordem.
 
-```text
-Ambientes
+### 3.3 Estado
 
-Sala
-15,96 m²
-Drywall
-[Editar] [Fotos]
-
-Quarto 1
-10,85 m²
-Forro
-[Editar] [Fotos]
-
-+ Adicionar ambiente
-```
-
-Dentro de ambiente:
-
-```text
-Nome
-Tipo de aplicação
-Comprimento
-Largura
-Altura
-Área
-Perímetro
-Portas
-Janelas
-Recortes
-Observações
-Fotos
-```
-
-## 8.4 Mudanças de estado
-
-Remover do `QuoteDraft`:
+Remover do draft do novo fluxo:
 
 ```ts
 workId
-selectedMeasurementIds // substituir conforme novo desenho
+selectedMeasurementIds // substituir pelo modelo novo
 ```
 
-Introduzir estrutura local semelhante a:
+Introduzir `QuoteEnvironmentDraft[]` ou equivalente.
 
-```ts
-interface QuoteEnvironmentDraft {
-  localId: string;
-  serverId?: string;
-  name: string;
-  applicationType: MeasurementApplicationType;
-  measurement: MeasurementDraft;
-}
-```
+### 3.4 Cálculo de materiais
 
-`localId` pode usar UUID local para suportar edição antes de persistir.
+Deve usar medições dos ambientes e não Work.
 
-## 8.5 Persistência
+### 3.5 Compatibilidade
 
-Escolher uma das estratégias:
+- telas históricas de Work podem permanecer;
+- não apagar services/types de Work se ainda usados fora do novo fluxo;
+- orçamento legado continua exibível.
 
-### Estratégia A — draft local e persistência no final
+## Testes
 
-Boa para simplicidade, mas exige payload composto.
+- criar 1 ambiente;
+- criar múltiplos ambientes;
+- cálculo de materiais usa medições corretas;
+- alterar ambiente atualiza cálculo;
+- nenhum Work é necessário no novo fluxo;
+- quote legado abre normalmente.
 
-### Estratégia B — criar orçamento rascunho cedo
+## GOAL HERMES — ETAPA 3
 
 ```text
-Cliente selecionado
-  ↓
-cria Quote RASCUNHO
-  ↓
-ambientes/medições persistidos progressivamente
+/goal draft
+Implemente SOMENTE a ETAPA 3 do frontend V4.
+
+DEPENDÊNCIA
+Confirme primeiro que a API possui QuoteEnvironment e Measurement sem Work obrigatório.
+
+OBJETIVO DE NEGÓCIO
+O usuário deve criar orçamento usando Cliente → Local → Ambientes/Medições, sem selecionar Obra.
+
+OBJETIVO TÉCNICO
+Remover Work do fluxo de novo orçamento e consumir os novos endpoints de QuoteEnvironment/Measurement.
+
+FAÇA
+1. Remova WorkPicker do novo fluxo.
+2. Remova worksService somente do novo orçamento.
+3. Crie tipos/services para QuoteEnvironment.
+4. Modele múltiplos ambientes e suas medições.
+5. Preserve cálculo de materiais com base nas medições.
+6. Preserve leitura de dados antigos.
+7. Não delete telas/services de Work ainda se houver consumidores.
+8. Crie testes do novo draft/payload/cálculo.
+
+NÃO FAÇA
+- não refatore toda a arquitetura visual fora do necessário;
+- não mexa no Financeiro;
+- não apague Work do projeto inteiro.
+
+CRITÉRIO
+É possível concluir novo orçamento completo sem criar ou selecionar Work.
 ```
-
-É mais robusta para recuperação de rascunho e uploads.
-
-**Recomendação:** evoluir para Estratégia B em fase posterior, principalmente se o wizard ficar longo e precisar recuperar progresso.
-
-## 8.6 Migração temporária
-
-Durante transição, manter tipos/services de `Work` somente para telas históricas, sem usá-los no novo orçamento.
 
 ---
 
-# 9. ETAPA 4 — Refatorar `novo.tsx` do orçamento
+# ETAPA 4 — Refatorar o wizard de Novo Orçamento
 
-## 9.1 Problema
+## Objetivo de negócio
 
-`app/(app)/orcamentos/novo.tsx` concentra dezenas de responsabilidades e está excessivamente grande.
+Facilitar evolução e reduzir risco de bugs em uma das telas mais importantes do produto.
 
-## 9.2 Arquitetura alvo
+## Objetivo técnico
 
-Manter a rota fina:
+Quebrar o arquivo de aproximadamente 97 KB em feature estruturada, sem alterar comportamento funcional além do que já foi aprovado nas etapas anteriores.
 
-```text
-app/(app)/orcamentos/novo.tsx
-```
+## Arquivos principais
 
-Exemplo:
+- `app/(app)/orcamentos/novo.tsx`
+- novo `src/features/quotes/create/**`
+- schemas Zod
+- hooks
+- components/steps
 
-```tsx
-export default function NovoOrcamentoRoute() {
-  return <CreateQuoteScreen />;
-}
-```
-
-Criar:
+## Estrutura alvo sugerida
 
 ```text
 src/features/quotes/create/
 ├── CreateQuoteScreen.tsx
 ├── types.ts
 ├── constants.ts
-├── utils.ts
 ├── validation.ts
+├── utils.ts
 ├── hooks/
 │   ├── useQuoteDraft.ts
 │   ├── useQuoteWizard.ts
@@ -562,142 +662,105 @@ src/features/quotes/create/
     └── ReviewStep.tsx
 ```
 
-## 9.3 Responsabilidades
+## Responsabilidades
 
-### `CreateQuoteScreen`
+- rota Expo Router: wrapper fino;
+- `CreateQuoteScreen`: orquestra fluxo;
+- `useQuoteDraft`: draft + ações;
+- `useQuoteWizard`: navegação e validação de steps;
+- `useMaterialCalculation`: server call de composição;
+- `useQuoteSubmit`: payload/mutation/cache;
+- steps: UI específica.
 
-Somente:
+## Não fazer
 
-- coordena step atual;
-- renderiza step;
-- chama handlers de navegação;
-- exibe snackbar/loading global.
+- não mover server state para Zustand;
+- não criar Context global para tudo;
+- não duplicar validação;
+- não mudar API só por refatoração estrutural.
 
-### `useQuoteDraft`
+## Testes
 
-- estado do draft;
-- ações de update;
-- reset;
-- derivação de totais.
+- hooks isolados;
+- validation;
+- ClientStep;
+- EnvironmentStep;
+- PricingStep;
+- payload final.
 
-### `useQuoteWizard`
-
-- step atual;
-- validação para avançar;
-- voltar;
-- regras de fluxo.
-
-### `useMaterialCalculation`
-
-- chama API de composição;
-- controla loading/error;
-- aplica resultado ao draft.
-
-### `useQuoteSubmit`
-
-- monta payload final;
-- mutation;
-- invalida queries;
-- trata response.
-
-## 9.4 Regra de tamanho
-
-Não usar número rígido como qualidade absoluta, porém manter telas e componentes com uma responsabilidade clara. Se um step ultrapassa muito o necessário, extrair componentes/hook.
-
-## 9.5 Testes facilitados
-
-Após separação deve ser possível testar:
+## GOAL HERMES — ETAPA 4
 
 ```text
-ClientStep isolado
-PricingStep isolado
-validation isolada
-useQuoteDraft isolado
-```
+/goal draft
+Implemente SOMENTE a ETAPA 4.
 
-sem montar todo o wizard.
+OBJETIVO
+Refatorar o wizard de novo orçamento para uma feature modular e testável sem alterar comportamento funcional já estabilizado.
 
-### Prompt de implementação — Refatoração estrutural
+FAÇA
+1. Transforme app/(app)/orcamentos/novo.tsx em rota fina.
+2. Crie src/features/quotes/create com screen, steps, hooks, validation e componentes.
+3. Mantenha React Query como server state.
+4. Mantenha draft local à feature.
+5. Não use Zustand como store de formulário.
+6. Centralize Zod/validação.
+7. Preserve design system, acessibilidade e navegação.
+8. Extraia testes unitários de hooks/helpers/steps.
+9. Garanta que payload final permaneça equivalente ao contrato vigente.
 
-```text
-Refatore app/(app)/orcamentos/novo.tsx sem alterar comportamento funcional nesta etapa.
+NÃO FAÇA
+- não implemente novas features de produto;
+- não altere Financeiro;
+- não mude backend.
 
-Objetivo:
-- transformar a rota Expo Router em um wrapper fino;
-- mover a implementação para src/features/quotes/create;
-- separar steps, modais, hooks, validações e helpers;
-- preservar exatamente o contrato atual com a API enquanto a refatoração estrutural ocorre.
-
-Regras:
-1. Não misture esta refatoração com remoção de Obra ou mudança de API.
-2. Faça em commits lógicos se possível.
-3. Não duplicar estado entre steps.
-4. Não usar contexto global para tudo; estado do wizard deve permanecer local à feature.
-5. React Query continua responsável por server state.
-6. Zustand não deve virar storage de formulário.
-7. Manter design system e acessibilidade.
-8. Atualizar imports sem criar ciclos.
-9. Criar testes de helpers/validation/hooks extraídos.
-10. Garantir lint, typecheck e testes verdes.
+CRITÉRIO
+A rota fica fina, responsabilidades ficam separadas e o fluxo continua funcional com testes verdes.
 ```
 
 ---
 
-# 10. ETAPA 5 — Padronizar integração com API e eliminar normalizadores improvisados
+# ETAPA 5 — Padronizar integração com API e contratos tipados
 
-## 10.1 Problema
+## Objetivo de negócio
 
-Há telas com helper:
+Reduzir bugs em que a UI espera um formato e a API retorna outro.
 
-```ts
-function toArray<T>(result: unknown): T[]
-```
+## Objetivo técnico
 
-porque os tipos esperam `{ data, total }`, mas a API retorna array puro em alguns endpoints.
+Centralizar adapters nos services e preparar geração automática de client/types via OpenAPI.
 
-Isso é sintoma de contrato divergente.
+## Problema atual
 
-## 10.2 Curto prazo
-
-Centralizar adaptação no service, nunca na tela.
-
-Exemplo:
+Há `toArray<T>` em telas para tolerar:
 
 ```text
-src/services/api/serviceOrders.ts
+array puro
+OU
+{ data, total }
 ```
 
-deve devolver sempre o tipo que a tela espera.
+A tela não deve conhecer inconsistência de transporte.
 
-A UI não deve saber que a API possui formatos inconsistentes.
+## Arquivos principais
 
-## 10.3 Médio prazo
+- `src/services/api/**`
+- `src/types/**`
+- telas com `toArray()`/casts
+- `package.json` script `api:generate`
 
-Gerar client/tipos via OpenAPI.
+## Alterações obrigatórias
 
-`package.json` já possui:
+### 5.1 Curto prazo
 
-```text
-api:generate
-```
+Services retornam um contrato único para a UI.
 
-como TODO.
+### 5.2 Médio prazo
 
-Objetivo:
+Consumir OpenAPI estabilizado do backend e gerar tipos/client.
 
-```text
-Swagger/OpenAPI da API
-  ↓
-client/types gerados
-  ↓
-services finos
-  ↓
-React Query
-```
+### 5.3 Paginação
 
-## 10.4 Paginação
-
-Quando o backend padronizar:
+Adotar tipo comum quando backend suportar:
 
 ```ts
 interface PaginatedResponse<T> {
@@ -711,67 +774,62 @@ interface PaginatedResponse<T> {
 }
 ```
 
-Remover `toArray` espalhados.
+### 5.4 Remover adapters das telas
+
+Somente depois do service garantir o contrato.
+
+## GOAL HERMES — ETAPA 5
+
+```text
+/goal draft
+Implemente SOMENTE a ETAPA 5.
+
+OBJETIVO
+Eliminar contratos improvisados na UI e criar uma camada de API tipada e previsível.
+
+FAÇA
+1. Procure toArray, casts unknown/any e normalizações de response nas telas.
+2. Mova normalização temporária para src/services/api.
+3. Padronize tipos de lista/paginação conforme contrato real do backend.
+4. Configure ou implemente api:generate somente se OpenAPI já estiver estável e disponível.
+5. Atualize telas para consumir tipos definitivos.
+6. Não altere UX além de erros derivados do contrato.
+7. Crie testes de services/mappers.
+
+NÃO FAÇA
+- não invente response que a API não fornece;
+- não gere client contra spec desatualizada;
+- não refatore features não relacionadas.
+
+CRITÉRIO
+Nenhuma tela crítica precisa adivinhar se a API retorna array ou envelope.
+```
 
 ---
 
-# 11. ETAPA 6 — Tratar corretamente acesso suspenso e erros da API
+# ETAPA 6 — Acesso suspenso, erros centralizados e sessão
 
-## 11.1 Problema
+## Objetivo de negócio
 
-O Axios possui `accessDeniedHandler`, mas atualmente reage principalmente ao status 403. A API pode responder:
+Dar feedback claro quando a empresa está suspensa, usuário perdeu acesso ou sessão expirou, sem loops de requests e mensagens genéricas.
 
-```text
-402
-COMPANY_ACCESS_SUSPENDED
-```
+## Objetivo técnico
 
-## 11.2 Regra nova
+Orientar comportamento por `ApiError.code`, não apenas HTTP status.
 
-O comportamento deve ser orientado ao `code`.
+## Arquivos principais
 
-Exemplo no interceptor:
+- `src/services/api/client.ts`
+- `src/types/api.ts`
+- `src/store/useSessionStore.ts`
+- root layouts/navegação
+- nova tela de acesso suspenso
 
-```text
-response error
-  ↓
-toApiError(error)
-  ↓
-code === COMPANY_ACCESS_SUSPENDED
-  ↓
-accessDeniedHandler(details)
-```
+## Alterações obrigatórias
 
-Independente de 402/403.
+### 6.1 Error mapper
 
-## 11.3 Tela dedicada
-
-Criar rota/tela:
-
-```text
-app/(app)/access-suspended.tsx
-```
-
-ou equivalente fora do grupo operacional.
-
-Mostrar:
-
-```text
-Acesso temporariamente suspenso
-Empresa: X
-Situação: ...
-Contato de suporte: ...
-
-[Atualizar situação]
-[Trocar empresa]
-[Sair]
-```
-
-Não permitir que o usuário permaneça em looping de requests falhando.
-
-## 11.4 Outros códigos recomendados
-
-Preparar tratamento centralizado para:
+Reconhecer códigos como:
 
 ```text
 UNAUTHORIZED
@@ -785,26 +843,88 @@ NETWORK_ERROR
 SERVER_ERROR
 ```
 
-## 11.5 Grace period
+### 6.2 `COMPANY_ACCESS_SUSPENDED`
 
-Se `SUBSCRIPTION_GRACE_PERIOD`, não necessariamente bloquear. Exibir aviso discreto dependendo da regra do produto.
+Independente de 402/403:
+
+```text
+error.code
+→ accessDeniedHandler
+→ tela dedicada
+```
+
+### 6.3 Tela
+
+Mostrar:
+
+- empresa;
+- situação;
+- suporte;
+- atualizar situação;
+- trocar empresa;
+- sair.
+
+### 6.4 401
+
+Refresh falhou → limpar tokens + sessão + login.
+
+### 6.5 Grace period
+
+Não bloquear se a regra do backend permitir; apresentar aviso conforme produto.
+
+## Testes
+
+- 401 refresh falho;
+- 402 com code suspended;
+- 403 permission;
+- trocar empresa;
+- sem loop de retry.
+
+## GOAL HERMES — ETAPA 6
+
+```text
+/goal draft
+Implemente SOMENTE a ETAPA 6.
+
+OBJETIVO
+Padronizar o tratamento de sessão e acesso da empresa usando error.code da API.
+
+FAÇA
+1. Revise client.ts, toApiError e handlers atuais.
+2. Faça COMPANY_ACCESS_SUSPENDED ser reconhecido pelo code, seja HTTP 402 ou 403.
+3. Crie fluxo/tela dedicada de acesso suspenso.
+4. Mantenha refresh queue e logout seguros.
+5. Evite retry loop para empresa bloqueada.
+6. Diferencie forbidden de subscription suspended.
+7. Crie testes.
+
+NÃO FAÇA
+- não alterar regra de assinatura no frontend;
+- não armazenar segredo adicional;
+- não mudar telas operacionais fora do necessário.
+
+CRITÉRIO
+Cada erro de acesso crítico leva a um estado previsível e recuperável da aplicação.
+```
 
 ---
 
-# 12. ETAPA 7 — Simplificar o menu "Mais"
+# ETAPA 7 — Simplificar menu Mais e ações rápidas
 
-## 12.1 Problemas atuais
+## Objetivo de negócio
 
-- Orçamentos já estão na tab e aparecem novamente em Mais.
-- Serviços já estão na tab e aparecem novamente.
-- Pagamentos e Cobranças apontam para o mesmo lugar.
-- Produção e Estoque aparecem para todos.
+Diminuir carga cognitiva e deixar o app parecer ferramenta operacional, não um ERP cheio de módulos repetidos.
 
-## 12.2 Estrutura recomendada
+## Arquivos principais
+
+- `app/(app)/(tabs)/mais.tsx`
+- `app/(app)/(tabs)/novo.tsx`
+- navigation/routes
+- permissions/features quando disponíveis
+
+## Estrutura alvo
 
 ```text
-MAIS
-
 Operação
   Clientes
   Agenda
@@ -825,362 +945,496 @@ Conta
   Perfil
 
 Suporte
-  Ajuda e suporte
+  Ajuda
   Trocar empresa
   Sair
 ```
 
-`*` condicionado a feature/role.
+`*` somente quando feature + permission.
 
-## 12.3 Não duplicar tabs
+## Alterações obrigatórias
 
-Não listar normalmente:
+- remover Orçamentos e Serviços do Mais se já estão nas tabs;
+- consolidar Pagamentos/Cobranças em Financeiro;
+- manter Notificações em local coerente, sem duplicação;
+- `Novo` deve mostrar apenas ações frequentes e permitidas.
 
-```text
-Orçamentos
-Serviços
-```
-
-em Mais, salvo necessidade específica de acessibilidade/navegação comprovada.
-
-## 12.4 Financeiro como módulo consolidado
-
-Em vez de duas entradas quase iguais:
+## GOAL HERMES — ETAPA 7
 
 ```text
-Pagamentos
-Cobranças
-```
+/goal draft
+Implemente SOMENTE a ETAPA 7.
 
-usar:
+OBJETIVO
+Simplificar navegação e remover duplicidades do menu Mais/Novo.
 
-```text
-Financeiro
-```
+FAÇA
+1. Remova Orçamentos e Serviços do Mais porque já existem em tabs.
+2. Consolide Pagamentos/Cobranças em Financeiro.
+3. Organize seções Operação, Financeiro, Gestão, Conta e Suporte.
+4. Preserve rotas existentes quando ainda usadas; mude apenas entrada de navegação.
+5. Atualize Novo para mostrar ações frequentes.
+6. Respeite permissions/features se a Etapa 8 já estiver disponível; caso contrário deixe integração preparada sem hardcode confuso.
+7. Teste navegação e acessibilidade.
 
-com subáreas internas:
+NÃO FAÇA
+- não criar módulos novos;
+- não alterar backend;
+- não reestilizar o app inteiro.
 
-```text
-Visão geral
-A receber
-Recebimentos
-Despesas
+CRITÉRIO
+Menu tem menos duplicidade, ações são encontráveis e tabs principais continuam simples.
 ```
 
 ---
 
-# 13. ETAPA 8 — Feature flags e menu por capacidade
+# ETAPA 8 — Feature flags + permissions na UX
 
-## 13.1 Dependência
+## Dependência
 
-Backend deve retornar features efetivas da empresa.
+Backend precisa fornecer `GET /companies/current/features` ou contrato equivalente.
 
-## 13.2 Store/cache
+## Objetivo de negócio
 
-Não precisa armazenar permanentemente em Zustand se React Query puder gerenciar como server state.
+Mostrar a cada empresa e usuário somente o que realmente pode usar.
 
-Exemplo:
+## Objetivo técnico
 
-```text
-useCompanyFeatures()
-```
+Combinar feature efetiva com permissão do membro para controlar visibilidade/ações.
 
-query key:
+## Arquivos principais
 
-```text
-['company', companyId, 'features']
-```
+- novo `src/services/api/companyFeatures.ts`
+- hook `useCompanyFeatures`
+- `PermissionGate`
+- `src/types/permissions.ts`
+- menu Mais
+- home/dashboard
+- rotas de módulos opcionais
 
-## 13.3 Uso
-
-```tsx
-{features.production && can('production.read') ? (
-  <MenuItem ... />
-) : null}
-```
-
-## 13.4 Regra
-
-Feature define se a empresa pode usar o módulo.
-
-Permission define se o usuário pode usar o módulo.
+## Regra
 
 ```text
 visible = featureEnabled && permissionGranted
 ```
 
-Nunca confundir os dois conceitos.
+Feature não substitui permission e permission não substitui feature.
+
+## Alterações obrigatórias
+
+- React Query para server state das features;
+- não persistir em Zustand sem necessidade;
+- Produção/Estoque/Compras/Equipe etc. condicionais;
+- guard visual em ações sensíveis;
+- deep link para rota de feature desabilitada deve mostrar fallback seguro.
+
+## GOAL HERMES — ETAPA 8
+
+```text
+/goal draft
+Implemente SOMENTE a ETAPA 8.
+
+OBJETIVO
+Controlar visibilidade e navegação por feature efetiva da empresa + permissão do usuário.
+
+FAÇA
+1. Consuma endpoint de features via React Query.
+2. Crie useCompanyFeatures.
+3. Combine com PermissionGate/roles existentes.
+4. Atualize menu, Novo e home para módulos opcionais.
+5. Garanta fallback para deep links sem acesso.
+6. Não use Zustand como fonte de server state sem justificativa.
+7. Crie testes da matriz feature x permission.
+
+CRITÉRIO
+Produção, Estoque, Compras, Financeiro avançado etc. só aparecem quando a empresa e o usuário realmente podem usar.
+```
 
 ---
 
-# 14. ETAPA 9 — Financeiro orientado ao Serviço
+# ETAPA 9 — Financeiro centrado no Serviço
 
-## 14.1 Objetivo
+## Dependência
 
-Depois de aprovado, o usuário deve enxergar o serviço como centro financeiro.
+Backend Etapa 7 concluída com `financial-summary` e endpoints de despesas/recebíveis.
 
-## 14.2 Detalhe do Serviço
+## Objetivo de negócio
 
-Criar seção:
+Permitir ao usuário entender o resultado real do Serviço sem fazer conta manual.
 
-```text
-Financeiro
+## Objetivo técnico
 
-Valor contratado      R$ 10.000
-Aditivos aprovados     R$  1.200
-Total contratado       R$ 11.200
+Criar UI financeira baseada exclusivamente nos dados calculados pelo backend.
 
-Recebido               R$  7.000
-A receber               R$  4.200
+## Arquivos principais
 
-Custo realizado        R$  5.300
-Resultado projetado    R$  5.900
-Margem                  52,68%
-```
+- `app/(app)/servicos/[id].tsx`
+- novas rotas/sections financeiras
+- services `financial`, `expenses`, `receivables`
+- components de resumo
+- permissions
 
-Não usar somente:
+## Alterações obrigatórias
 
-```text
-Lucro: R$ X
-```
+### 9.1 Resumo
 
-sem explicar origem.
-
-## 14.3 Subtelas
+Exibir separadamente:
 
 ```text
-/servicos/[id]/financeiro
-/servicos/[id]/recebimentos
-/servicos/[id]/despesas
+Valor contratado
+Aditivos aprovados
+Total contratado
+Recebido
+A receber
+Custo realizado
+Resultado projetado
+Resultado realizado/caixa
+Margem
 ```
 
-ou tabs/seções internas conforme UX final.
+### 9.2 Não calcular fonte da verdade no Mobile
 
-## 14.4 Registrar despesa
+Mobile apenas formata response; não reconstrói lucro somando arrays como regra oficial.
 
-Ao entrar a partir do serviço:
+### 9.3 Despesa a partir do Serviço
+
+`serviceOrderId` vem da rota/contexto e não deve ser selecionado manualmente.
+
+### 9.4 Recebimento
+
+Mostrar parcelas, vencimento, status, data e meio.
+
+### 9.5 Permissions
+
+Perfis sem acesso a custos/margem não renderizam dados restritos.
+
+## Testes
+
+- summary correto;
+- sem permission;
+- partial payment;
+- erro/loading;
+- invalidate após registrar despesa/recebimento.
+
+## GOAL HERMES — ETAPA 9
 
 ```text
-serviceOrderId
+/goal draft
+Implemente SOMENTE a ETAPA 9.
+
+DEPENDÊNCIA
+Confirme endpoints financeiros do ServiceOrder no backend.
+
+OBJETIVO
+Transformar o detalhe de Serviço em um hub financeiro com valores rastreáveis e claros.
+
+FAÇA
+1. Crie service/types para financial-summary, expenses e receivables.
+2. Exiba contratado, recebido, a receber, custo, resultado e margem separadamente.
+3. Não calcule lucro oficial no frontend.
+4. Registre despesa/recebimento já vinculado ao Serviço atual.
+5. Respeite permissions de custo/margem.
+6. Invalide queries corretamente.
+7. Trate loading/error/empty.
+8. Teste permissions e atualizações.
+
+NÃO FAÇA
+- não alterar fórmula financeira definida pelo backend;
+- não implementar Aditivos ainda além de exibir valor no summary se já vier da API.
+
+CRITÉRIO
+Usuário autorizado consegue compreender situação financeira do Serviço sem cálculos manuais.
 ```
-
-deverá ser inferido pelo contexto da rota, não pedido ao usuário.
-
-## 14.5 Registrar recebimento
-
-Mostrar:
-
-- parcela;
-- vencimento;
-- status;
-- valor;
-- recebido em;
-- meio de pagamento;
-- comprovante.
-
-## 14.6 Permissões
-
-Installer não deve ver custos/margem se não tiver permissão.
-
-Usar `PermissionGate`/equivalente para UX, com backend reforçando a regra.
 
 ---
 
-# 15. ETAPA 10 — Anexos e fotos privados
+# ETAPA 10 — Anexos e fotos privados
 
-## 15.1 Dependência
+## Dependência
 
-Backend deve fornecer `Attachment` autenticado ou URLs assinadas.
+Backend Etapa 8 com Attachment autenticado/signed URL.
 
-## 15.2 Serviço de anexos
+## Objetivo de negócio
 
-Criar:
+Permitir documentação fotográfica segura do orçamento, execução, comprovantes e garantia.
+
+## Objetivo técnico
+
+Criar componentes reutilizáveis de captura/upload/listagem por entidade/categoria.
+
+## Arquivos sugeridos
 
 ```text
 src/services/api/attachments.ts
-```
-
-Operações:
-
-```text
-upload
-listByEntity
-delete
-getDownloadUrl/open
-```
-
-## 15.3 Componente reutilizável
-
-```text
 src/components/domain/attachments/
-├── AttachmentPicker.tsx
-├── AttachmentGrid.tsx
-├── AttachmentCard.tsx
-└── PhotoCaptureButton.tsx
+  AttachmentPicker.tsx
+  AttachmentGrid.tsx
+  AttachmentCard.tsx
+  PhotoCaptureButton.tsx
 ```
 
-## 15.4 Contextos de foto
+Telas:
+
+- Quote/Environment;
+- Service antes/durante/depois;
+- Expense receipt;
+- Purchase document;
+- Warranty.
+
+## Alterações obrigatórias
+
+- upload multipart autenticado;
+- não persistir URL física pública como premissa;
+- download via endpoint autorizado/signed URL;
+- compressão apropriada com `expo-image-manipulator`;
+- estado visual `pendente/enviando/enviado/falhou`;
+- evitar upload duplicado em retry.
+
+## GOAL HERMES — ETAPA 10
 
 ```text
-Orçamento / ambiente
-Serviço — antes
-Serviço — durante
-Serviço — depois
-Despesa — comprovante
-Compra — nota
-Garantia — evidência
-```
+/goal draft
+Implemente SOMENTE a ETAPA 10.
 
-## 15.5 Compressão
+OBJETIVO
+Criar experiência segura e reutilizável de anexos/fotos usando o novo contrato Attachment da API.
 
-Antes de enviar imagem:
+FAÇA
+1. Crie attachments service e tipos.
+2. Crie componentes reutilizáveis de picker/capture/grid/card.
+3. Integre pelo menos os contextos definidos na etapa, priorizando Serviço e comprovantes.
+4. Comprima imagens quando apropriado sem destruir qualidade necessária.
+5. Mostre estados de upload.
+6. Use URL autorizada/signed; não assuma arquivo público.
+7. Teste erro/retry/tenant contract.
 
-- limitar dimensão quando apropriado;
-- comprimir JPEG/WebP;
-- manter qualidade suficiente para documentação;
-- não destruir original se requisito exigir resolução plena.
+NÃO FAÇA
+- não acessar storage diretamente;
+- não guardar token em URL;
+- não criar fila offline financeira automática.
 
-`expo-image-manipulator` já existe nas dependências e pode ser aproveitado conforme necessidade.
-
-## 15.6 Offline
-
-Foto capturada offline pode entrar em fila de upload, mas o usuário deve enxergar claramente:
-
-```text
-Pendente de envio
-Enviando
-Enviado
-Falhou
+CRITÉRIO
+Fotos/documentos só são abertos por fluxo autorizado e a UI comunica claramente o estado de envio.
 ```
 
 ---
 
-# 16. ETAPA 11 — Aditivos no Serviço
+# ETAPA 11 — Aditivos de Serviço
 
-## 16.1 UX
+## Dependência
 
-Detalhe do serviço:
+Backend ServiceAdditional disponível.
+
+## Objetivo de negócio
+
+Registrar trabalho adicional sem modificar o orçamento original aprovado.
+
+## UX alvo
 
 ```text
+Serviço #35
+
 Aditivos
-
-#1 Parede adicional
-R$ 1.200
-Aprovado
-
-#2 Sanca adicional
-R$ 600
-Aguardando aprovação
+#1 Parede adicional   R$ 1.200  Aprovado
+#2 Sanca extra        R$   600  Aguardando
 
 + Novo aditivo
 ```
 
-## 16.2 Fluxo
+## Alterações obrigatórias
+
+- lista no detalhe do Serviço;
+- criar rascunho;
+- enviar/apresentar;
+- aprovar/rejeitar conforme permissão;
+- refetch financial-summary após status aprovado;
+- não somar manualmente como fonte da verdade.
+
+## GOAL HERMES — ETAPA 11
 
 ```text
-Novo aditivo
-  ↓
-descrição + valor + custo estimado opcional
-  ↓
-Salvar rascunho
-  ↓
-Enviar/Apresentar ao cliente
-  ↓
-Aprovar ou rejeitar
+/goal draft
+Implemente SOMENTE a ETAPA 11.
+
+OBJETIVO
+Adicionar UX de Aditivos vinculados ao Serviço sem editar o Quote aprovado.
+
+FAÇA
+- services/types ServiceAdditional;
+- lista e detalhe no Serviço;
+- formulário de criação;
+- ações de status permitidas;
+- atualização do financial-summary após aprovação;
+- permissions;
+- loading/error/testes.
+
+NÃO FAÇA
+- não editar total do Quote original;
+- não calcular total oficial no frontend;
+- não implementar Compras.
+
+CRITÉRIO
+O usuário enxerga claramente contrato original e extras aprovados separadamente.
 ```
-
-A UI nunca deve editar o total do orçamento original para representar mudança de escopo.
-
-## 16.3 Financeiro
-
-Ao aprovar aditivo, atualizar summary pela API/refetch, não somar manualmente no frontend como fonte da verdade.
 
 ---
 
-# 17. ETAPA 12 — Fornecedores e Compras
+# ETAPA 12 — Fornecedores e Compras
 
-## 17.1 Menu
+## Dependência
 
-Dentro de Estoque/Financeiro conforme posicionamento:
+Backend Supplier/Purchase/Inventory integrado.
+
+## Objetivo de negócio
+
+Permitir registrar de quem comprou, quanto custou e para qual Serviço/estoque foi o material.
+
+## UX alvo
+
+Rotas possíveis:
 
 ```text
-Fornecedores
-Compras
+/compras
+/compras/novo
+/compras/[id]
+/fornecedores
+/fornecedores/[id]
 ```
 
-Não colocar tudo como tab principal.
-
-## 17.2 Compra vinculada ao serviço
-
-A partir do serviço:
+A partir do Serviço:
 
 ```text
 Comprar materiais
 ```
 
-abre formulário com `serviceOrderId` implícito.
+com `serviceOrderId` implícito.
 
-## 17.3 Recebimento de compra
+## Alterações obrigatórias
 
-Mostrar status:
+- Supplier picker/cadastro;
+- Purchase form;
+- itens com quantidade/unidade/custo;
+- status da compra;
+- recebimento;
+- refetch estoque;
+- anexar nota/comprovante via Attachment;
+- permissions/features.
+
+## GOAL HERMES — ETAPA 12
 
 ```text
-Rascunho
-Pedido
-Recebido
-Cancelado
-```
+/goal draft
+Implemente SOMENTE a ETAPA 12.
 
-Após receber, refetch de estoque.
+OBJETIVO
+Adicionar experiência de Fornecedores e Compras integrada ao Serviço e estoque.
+
+FAÇA
+1. Crie services/types de Supplier/Purchase.
+2. Crie lista, detalhe e novo.
+3. Permita abrir Nova Compra a partir do Serviço com serviceOrderId implícito.
+4. Suporte itens e status.
+5. Ao marcar recebida, refaça queries de estoque.
+6. Integre Attachment para nota/comprovante.
+7. Respeite feature e permission.
+8. Crie testes.
+
+NÃO FAÇA
+- não recalcular estoque localmente como fonte da verdade;
+- não criar módulo contábil completo.
+
+CRITÉRIO
+Usuário consegue rastrear fornecedor → compra → Serviço/estoque usando dados da API.
+```
 
 ---
 
-# 18. ETAPA 13 — Garantia e Retorno
+# ETAPA 13 — Garantia e Retorno
 
-## 18.1 Pós-serviço
+## Dependência
 
-Ao concluir serviço, mostrar:
+Backend WarrantyReturn + Attachment.
+
+## Objetivo de negócio
+
+Manter relacionamento pós-serviço e histórico de problemas/garantias.
+
+## UX
+
+No Serviço concluído:
 
 ```text
 Concluído em 20/08/2026
-Garantia até 20/08/2027
-```
+Garantia até ...
 
-## 18.2 Retornos
-
-Na tela do serviço:
-
-```text
 Retornos e garantia
-
-Nenhum retorno registrado
+Nenhum retorno
 + Registrar retorno
 ```
 
-Formulário:
+Campos:
+
+- tipo;
+- motivo;
+- descrição;
+- data;
+- agendamento;
+- fotos;
+- custo quando permitido;
+- status.
+
+## Regra
+
+Não mudar o Serviço original de `CONCLUIDA` para `EM_ANDAMENTO` automaticamente.
+
+## GOAL HERMES — ETAPA 13
 
 ```text
-Tipo
-Motivo
-Descrição
-Data
-Agendamento
-Fotos
-Custo
-Situação
+/goal draft
+Implemente SOMENTE a ETAPA 13.
+
+OBJETIVO
+Criar UX de garantia/retorno vinculada ao Serviço concluído sem destruir o histórico original.
+
+FAÇA
+- services/types;
+- seção no Serviço;
+- formulário de retorno;
+- status/timeline;
+- fotos via Attachment;
+- permissions;
+- testes.
+
+NÃO FAÇA
+- não reabra Service automaticamente;
+- não confundir retorno com Aditivo.
+
+CRITÉRIO
+Serviço continua concluído e os eventos pós-serviço ficam rastreáveis separadamente.
 ```
-
-## 18.3 Não reabrir silenciosamente
-
-Um retorno não deve mudar o serviço original de `CONCLUIDA` para `EM_ANDAMENTO` sem regra explícita. Manter histórico separado.
 
 ---
 
-# 19. ETAPA 14 — Follow-up comercial
+# ETAPA 14 — Follow-up comercial
 
-## 19.1 Lista de orçamentos
+## Dependência
 
-Acrescentar indicadores:
+Backend QuoteFollowUp/loss reason.
+
+## Objetivo de negócio
+
+Ajudar o usuário a não perder orçamento por falta de retorno e identificar causas de perda.
+
+## Arquivos/telas
+
+- lista de Orçamentos;
+- detalhe do Orçamento;
+- novo service/hook de follow-up;
+- home/dashboard.
+
+## Alterações obrigatórias
+
+### 14.1 Indicadores
 
 ```text
 Enviado há 4 dias
@@ -1188,55 +1442,72 @@ Follow-up hoje
 Vence em 2 dias
 ```
 
-## 19.2 Ações
+### 14.2 Ações
 
-No orçamento:
+- Registrar contato;
+- Agendar follow-up;
+- Marcar não aprovado;
+- motivo estruturado + observação.
+
+### 14.3 Motivos
+
+- Preço
+- Prazo
+- Concorrente
+- Adiado
+- Sem resposta
+- Mudança de escopo
+- Outro
+
+## GOAL HERMES — ETAPA 14
 
 ```text
-Registrar contato
-Agendar follow-up
-Marcar como não aprovado
+/goal draft
+Implemente SOMENTE a ETAPA 14.
+
+OBJETIVO
+Adicionar follow-up comercial acionável na lista/detalhe de Orçamentos.
+
+FAÇA
+1. Consuma QuoteFollowUp/loss reason da API.
+2. Mostre próximos contatos e validade.
+3. Adicione Registrar contato e Agendar follow-up.
+4. Estruture motivo de perda sem remover observação livre.
+5. Atualize React Query após ações.
+6. Adicione testes de filtros/indicadores.
+
+NÃO FAÇA
+- não criar CRM genérico;
+- não alterar aprovação já estabilizada.
+
+CRITÉRIO
+Usuário identifica rapidamente quais propostas exigem ação e por que negócios foram perdidos.
 ```
-
-## 19.3 Motivo de perda estruturado
-
-Ao rejeitar:
-
-```text
-Motivo
-  Preço
-  Prazo
-  Concorrente
-  Adiado
-  Sem resposta
-  Mudança de escopo
-  Outro
-
-Observação opcional
-```
-
-Isso alimenta relatórios reais.
 
 ---
 
-# 20. ETAPA 15 — Dashboard mais útil
+# ETAPA 15 — Home/Dashboard acionável
 
-## 20.1 Evitar dashboard decorativo
+## Objetivo de negócio
 
-Priorizar informação acionável.
+Responder à pergunta: **o que eu preciso fazer hoje?**
 
-### Cards recomendados
+## Objetivo técnico
 
-```text
-Orçamentos aguardando resposta
-Serviços em andamento
-Serviços atrasados
-A receber
-Despesas do mês
-Follow-ups de hoje
-```
+Priorizar cards e listas acionáveis em vez de gráficos decorativos.
 
-### Lista "Hoje"
+## Conteúdo sugerido
+
+### Cards
+
+- orçamentos aguardando resposta;
+- serviços em andamento;
+- serviços atrasados;
+- a receber;
+- despesas do mês;
+- follow-ups hoje.
+
+### Hoje
 
 ```text
 09:00 Medição — Cliente X
@@ -1246,611 +1517,354 @@ Follow-ups de hoje
 
 ### Alertas
 
-```text
-3 orçamentos vencendo
-2 parcelas vencidas
-1 material abaixo do mínimo
-```
+- propostas vencendo;
+- parcelas vencidas;
+- material abaixo do mínimo;
+- retorno/garantia pendente.
 
-Mostrar apenas cards permitidos pelo role/features.
+## Regras
+
+- feature + permission filtram conteúdo;
+- não duplicar relatório completo na home;
+- cada card deve levar a uma ação/lista relevante.
+
+## GOAL HERMES — ETAPA 15
+
+```text
+/goal draft
+Implemente SOMENTE a ETAPA 15.
+
+OBJETIVO
+Transformar Home em painel acionável do dia, não em dashboard decorativo.
+
+FAÇA
+1. Audite home atual e endpoints disponíveis.
+2. Mostre cards realmente acionáveis definidos na etapa.
+3. Crie seção Hoje e Alertas.
+4. Cada card deve navegar para filtro/lista correspondente.
+5. Respeite feature/permission.
+6. Não carregar dados pesados desnecessários.
+7. Teste estados loading/empty/error.
+
+CRITÉRIO
+Usuário entende prioridades do dia em poucos segundos e consegue agir a partir da Home.
+```
 
 ---
 
-# 21. ETAPA 16 — Offline: definir o que pode e não pode sincronizar automaticamente
+# ETAPA 16 — Offline e confiabilidade de campo
 
-O projeto já possui documentação de offline. A evolução deve manter regras de risco.
+## Objetivo de negócio
 
-## 21.1 Bom candidato a offline
+Evitar perda de informações em locais com conexão instável sem criar inconsistências financeiras ou duplicidade.
 
-- rascunho de orçamento;
-- formulário de medição;
+## Bom candidato a offline
+
+- draft de orçamento;
+- medição;
 - observação;
 - checklist;
 - fotos pendentes;
-- atualização operacional não financeira quando conflict-safe.
+- atualização operacional conflict-safe.
 
-## 21.2 Não sincronizar cegamente
+## Não enfileirar cegamente
 
 - aprovar orçamento;
 - receber pagamento;
 - cancelar recebimento;
-- alterar permissão;
 - concluir compra;
-- atualizar estoque sensível com conflito;
-- ações que criam números sequenciais.
+- alterar permissão;
+- ação que depende de sequência;
+- estoque sensível sem estratégia de conflito.
 
-Essas ações devem preferir confirmação online ou estratégia específica de idempotency key.
-
-## 21.3 Estado visual
-
-Todo item offline precisa mostrar estado:
+## Estados visuais
 
 ```text
 Somente neste aparelho
 Pendente de sincronização
 Sincronizado
+Falhou
 Conflito
-Falha
+```
+
+## Regras técnicas
+
+- idempotency key quando backend suportar;
+- retry com backoff;
+- não esconder erro de conflito;
+- upload de foto pode ter fila independente;
+- draft local deve ser recuperável.
+
+## GOAL HERMES — ETAPA 16
+
+```text
+/goal draft
+Implemente SOMENTE a ETAPA 16.
+
+OBJETIVO
+Melhorar confiabilidade em campo sem colocar operações críticas em sincronização cega.
+
+FAÇA
+1. Leia docs/OFFLINE.md e FASE8-OFFLINE.md além deste plano.
+2. Classifique ações atuais em offline-safe e online-required.
+3. Implemente recuperação de draft/medição/checklist conforme arquitetura existente.
+4. Crie estados visuais de sincronização.
+5. Use idempotency key somente onde backend suportar.
+6. Não enfileire aprovação/pagamento/compra crítica sem estratégia explícita.
+7. Teste reconexão, retry e conflito.
+
+CRITÉRIO
+Conexão ruim não perde dados de campo e não duplica operações financeiras/comerciais críticas.
 ```
 
 ---
 
-# 22. ETAPA 17 — Performance e renderização
+# ETAPA 17 — Performance, acessibilidade, testes e segurança mobile
 
-## 22.1 React Query
+## Objetivo de negócio
 
-Manter React Query para server state.
+Consolidar qualidade para uso diário em produção.
+
+## Performance
 
 Revisar:
 
-- `staleTime` por domínio;
-- invalidações excessivamente amplas;
+- `staleTime`;
+- invalidações amplas;
 - queries duplicadas;
-- cancelamento de requests em busca;
-- `enabled` por companyId.
-
-## 22.2 Listas
-
-Continuar com `FlatList` enquanto volume for aceitável.
-
-Antes de adicionar biblioteca como FlashList, medir.
-
-Aplicar:
-
+- server-side search;
 - paginação;
-- `keyExtractor` estável;
-- componentes memoizados quando houver evidência;
-- não renderizar grandes listas dentro de ScrollView.
+- FlatList;
+- debounce;
+- requests canceláveis.
 
-## 22.3 Busca
+Não adicionar biblioteca de performance antes de medir.
 
-Para clientes/orçamentos grandes:
+## Acessibilidade
 
-```text
-debounce
-→ busca server-side
-→ paginação
-```
-
-em vez de carregar milhares de itens e filtrar tudo localmente.
-
----
-
-# 23. ETAPA 18 — Acessibilidade e consistência visual
-
-## 23.1 Preservar
-
-O projeto já usa vários `accessibilityLabel` e touch targets.
-
-Manter padrão:
-
-- touch target mínimo adequado;
-- labels em ícones;
+- touch targets;
+- labels;
 - contraste;
-- estado disabled claro;
-- loading sem duplo submit;
-- erros próximos do campo;
-- foco no primeiro erro quando possível.
+- erro próximo do campo;
+- status por texto + cor/ícone;
+- focus/foco quando viável;
+- disabled/loading claros.
 
-## 23.2 Status não pode depender apenas de cor
+## Testes
 
-Sempre combinar:
+### Unitários
 
-```text
-cor + texto/ícone
-```
-
-## 23.3 Formulários
-
-Padronizar:
-
-```text
-Label
-Campo
-Ajuda opcional
-Erro
-```
-
-Não criar novos estilos ad hoc fora do design system sem justificativa.
-
----
-
-# 24. ETAPA 19 — Tipagem, forms e validação
-
-## 24.1 React Hook Form
-
-Já está instalado. Avaliar usar de forma consistente em novos formulários e na refatoração de formulários grandes.
-
-Não é necessário migrar todos os formulários de uma vez.
-
-## 24.2 Zod
-
-Centralizar schemas por feature.
-
-Exemplo:
-
-```text
-src/features/quotes/create/validation.ts
-```
-
-Não repetir regra equivalente no UI e no service.
-
-## 24.3 Backend continua sendo autoridade
-
-Validação frontend melhora UX, mas não substitui DTO/ValidationPipe do backend.
-
----
-
-# 25. ETAPA 20 — Testes do frontend
-
-## 25.1 Testes unitários
-
-Priorizar:
-
-- masks;
+- schemas;
 - formatters;
-- validações;
-- cálculo apenas visual;
-- mapeamento de status;
-- error mapper;
-- feature/permission visibility.
+- mappers;
+- permissions/features;
+- hooks.
 
-## 25.2 Componentes
+### Componentes
 
-Testar:
+- QuoteCard;
+- ServiceCard;
+- FinancialSummary;
+- EnvironmentStep;
+- AttachmentGrid;
+- PermissionGate.
 
-```text
-QuoteCard
-ServiceOrderCard
-FinancialSummary
-QuickClientModal
-EnvironmentStep
-StatusBadge
-PermissionGate
-```
-
-## 25.3 Fluxos de integração
-
-Com API mockada:
+### Integração
 
 ```text
 criar orçamento
-aprovar
-abrir serviço
+→ aprovar
+→ abrir Serviço
 ```
 
 ```text
 empresa suspensa
-→ redireciona para tela apropriada
+→ tela apropriada
 ```
 
-```text
-finance user
-→ vê financeiro
-→ não vê edição comercial
-```
+### E2E
 
-## 25.4 E2E
+Web pode usar Playwright; native pode avaliar Maestro posteriormente se houver ganho real.
 
-O Playwright existente é útil principalmente para web.
+## Segurança
 
-Para Android/iOS, avaliar futuramente:
+- native: SecureStore;
+- web produtivo futuro: preferir cookie HttpOnly coordenado com backend;
+- nunca logar access/refresh token;
+- limpar sessão corretamente.
 
-```text
-Maestro
-```
-
-ou ferramenta equivalente, sem adicionar antes de definir fluxo crítico a proteger.
-
-Casos E2E prioritários:
+## GOAL HERMES — ETAPA 17
 
 ```text
-login
-seleção de empresa
-novo cliente rápido
-novo orçamento
-aprovação
-serviço
-logout
+/goal draft
+Implemente SOMENTE a ETAPA 17.
+
+OBJETIVO
+Consolidar performance, acessibilidade, testes e segurança do SmartGesso-Mobile sem adicionar features novas.
+
+FAÇA
+1. Meça/inspecione queries e listas antes de otimizar.
+2. Corrija invalidações e paginação/busca conforme contratos reais.
+3. Audite acessibilidade das telas críticas.
+4. Amplie testes unitários/component/integration dos fluxos V4.
+5. Proteja logs e token handling.
+6. Não adicionar dependência pesada sem justificativa.
+7. Execute lint, typecheck, tests e expo doctor.
+
+NÃO FAÇA
+- não criar feature nova;
+- não alterar regra de backend;
+- não redesenhar visualmente o produto sem necessidade.
+
+CRITÉRIO
+Fluxos críticos têm cobertura, app não degrada em listas comuns, acessibilidade básica está preservada e tokens/dados sensíveis não aparecem em logs.
 ```
 
 ---
 
-# 26. ETAPA 21 — Segurança mobile
-
-## 26.1 Native
-
-Manter access/refresh tokens em SecureStore.
-
-## 26.2 Web
-
-Hoje há fallback para `localStorage`.
-
-Se o build web virar canal produtivo relevante, migrar autenticação web para arquitetura com cookie `HttpOnly`, `Secure`, `SameSite`, coordenada com backend.
-
-## 26.3 Não logar
-
-Nunca imprimir:
-
-- access token;
-- refresh token;
-- senha;
-- dados sensíveis de cliente;
-- resposta financeira inteira em logs de produção.
-
-## 26.4 Screenshots/clipboard
-
-Para dados altamente sensíveis no futuro, avaliar política específica por tela. Não bloquear screenshots indiscriminadamente sem necessidade de produto.
-
----
-
-# 27. ETAPA 22 — Estrutura de features recomendada
-
-O projeto atualmente combina `app`, `screens`, `services`, `types`, `components` etc. Não é necessário migrar tudo imediatamente.
-
-Para novas áreas complexas, adotar feature folders progressivamente:
+# 4. Ordem recomendada de implementação
 
 ```text
-src/features/
-├── quotes/
-├── service-orders/
-├── finance/
-├── attachments/
-├── purchases/
-├── warranty/
-└── follow-up/
+FASE A — ESTABILIZAÇÃO
+Etapa 0  Baseline
+Etapa 1  Aprovação → Serviço
+Etapa 2  Serviços sem criação manual normal
+
+FASE B — FLUXO PRINCIPAL
+Etapa 3  Ambientes/Medições sem Obra
+Etapa 4  Refatorar wizard
+Etapa 5  Contratos de API
+Etapa 6  Acesso suspenso/erros
+
+FASE C — NAVEGAÇÃO E PRODUTO CONFIGURÁVEL
+Etapa 7  Menu Mais/Novo
+Etapa 8  Feature flags + permissions
+
+FASE D — OPERAÇÃO E FINANCEIRO
+Etapa 9  Financeiro por Serviço
+Etapa 10 Anexos privados
+Etapa 11 Aditivos
+Etapa 12 Compras/Fornecedores
+Etapa 13 Garantia/Retorno
+Etapa 14 Follow-up
+Etapa 15 Home acionável
+
+FASE E — CONFIABILIDADE
+Etapa 16 Offline
+Etapa 17 Performance/A11y/Testes/Segurança
 ```
 
-Cada feature pode conter:
+Dependências com backend:
 
 ```text
-components/
-hooks/
-validation/
-types/
-utils/
-```
-
-Services API podem continuar centralizados em `src/services/api` ou migrar gradualmente, mas escolher um padrão e documentar.
-
-Não criar duas arquiteturas concorrentes permanentemente.
-
----
-
-# 28. Ordem recomendada de execução
-
-```text
-FASE 1 — Correções P0
-  1. Aprovação → Serviço sem convert duplicado
-  2. Refatoração estrutural do wizard sem mudar regra
-  3. Centralizar contratos de API nas services
-
-FASE 2 — Fluxo simplificado
-  4. Backend cria QuoteEnvironment
-  5. Mobile remove Work/Obra do novo orçamento
-  6. Serviços deixam de ser criados manualmente
-
-FASE 3 — Segurança e navegação
-  7. Error code / suspensão
-  8. Menu Mais simplificado
-  9. Feature flags + permissions
-
-FASE 4 — Financeiro
- 10. Financeiro no Serviço
- 11. Recebíveis
- 12. Despesas vinculadas
- 13. Comprovantes
-
-FASE 5 — Arquivos e operação
- 14. Attachments privados
- 15. Fotos antes/durante/depois
- 16. fila offline de fotos
-
-FASE 6 — Produto avançado
- 17. Aditivos
- 18. Compras/Fornecedores
- 19. Garantia/Retorno
- 20. Follow-up
-
-FASE 7 — Consolidação
- 21. OpenAPI client
- 22. Dashboard acionável
- 23. testes E2E
- 24. performance e observabilidade de erros
+Backend Etapa 1 → Frontend Etapa 1
+Backend Etapa 6 → Frontend Etapa 3
+Backend Etapa 7 → Frontend Etapa 9
+Backend Etapa 8 → Frontend Etapa 10
+Backend Etapa 9 → Frontend Etapa 11
+Backend Etapa 10 → Frontend Etapa 12
+Backend Etapa 11 → Frontend Etapa 13
+Backend Etapa 12 → Frontend Etapa 14
+Backend Etapa 13 → Frontend Etapa 8
 ```
 
 ---
 
-# 29. Mapa de telas alvo
+# 5. Definição de pronto global
 
-```text
-(auth)
-  Login
-  Convite/ativação
+Uma etapa só está pronta quando, quando aplicável:
 
-(company)
-  Selecionar empresa
-  Acesso suspenso
-
-(app)
-  (tabs)
-    Início
-    Orçamentos
-    Novo
-    Serviços
-    Mais
-
-  clientes/
-    index
-    novo
-    [id]
-
-  orcamentos/
-    novo
-    [id]
-    [id]/ambientes
-    [id]/follow-ups
-
-  servicos/
-    [id]
-    [id]/execucao
-    [id]/financeiro
-    [id]/aditivos
-    [id]/anexos
-    [id]/garantia
-
-  financeiro/
-    index
-    a-receber
-    recebimentos
-    despesas
-
-  compras/
-    index
-    novo
-    [id]
-
-  fornecedores/
-    index
-    [id]
-
-  agenda/
-  notificacoes/
-  relatorios/
-  configuracoes/
-```
-
-Não é obrigatório criar todas as rotas imediatamente. É o mapa de direção.
-
----
-
-# 30. Checklist de definição de pronto por etapa
-
-Uma etapa está pronta somente quando:
-
-- [ ] contrato de API correspondente está confirmado;
-- [ ] tipos TypeScript representam o response real;
-- [ ] tela não contém adapters improvisados para formatos desconhecidos;
-- [ ] loading/success/error estão tratados;
-- [ ] botão não permite submit duplicado;
-- [ ] React Query é invalidado corretamente;
-- [ ] permissão/feature está refletida na UX quando aplicável;
-- [ ] acessibilidade básica preservada;
+- [ ] contrato da API confirmado;
+- [ ] tipos representam response real;
+- [ ] loading/error/empty/success tratados;
+- [ ] submit duplicado impedido;
+- [ ] React Query invalidado corretamente;
+- [ ] tenant/companyId presente na query key quando necessário;
+- [ ] feature/permission respeitada;
+- [ ] acessibilidade preservada;
 - [ ] comportamento offline definido;
 - [ ] testes relevantes criados;
 - [ ] lint verde;
 - [ ] typecheck verde;
 - [ ] testes verdes;
-- [ ] não houve alteração visual/regra fora do escopo sem documentação;
-- [ ] fluxo foi testado em pelo menos um dispositivo/plataforma alvo.
+- [ ] Expo Doctor sem regressão relevante;
+- [ ] navegação crítica testada manualmente;
+- [ ] nenhuma alteração fora do escopo.
 
 ---
 
-# 31. PROMPT MESTRE — Implementação segura do frontend/mobile
-
-Use este prompt para executar **uma etapa de cada vez**.
+# 6. Prompt mestre para qualquer etapa
 
 ```text
 Você é o engenheiro React Native/Expo sênior responsável pelo SmartGesso-Mobile.
 
 CONTEXTO
-- Stack: Expo 57, React Native, Expo Router, React Query, Zustand, Axios, Zod e React Hook Form.
-- O backend é NestJS + Prisma e o produto é SaaS multiempresa.
-- O fluxo alvo é Cliente → Orçamento → Serviço → Execução/Financeiro → Resultado → Garantia.
-- A bottom navigation principal deve continuar simples: Início | Orçamentos | Novo | Serviços | Mais.
-- O aplicativo possui design system próprio; preserve-o.
+- Expo 57 + React Native + Expo Router + React Query + Zustand + Axios + Zod.
+- Backend NestJS/Prisma.
+- SaaS multiempresa.
+- Fluxo alvo: Cliente → Orçamento → Serviço → Execução/Financeiro → Resultado → Garantia.
+- Navegação principal: Início | Orçamentos | Novo | Serviços | Mais.
 
-DOCUMENTO OBRIGATÓRIO
-Leia integralmente docs/PLANO_REFATORACAO_FRONTEND_V4.md.
-Leia também a etapa correspondente de PLANO_REFATORACAO_BACKEND_V4.md quando houver dependência de API.
-Implemente SOMENTE a etapa que eu indicar.
+REGRAS GERAIS
+1. Leia integralmente docs/PLANO_REFATORACAO_FRONTEND_V4.md.
+2. Execute somente a etapa informada.
+3. Quando houver dependência, confirme o contrato real no backend antes de codificar.
+4. React Query é server state.
+5. Zustand não deve virar store de formulário.
+6. Não duplicar regra de negócio do backend.
+7. Não calcular como fonte da verdade o que a API deve fornecer.
+8. Adapters de transporte ficam no service, não na tela.
+9. Preserve design system e acessibilidade.
+10. Feature e permission são verificações distintas.
+11. Operações críticas bloqueiam duplo submit.
+12. Não coloque aprovação/pagamento em offline queue sem estratégia explícita.
+13. Não exponha token/dado sensível em logs.
+14. Não faça refatoração cosmética fora da etapa.
+15. Não avance para a etapa seguinte automaticamente.
 
 ANTES DE ALTERAR
-1. Inspecione a rota/tela atual e os services/types relacionados.
-2. Confirme o contrato real da API; não programe contra suposição.
-3. Identifique dependências de React Query, Zustand, navigation e permissions.
-4. Liste resumidamente os arquivos que pretende alterar.
-5. Se o backend ainda não suportar a etapa, não simule uma API definitiva; implemente apenas compatibilidade segura ou pare a parte dependente.
+1. Liste arquivos afetados.
+2. Descreva comportamento atual.
+3. Confirme response/endpoint real.
+4. Identifique query keys, mutations, navigation, permissions e stores envolvidos.
+5. Identifique compatibilidade com dados/telas legadas.
 
-REGRAS DE ARQUITETURA
-1. Rotas do Expo Router devem ser finas sempre que a feature for complexa.
-2. React Query é a fonte de server state.
-3. Zustand deve permanecer focado em estado global real, principalmente sessão/contexto, e não virar store de formulário.
-4. Não duplicar regras de negócio do backend.
-5. Não calcular como fonte da verdade valores financeiros que a API deve fornecer.
-6. Tipos devem representar responses reais.
-7. Adapters de contrato devem ficar na camada de service, não espalhados nas telas.
-8. Não criar dependências novas sem necessidade demonstrada.
-9. Preservar componentes e tokens do design system.
-10. Não remover acessibilidade existente.
-11. Features e permissions são conceitos diferentes: visibilidade = feature habilitada + permissão.
-12. Ocultar UI não substitui segurança de backend.
-13. Não expor tokens ou dados sensíveis em logs.
-14. Evitar setTimeout como regra de navegação quando o sucesso da mutation já permite navegar deterministicamente, salvo razão de UX documentada.
-15. Operações críticas devem impedir duplo submit.
+VALIDAÇÃO
+Execute os scripts reais equivalentes a:
+- lint
+- typecheck
+- tests
+- expo doctor quando relevante
 
-FORMULÁRIOS
-- Preferir schemas Zod centralizados por feature.
-- Usar React Hook Form quando isso reduzir estado repetitivo e melhorar validação.
-- Backend continua sendo autoridade de validação.
-
-REACT QUERY
-- query keys devem incluir companyId quando tenant-scoped.
-- invalidar somente o necessário.
-- tratar loading, refreshing, empty e error.
-- não buscar dados se companyId/dependência necessária estiver ausente.
-
-ERROS
-- mapear erro pelo code retornado pela API.
-- COMPANY_ACCESS_SUSPENDED deve ir para fluxo de acesso suspenso.
-- 401 com refresh falho deve limpar sessão.
-- erros de validação devem ser apresentados de forma útil.
-
-OFFLINE
-Não coloque em fila automaticamente ações financeiras ou de aprovação sem estratégia explícita de idempotência/conflito.
-
-TESTES
-Para cada etapa, adicione testes para:
-- caminho feliz;
-- erro da API;
-- loading/disabled quando aplicável;
-- permission/feature quando aplicável;
-- resposta já existente/idempotência quando aplicável.
-
-VALIDAÇÃO FINAL
-Execute:
-- npm run lint
-- npm run typecheck
-- npm test
-- npm run doctor quando relevante
-
-Se a alteração tocar rota crítica, faça validação manual da navegação.
+Faça validação manual das rotas críticas tocadas.
 
 SAÍDA FINAL
-1. Resumo.
-2. Arquivos alterados.
-3. Contrato de API utilizado.
-4. Comportamento visual alterado.
-5. Testes criados.
-6. Compatibilidade/offline.
-7. Riscos residuais.
-8. Próxima etapa recomendada.
-
-IMPORTANTE
-Não execute automaticamente a próxima etapa. Estabilize a atual primeiro.
+1. arquivos alterados;
+2. comportamento anterior;
+3. comportamento novo;
+4. contrato da API usado;
+5. testes executados;
+6. impacto em cache/offline;
+7. riscos residuais;
+8. dependências para próxima etapa;
+9. por que a etapa está concluída.
 ```
 
 ---
 
-# 32. Prompts específicos recomendados por macrofase
+# 7. Sugestões finais de produto e UX
 
-## 32.1 Remover Obra do wizard
+## 7.1 Não transformar o app em ERP visual pesado
 
-```text
-Implemente a migração do novo orçamento de Work/Obra para QuoteEnvironment conforme docs/PLANO_REFATORACAO_FRONTEND_V4.md.
+A arquitetura interna pode ser robusta, mas a UI deve ser orientada a tarefa.
 
-Antes de alterar, confirme que a API possui endpoints e tipos de QuoteEnvironment/Measurement.
+## 7.2 Serviço deve ser o hub pós-aprovação
 
-Requisitos:
-- remover WorkPicker do novo orçamento;
-- remover worksService do novo fluxo;
-- criar gerenciamento de ambientes dentro do orçamento;
-- cada ambiente deve ter nome, tipo de aplicação e medição;
-- preservar cálculo de materiais usando as medições dos ambientes;
-- não apagar telas históricas de Obra nesta etapa;
-- manter compatibilidade com orçamento existente;
-- extrair implementação para src/features/quotes/create;
-- criar testes dos novos steps e payload.
-```
-
-## 32.2 Financeiro do Serviço
-
-```text
-Implemente a UI financeira do detalhe de Serviço usando exclusivamente o endpoint de financial-summary e endpoints de receivables/expenses fornecidos pelo backend.
-
-Não calcule lucro como fonte da verdade no frontend.
-Exiba separadamente:
-- valor contratado;
-- aditivos aprovados;
-- total contratado;
-- recebido;
-- a receber;
-- custo realizado;
-- resultado projetado/realizado conforme contrato;
-- margem.
-
-Respeite COST_VIEW_ROLES/permissions e não renderize valores restritos para perfis sem acesso.
-Crie componentes reutilizáveis e testes de permission visibility.
-```
-
-## 32.3 Feature flags
-
-```text
-Implemente capabilities da empresa no SmartGesso-Mobile.
-
-Consuma GET /companies/current/features via React Query.
-Não persistir manualmente em Zustand salvo necessidade comprovada.
-Crie hook useCompanyFeatures.
-Atualize o menu Mais para mostrar Produção, Estoque, Compras, Equipe etc. somente quando feature habilitada e usuário possuir permissão.
-Não duplicar Orçamentos/Serviços no Mais.
-Pagamentos/Cobranças devem ser consolidados em Financeiro.
-Crie testes da matriz de visibilidade.
-```
-
----
-
-# 33. Sugestões finais de produto e UX
-
-## 33.1 Não transformar o app em ERP visualmente pesado
-
-O backend pode ter modelos sofisticados, mas a interface deve continuar orientada à tarefa.
-
-O gesseiro não precisa navegar por quinze módulos para executar o trabalho.
-
-## 33.2 "Novo" deve ser contextual e curto
-
-A tab central `Novo` deve oferecer apenas ações frequentes:
-
-```text
-Novo orçamento
-Novo cliente
-Registrar despesa
-Registrar recebimento
-Agendar visita
-```
-
-E filtrar conforme role/feature.
-
-Não colocar todas as entidades do banco nessa tela.
-
-## 33.3 Serviço deve virar "hub" de execução
-
-Detalhe do serviço ideal:
+Detalhe ideal:
 
 ```text
 Cliente + local
-Status
-Próxima atividade
+Status + agenda
 
 Execução
   Checklist
@@ -1863,7 +1877,7 @@ Comercial
   Aditivos
 
 Financeiro
-  Recebimentos
+  Recebíveis
   Despesas
   Resultado
 
@@ -1872,28 +1886,21 @@ Pós-serviço
   Retornos
 ```
 
-Isso reduz navegação fragmentada.
-
-## 33.4 Home deve responder "o que preciso fazer hoje?"
-
-Evitar excesso de gráficos na home mobile.
-
-Priorizar:
+## 7.3 Novo deve ter poucas ações frequentes
 
 ```text
-Ações pendentes
-Agenda do dia
-Orçamentos esperando resposta
-Serviços atrasados
-Parcelas vencidas
-Alertas de estoque
+Novo orçamento
+Novo cliente
+Agendar visita
+Registrar despesa
+Registrar recebimento
 ```
 
-Relatórios detalhados podem ficar em módulo próprio.
+filtradas por role/feature.
 
-## 33.5 Reduzir cliques na medição
+## 7.4 Medição precisa ser muito rápida
 
-No campo, o usuário deve conseguir:
+No campo:
 
 ```text
 + Ambiente
@@ -1903,103 +1910,74 @@ salvar
 + próximo ambiente
 ```
 
-sem navegar por Obra → Medição → voltar → Orçamento.
+Sem Obra → Medição → voltar → Orçamento.
 
-## 33.6 Fotos devem estar contextualizadas
+## 7.5 Fotos contextualizadas
 
-Uma grade genérica de imagens perde valor.
+Cada foto precisa saber:
 
-Cada foto deve saber:
+- empresa;
+- orçamento/Serviço;
+- ambiente;
+- categoria/fase;
+- data;
+- autor.
 
-```text
-qual empresa
-qual orçamento/serviço
-qual ambiente
-qual fase
-quando
-quem enviou
-```
+## 7.6 Previsto e realizado visualmente separados
 
-## 33.7 Não misturar previsão e realizado
+Especialmente no financeiro.
 
-No mobile:
+## 7.7 Permissões também melhoram UX
 
-```text
-Previsto
-Realizado
-```
+Não mostrar botão que o usuário nunca poderá usar.
 
-devem ter labels visuais claros.
+## 7.8 Produção é opcional
 
-## 33.8 Preservar histórico comercial
+Empresas sem fábrica própria não devem ver Produção.
 
-Depois de aprovado, não permitir que o usuário simplesmente edite o orçamento original e destrua o registro do que o cliente aceitou.
+## 7.9 Home deve ser operacional
 
-Use nova versão antes da aprovação e aditivo após aprovação.
+Priorizar pendências, agenda, follow-up, atrasos e vencimentos.
 
-## 33.9 Permissões também melhoram UX
+## 7.10 Recursos futuros depois da V4 estabilizada
 
-Não mostrar botões que o usuário nunca poderá executar.
+Avaliar apenas após uso real:
 
-Exemplo Installer:
-
-```text
-vê execução
-vê agenda
-adiciona fotos
-marca checklist
-```
-
-mas não precisa enxergar:
-
-```text
-margem
-custo
-administração de assinatura
-```
-
-## 33.10 Melhorias adicionais futuras
-
-Depois das fases principais, avaliar:
-
-- assinatura/aceite digital do orçamento;
-- envio direto por WhatsApp usando compartilhamento/deep link apropriado;
-- lembretes automáticos de follow-up;
-- mapa/rota para agenda de visitas;
-- leitura de QR/etiqueta para estoque;
-- duplicação de ambientes em medições repetitivas;
-- templates de orçamento por tipo de serviço;
-- favoritos de serviços/materiais mais usados;
+- aceite/assinatura digital;
+- WhatsApp assistido;
+- templates de orçamento;
+- favoritos de itens;
+- duplicação de ambiente;
 - timeline completa do cliente;
-- indicadores de conversão comercial;
-- notificações de parcela vencida;
-- pesquisa global por cliente/orçamento/serviço.
-
-Não implementar todas simultaneamente. Validar uso real antes de aumentar escopo.
+- mapa/rota da agenda;
+- QR/etiqueta de estoque;
+- pesquisa global;
+- notificações automáticas de vencimento;
+- indicadores de conversão.
 
 ---
 
-# 34. Resultado esperado depois da refatoração
+# 8. Resultado esperado ao final da V4
 
-O usuário final deve conseguir executar o ciclo principal sem compreender a estrutura interna do banco:
+O usuário deve conseguir executar o ciclo principal sem entender a arquitetura interna:
 
 ```text
 1. Cadastrar/selecionar cliente
 2. Criar orçamento
 3. Informar local
 4. Adicionar ambientes e medições
-5. Obter materiais/serviços
+5. Definir materiais/serviços
 6. Definir preço, prazo e pagamento
 7. Gerar/enviar PDF
 8. Registrar aprovação
 9. Serviço aparece automaticamente
-10. Executar com checklist/fotos/materiais
+10. Executar com agenda/checklist/fotos/materiais
 11. Registrar compras/despesas/recebimentos
 12. Acompanhar resultado
-13. Concluir
-14. Registrar garantia/retorno quando necessário
+13. Registrar aditivos quando houver mudança de escopo
+14. Concluir
+15. Registrar garantia/retorno quando necessário
+16. Fazer follow-up comercial de propostas ainda abertas
 ```
 
-A experiência deve parecer simples mesmo que a arquitetura interna seja robusta.
-
-Esse é o critério principal de sucesso da refatoração do frontend.
+O critério final é: **uma experiência simples para o profissional, apoiada por contratos previsíveis, segurança multiempresa, rastreabilidade e arquitetura de frontend fácil de manter**.
