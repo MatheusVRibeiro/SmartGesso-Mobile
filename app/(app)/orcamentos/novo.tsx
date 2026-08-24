@@ -5,7 +5,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -22,8 +21,6 @@ import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
-import { StatusBadge } from '../../../src/components/ui/StatusBadge';
-import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { compositionsService } from '../../../src/services/api/compositions';
@@ -35,308 +32,45 @@ import { COST_VIEW_ROLES } from '../../../src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import { parseCurrencyInput } from '../../../src/utils/masks';
-import type { Client, CreateClientInput } from '../../../src/types/client';
-import type { CreateQuoteInput, QuotePaymentMethod } from '../../../src/types/quote';
-import type { MeasurementApplicationType } from '../../../src/types/measurement';
-import type {
-  QuoteEnvironment,
-  QuoteEnvironmentMeasurement,
-} from '../../../src/types/quoteEnvironment';
-import type {
-  CalculateMaterialsInput,
-  CalculateMaterialsResponse,
-} from '../../../src/types/composition';
-import { z } from 'zod';
 import { createQuoteSchema } from '../../../src/validation/schemas';
-
-// ─── Tipos do wizard ────────────────────────────────────────────────────────
-
-type StepKey =
-  | 'cliente'
-  | 'local'
-  | 'ambientes'
-  | 'itens'
-  | 'valores'
-  | 'prazo'
-  | 'pagamento'
-  | 'revisao';
-
-interface ServiceDraft {
-  id: string;
-  name: string;
-  unitPrice: string;
-}
-
-interface MaterialDraft {
-  key: string;
-  materialType: string;
-  name: string;
-  unit: string;
-  quantity: string;
-  unitPrice?: number | null;
-  total?: number | null;
-}
-
-/** Endereço livre do local do serviço (Etapa 2 — V3). */
-interface QuoteLocalDraft {
-  zipCode: string;
-  street: string;
-  number: string;
-  complement: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  reference: string;
-}
-
-/** Modos da etapa Prazo (V3): A = início + duração, B = início + conclusão, C = data-limite. */
-type PrazoMode = 'A' | 'B' | 'C';
-
-/** Contagem do prazo no Modo A: dias úteis ou corridos. */
-type PrazoCalendar = 'UTEIS' | 'CORRIDOS';
-
-/** Medição local de um ambiente dentro do wizard (campos em texto para edição). */
-interface QuoteEnvironmentMeasurementDraft {
-  length: string;
-  width: string;
-  height: string;
-  area: string;
-  perimeter: string;
-  observations: string;
-}
-
-/** Ambiente criado localmente no wizard — antes de ser persistido na API. */
-interface QuoteEnvironmentDraft {
-  id: string;
-  name: string;
-  description: string;
-  order: number;
-  applicationType: MeasurementApplicationType;
-  measurement: QuoteEnvironmentMeasurementDraft;
-}
-
-interface QuoteDraft {
-  clientId: string;
-  local: QuoteLocalDraft;
-  environments: QuoteEnvironmentDraft[];
-  materials: MaterialDraft[];
-  services: ServiceDraft[];
-  discount: string;
-  marginPct: string;
-  prazoMode: PrazoMode;
-  prazoCalendar: PrazoCalendar;
-  startDate: string;
-  durationDays: string;
-  endDate: string;
-  deadlineDate: string;
-  deadlineObservation: string;
-  paymentMethod: QuotePaymentMethod;
-  observations: string;
-}
-
-type ServiceErrors = Record<string, { name?: string; unitPrice?: string }>;
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * A API real retorna array puro em GET /clients, /works e
- * /works/:workId/measurements (Prisma findMany), enquanto os tipos
- * declarados são { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
-
-/** Converte texto digitado (pt-BR) em número. Aceita vírgula decimal. */
-function parseNumber(value: string): number {
-  const normalized = String(value).trim().replace(',', '.');
-  if (normalized === '') return 0;
-  const n = Number(normalized);
-  return Number.isNaN(n) ? NaN : n;
-}
-
-/** Converte texto em número — retorna undefined quando vazio/NaN. */
-function parseMeasurementValue(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (trimmed === '') return undefined;
-  const n = parseNumber(value);
-  return Number.isNaN(n) ? undefined : n;
-}
-
-/** Verdadeiro se algum campo de medição do ambiente tem valor. */
-function environmentHasMeasurements(env: QuoteEnvironmentDraft): boolean {
-  const m = env.measurement;
-  return Boolean(
-    m.length.trim() ||
-      m.width.trim() ||
-      m.height.trim() ||
-      m.area.trim() ||
-      m.perimeter.trim(),
-  );
-}
-
-/** Valida data no formato AAAA-MM-DD (ISO). */
-function isValidIsoDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
-}
-
-/** Soma dias corridos a uma data ISO (AAAA-MM-DD). */
-function addDaysToIsoDate(iso: string, days: number): string {
-  const [year, month, day] = iso.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-/** Soma dias úteis (seg–sex) a uma data ISO (AAAA-MM-DD). */
-function addBusinessDaysToIsoDate(iso: string, days: number): string {
-  const [year, month, day] = iso.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  let remaining = days;
-  while (remaining > 0) {
-    date.setUTCDate(date.getUTCDate() + 1);
-    const weekday = date.getUTCDay();
-    if (weekday !== 0 && weekday !== 6) remaining -= 1;
-  }
-  return date.toISOString().slice(0, 10);
-}
-
-/** Formata data ISO (AAAA-MM-DD) como DD/MM/AAAA. */
-function formatIsoDate(value: string): string {
-  if (!isValidIsoDate(value)) return value;
-  const [year, month, day] = value.split('-');
-  return `${day}/${month}/${year}`;
-}
-
-/** Monta resumo legível do endereço local (Etapa 2). */
-function buildLocalSummary(local: QuoteLocalDraft): string {
-  const parts = [
-    [local.street.trim(), local.number.trim()].filter(Boolean).join(', '),
-    local.complement.trim(),
-    local.neighborhood.trim(),
-    [local.city.trim(), local.state.trim()].filter(Boolean).join(' - '),
-    local.zipCode.trim(),
-  ].filter(Boolean);
-  return parts.join(' · ');
-}
-
-/** Calcula a conclusão prevista (Modo A) a partir de início + prazo em dias. */
-function computeEndDate(draft: QuoteDraft): string | null {
-  if (draft.prazoMode !== 'A') return null;
-  const start = draft.startDate.trim();
-  const days = parseNumber(draft.durationDays);
-  if (!isValidIsoDate(start) || !Number.isInteger(days) || days <= 0) return null;
-  return draft.prazoCalendar === 'UTEIS'
-    ? addBusinessDaysToIsoDate(start, days)
-    : addDaysToIsoDate(start, days);
-}
-
-/** Monta o payload de cálculo de materiais a partir das medições dos ambientes. */
-function buildCalculateInput(environments: QuoteEnvironmentDraft[]): CalculateMaterialsInput {
-  const measurements = environments
-    .filter(environmentHasMeasurements)
-    .flatMap((env) => {
-      const m = env.measurement;
-      return [
-        {
-          length: parseMeasurementValue(m.length),
-          width: parseMeasurementValue(m.width),
-          ceilingHeight: parseMeasurementValue(m.height),
-          area: parseMeasurementValue(m.area),
-          perimeter: parseMeasurementValue(m.perimeter),
-        },
-      ];
-    });
-
-  return {
-    applicationType: environments[0]?.applicationType ?? 'DRYWALL',
-    measurements,
-  };
-}
-
-let serviceIdCounter = 0;
-function nextServiceId(): string {
-  serviceIdCounter += 1;
-  return `servico-${serviceIdCounter}`;
-}
-
-// ─── Constantes ─────────────────────────────────────────────────────────────
-
-const PAYMENT_METHOD_OPTIONS: { value: QuotePaymentMethod; label: string }[] = [
-  { value: 'AVISTA', label: 'À vista' },
-  { value: 'AVISTA_DESCONTO', label: 'À vista c/ desconto' },
-  { value: 'ENTRADA_SALDO', label: 'Entrada + saldo' },
-  { value: 'QUINZENAL_2X', label: 'Quinzenal 2x' },
-  { value: 'MENSAL', label: 'Mensal' },
-  { value: 'PARCELADO', label: 'Parcelado' },
-  { value: 'PERSONALIZADO', label: 'Personalizado' },
-];
-
-const APPLICATION_TYPE_BADGE: Record<
-  MeasurementApplicationType,
-  { variant: StatusBadgeVariant; label: string }
-> = {
-  DRYWALL: { variant: 'active', label: 'Drywall' },
-  FORRO: { variant: 'warning', label: 'Forro' },
-  PAREDE: { variant: 'active', label: 'Parede' },
-  SANCA: { variant: 'expired', label: 'Sanca' },
-  REBAIXAMENTO: { variant: 'warning', label: 'Rebaixamento' },
-  OUTRO: { variant: 'cancelled', label: 'Outro' },
-};
-
-const STEP_META: {
-  key: StepKey;
-  title: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
-}[] = [
-  { key: 'cliente', title: 'Cliente', icon: 'person-outline' },
-  { key: 'local', title: 'Local', icon: 'location-outline' },
-  { key: 'ambientes', title: 'Ambientes', icon: 'home-outline' },
-  { key: 'itens', title: 'Serviço/Materiais', icon: 'cube-outline' },
-  { key: 'valores', title: 'Valores', icon: 'calculator-outline' },
-  { key: 'prazo', title: 'Prazo', icon: 'time-outline' },
-  { key: 'pagamento', title: 'Pagamento', icon: 'card-outline' },
-  { key: 'revisao', title: 'Revisão', icon: 'document-text-outline' },
-];
-
-// ─── Validação por etapa (zod) ──────────────────────────────────────────────
-
-const stepClienteSchema = z.object({
-  clientId: z.string().min(1, 'Selecione um cliente para continuar'),
-});
-
-const serviceRowSchema = z.object({
-  name: z.string().trim().min(1, 'Descrição é obrigatória'),
-  unitPrice: z
-    .string()
-    .trim()
-    .min(1, 'Informe o valor do serviço')
-    .refine((v) => !Number.isNaN(parseNumber(v)), 'Valor inválido')
-    .refine((v) => parseNumber(v) >= 0, 'Valor não pode ser negativo'),
-});
-
-const stepValoresSchema = z.object({
-  discount: z
-    .string()
-    .refine((v) => !Number.isNaN(parseNumber(v)), 'Desconto inválido')
-    .refine((v) => parseNumber(v) >= 0, 'Desconto não pode ser negativo'),
-  marginPct: z
-    .string()
-    .refine((v) => !Number.isNaN(parseNumber(v)), 'Margem inválida')
-    .refine((v) => parseNumber(v) >= 0, 'Margem não pode ser negativa')
-    .refine((v) => parseNumber(v) <= 100, 'Margem deve ser no máximo 100%'),
-});
+import { ClienteStep } from '../../../src/components/domain/quotes/steps/ClienteStep';
+import { AmbientesStep } from '../../../src/components/domain/quotes/steps/AmbientesStep';
+import { ItensStep } from '../../../src/components/domain/quotes/steps/ItensStep';
+import { ValoresStep } from '../../../src/components/domain/quotes/steps/ValoresStep';
+import {
+  PrazoPagamentoStep,
+  type PrazoPagamentoSubStep,
+} from '../../../src/components/domain/quotes/steps/PrazoPagamentoStep';
+import {
+  type QuoteDraft,
+  type QuoteEnvironmentDraft,
+  type QuoteEnvironmentMeasurementDraft,
+  type QuoteLocalDraft,
+  type ServiceDraft,
+  type ServiceErrors,
+  type MaterialsCalcState,
+  type Client,
+  type CreateClientInput,
+  type CreateQuoteInput,
+  type MeasurementApplicationType,
+  toArray,
+  parseNumber,
+  parseMeasurementValue,
+  environmentHasMeasurements,
+  isValidIsoDate,
+  formatIsoDate,
+  buildLocalSummary,
+  computeEndDate,
+  buildCalculateInput,
+  nextServiceId,
+  nextEnvironmentId,
+  PAYMENT_METHOD_OPTIONS,
+  STEP_META,
+  stepClienteSchema,
+  serviceRowSchema,
+  stepValoresSchema,
+} from '../../../src/components/domain/quotes/wizard/types';
+import { styles } from '../../../src/components/domain/quotes/wizard/styles';
 
 // ─── Modal de seleção de cliente ────────────────────────────────────────────
 
@@ -770,7 +504,7 @@ function StepProgress({ current }: { current: number }) {
       </View>
       <View style={styles.progressCaptionRow}>
         <Ionicons
-          name={STEP_META[current].icon}
+          name={STEP_META[current].icon as ComponentProps<typeof Ionicons>['name']}
           size={sizes.icon.sm}
           color={colors.primary}
           accessibilityElementsHidden
@@ -828,12 +562,13 @@ export default function NovoOrcamentoScreen() {
     observations: '',
   });
 
-  const [materialsCalc, setMaterialsCalc] = useState<{
-    key: string;
-    result: CalculateMaterialsResponse;
-  } | null>(null);
+  const [materialsCalc, setMaterialsCalc] = useState<MaterialsCalcState | null>(
+    null,
+  );
   const [materialsCalcPending, setMaterialsCalcPending] = useState(false);
-  const [materialsCalcError, setMaterialsCalcError] = useState<string | null>(null);
+  const [materialsCalcError, setMaterialsCalcError] = useState<string | null>(
+    null,
+  );
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -1135,12 +870,6 @@ export default function NovoOrcamentoScreen() {
 
   // ── Handlers de ambientes ───────────────────────────────────────────────────
 
-  let environmentIdCounter = 0;
-  function nextEnvironmentId(): string {
-    environmentIdCounter += 1;
-    return `env-${environmentIdCounter}`;
-  }
-
   function addEnvironment() {
     const newEnv: QuoteEnvironmentDraft = {
       id: nextEnvironmentId(),
@@ -1360,45 +1089,11 @@ export default function NovoOrcamentoScreen() {
 
     if (stepKey === 'cliente') {
       return (
-        <View>
-          <Text style={styles.sectionLabel}>Cliente</Text>
-          <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
-            <View style={styles.clientCardContent}>
-              <View style={styles.clientIcon}>
-                <Ionicons
-                  name="person-outline"
-                  size={sizes.icon.md}
-                  color={colors.primary}
-                  accessibilityElementsHidden
-                />
-              </View>
-              <View style={styles.clientInfo}>
-                <Text style={styles.clientLabel}>Cliente</Text>
-                <Text
-                  style={[
-                    styles.clientName,
-                    draft.clientId === '' && styles.selectorPlaceholder,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {selectedClient?.name ?? 'Selecione um cliente'}
-                </Text>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Trocar cliente"
-                onPress={() => setClientModalVisible(true)}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.clientChangeButton,
-                  pressed && styles.clientChangeButtonPressed,
-                ]}
-              >
-                <Text style={styles.clientChangeText}>Trocar</Text>
-              </Pressable>
-            </View>
-          </AppCard>
-        </View>
+        <ClienteStep
+          clientId={draft.clientId}
+          selectedClient={selectedClient}
+          onOpenClientModal={() => setClientModalVisible(true)}
+        />
       );
     }
 
@@ -1488,689 +1183,133 @@ export default function NovoOrcamentoScreen() {
 
     if (stepKey === 'ambientes') {
       return (
-        <View>
-          <Text style={styles.sectionLabel}>Ambientes e medições</Text>
-
-          {draft.environments.length === 0 ? (
-            <EmptyState
-              title="Nenhum ambiente adicionado"
-              description="Adicione ambientes com as medições do local para calcular os materiais da composição."
-              icon="home-outline"
-            />
-          ) : (
-            <View>
-              {draft.environments.map((env) => (
-                <AppCard
-                  key={env.id}
-                  shadow="light"
-                  style={styles.environmentCard}
-                >
-                  <View style={styles.environmentHeader}>
-                    <View style={styles.environmentNameField}>
-                      <AppInput
-                        label="Nome do ambiente"
-                        required
-                        value={env.name}
-                        onChangeText={(text) =>
-                          updateEnvironment(env.id, 'name', text)
-                        }
-                        placeholder="Ex.: Sala de estar"
-                        accessibilityLabel={`Nome do ambiente ${
-                          env.order + 1
-                        }`}
-                      />
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remover ambiente ${env.name}`}
-                      onPress={() => removeEnvironment(env.id)}
-                      hitSlop={8}
-                      style={styles.removeEnvironmentButton}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={sizes.icon.sm}
-                        color={colors.error}
-                      />
-                    </Pressable>
-                  </View>
-
-                  <Text style={styles.environmentSectionLabel}>
-                    Tipo de aplicação
-                  </Text>
-                  <View style={styles.applicationTypeRow}>
-                    {(
-                      [
-                        'DRYWALL',
-                        'FORRO',
-                        'PAREDE',
-                        'SANCA',
-                        'REBAIXAMENTO',
-                        'OUTRO',
-                      ] as const
-                    ).map((type) => {
-                      const selected = env.applicationType === type;
-                      const badge = APPLICATION_TYPE_BADGE[type];
-                      return (
-                        <Pressable
-                          key={type}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Tipo de aplicação ${badge.label}`}
-                          accessibilityState={{ selected }}
-                          onPress={() =>
-                            updateEnvironment(env.id, 'applicationType', type)
-                          }
-                          style={[
-                            styles.applicationTypeChip,
-                            selected && styles.applicationTypeChipSelected,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.applicationTypeChipText,
-                              selected &&
-                                styles.applicationTypeChipTextSelected,
-                            ]}
-                          >
-                            {badge.label}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-
-                  <Text style={styles.environmentSectionLabel}>
-                    Medidas (em metros)
-                  </Text>
-                  <View style={styles.environmentMeasurementRow}>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Comprimento"
-                        value={env.measurement.length}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'length', text)
-                        }
-                        placeholder="0"
-                        keyboardType="decimal-pad"
-                        accessibilityLabel={`Comprimento do ambiente ${env.name}`}
-                      />
-                    </View>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Largura"
-                        value={env.measurement.width}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'width', text)
-                        }
-                        placeholder="0"
-                        keyboardType="decimal-pad"
-                        accessibilityLabel={`Largura do ambiente ${env.name}`}
-                      />
-                    </View>
-                  </View>
-                  <View style={styles.environmentMeasurementRow}>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Altura"
-                        value={env.measurement.height}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'height', text)
-                        }
-                        placeholder="0"
-                        keyboardType="decimal-pad"
-                        accessibilityLabel={`Altura do ambiente ${env.name}`}
-                      />
-                    </View>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Área (m²)"
-                        value={env.measurement.area}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'area', text)
-                        }
-                        placeholder="0"
-                        keyboardType="decimal-pad"
-                        accessibilityLabel={`Área do ambiente ${env.name}`}
-                        helper={
-                          env.measurement.length && env.measurement.width
-                            ? 'Auto-calculada'
-                            : undefined
-                        }
-                      />
-                    </View>
-                  </View>
-                  <View style={styles.environmentMeasurementRow}>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Perímetro (m)"
-                        value={env.measurement.perimeter}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'perimeter', text)
-                        }
-                        placeholder="0"
-                        keyboardType="decimal-pad"
-                        accessibilityLabel={`Perímetro do ambiente ${env.name}`}
-                      />
-                    </View>
-                    <View style={styles.environmentMeasurementField}>
-                      <AppInput
-                        label="Observações"
-                        value={env.measurement.observations}
-                        onChangeText={(text) =>
-                          updateMeasurement(env.id, 'observations', text)
-                        }
-                        placeholder="Opcional"
-                        accessibilityLabel={`Observações do ambiente ${env.name}`}
-                      />
-                    </View>
-                  </View>
-                </AppCard>
-              ))}
-            </View>
-          )}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Adicionar ambiente"
-            onPress={addEnvironment}
-            style={({ pressed }) => [
-              styles.addItemButton,
-              pressed && styles.addItemButtonPressed,
-            ]}
-          >
-            <Ionicons
-              name="add"
-              size={sizes.icon.md}
-              color={colors.primary}
-              accessibilityElementsHidden
-            />
-            <Text style={styles.addItemText}>Adicionar ambiente</Text>
-          </Pressable>
-        </View>
+        <AmbientesStep
+          environments={draft.environments}
+          addEnvironment={addEnvironment}
+          updateEnvironment={updateEnvironment}
+          removeEnvironment={removeEnvironment}
+          updateMeasurement={updateMeasurement}
+        />
       );
     }
 
     if (stepKey === 'itens') {
-      const result = materialsCalc?.result ?? null;
       return (
-        <View>
-          <Text style={styles.sectionLabel}>Materiais</Text>
-          {draft.environments.filter(environmentHasMeasurements).length === 0 ? (
-            <EmptyState
-              title="Nenhum ambiente com medições"
-              description="Adicione ambientes com medições na Etapa 3 para calcular os materiais da composição."
-              icon="cube-outline"
-            />
-          ) : materialsCalcPending ? (
-            <LoadingState text="Calculando materiais..." />
-          ) : materialsCalcError ? (
-            <ErrorState
-              message={materialsCalcError}
-              onRetry={handleRecalculate}
-            />
-          ) : !result ? (
-            <LoadingState text="Preparando materiais..." />
-          ) : (
-            <View>
-              <AppCard shadow="light" style={styles.compositionCard}>
-                <View style={styles.compositionRow}>
-                  <Text style={styles.compositionCode}>
-                    {result.composition.code}
-                  </Text>
-                  <StatusBadge
-                    status="active"
-                    label={`v${result.composition.version}`}
-                    size="sm"
-                  />
-                </View>
-                <Text style={styles.compositionName} numberOfLines={2}>
-                  {result.composition.name}
-                </Text>
-              </AppCard>
-
-              <Text style={styles.sectionLabel}>Materiais calculados</Text>
-              {draft.materials.length === 0 ? (
-                <EmptyState
-                  title="Nenhum material calculado"
-                  description="A composição não retornou materiais para os ambientes selecionados."
-                  icon="cube-outline"
-                />
-              ) : (
-                draft.materials.map((material) => (
-                  <AppCard
-                    key={material.key}
-                    shadow="light"
-                    style={styles.materialCard}
-                  >
-                    <View style={styles.materialRow}>
-                      <View style={styles.materialInfo}>
-                        <Text style={styles.materialName} numberOfLines={2}>
-                          {material.name}
-                        </Text>
-                        <Text style={styles.materialMeta} numberOfLines={1}>
-                          {material.unitPrice != null
-                            ? `${formatCurrency(material.unitPrice)}/${material.unit}`
-                            : 'Preço não cadastrado'}
-                        </Text>
-                      </View>
-                      <View style={styles.materialQtyField}>
-                        <AppInput
-                          label="Qtd"
-                          value={material.quantity}
-                          onChangeText={(text) =>
-                            updateMaterialQuantity(material.key, text)
-                          }
-                          keyboardType="decimal-pad"
-                          placeholder="0"
-                          accessibilityLabel={`Quantidade de ${material.name}`}
-                          style={styles.materialQtyInput}
-                        />
-                      </View>
-                    </View>
-                    <View style={styles.itemSubtotalRow}>
-                      <Text style={styles.itemSubtotalLabel}>
-                        Total ({material.unit})
-                      </Text>
-                      <Text style={styles.itemSubtotalValue}>
-                        {formatCurrency(
-                          parseNumber(material.quantity) *
-                            (material.unitPrice ?? 0),
-                        )}
-                      </Text>
-                    </View>
-                  </AppCard>
-                ))
-              )}
-
-              <AppCard shadow="light" style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>Resumo</Text>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Área total</Text>
-                  <Text style={styles.summaryValue}>
-                    {formatNumber(result.totalArea)} m²
-                  </Text>
-                </View>
-                <PermissionGate allow={COST_VIEW_ROLES}>
-                  <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Custo estimado</Text>
-                    <Text style={styles.summaryCost}>
-                      {formatCurrency(result.estimatedCost)}
-                    </Text>
-                  </View>
-                </PermissionGate>
-              </AppCard>
-
-              <AppButton
-                title="Calcular novamente"
-                variant="outline"
-                size="lg"
-                loading={materialsCalcPending}
-                onPress={handleRecalculate}
-                accessibilityLabel="Calcular novamente"
-                style={styles.recalculateButton}
-              />
-            </View>
-          )}
-
-          <Text style={styles.sectionLabel}>Serviços</Text>
-          {draft.services.length === 0 ? (
-            <EmptyState
-              title="Nenhum serviço adicionado"
-              description="Adicione os serviços que serão executados (ex.: instalação de forro de drywall)."
-              icon="construct-outline"
-            />
-          ) : (
-            draft.services.map((service) => {
-              const errors = serviceErrors[service.id] ?? {};
-              return (
-                <AppCard
-                  key={service.id}
-                  shadow="light"
-                  style={styles.serviceCard}
-                >
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemLabel}>Serviço</Text>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Remover serviço"
-                      onPress={() => removeService(service.id)}
-                      hitSlop={8}
-                      style={styles.removeItemButton}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={sizes.icon.sm}
-                        color={colors.error}
-                      />
-                    </Pressable>
-                  </View>
-                  <AppInput
-                    label="Descrição"
-                    required
-                    value={service.name}
-                    onChangeText={(text) =>
-                      updateService(service.id, 'name', text)
-                    }
-                    placeholder="Ex.: Instalação de forro de drywall"
-                    error={errors.name}
-                    accessibilityLabel="Descrição do serviço"
-                  />
-                  <AppInput
-                    label="Valor (R$)"
-                    required
-                    value={service.unitPrice}
-                    onChangeText={(text) =>
-                      updateService(service.id, 'unitPrice', text)
-                    }
-                    mask="currency"
-                    placeholder="0,00"
-                    error={errors.unitPrice}
-                    accessibilityLabel="Valor do serviço"
-                  />
-                </AppCard>
-              );
-            })
-          )}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Adicionar serviço"
-            onPress={addService}
-            style={({ pressed }) => [
-              styles.addItemButton,
-              pressed && styles.addItemButtonPressed,
-            ]}
-          >
-            <Ionicons
-              name="add"
-              size={sizes.icon.md}
-              color={colors.primary}
-              accessibilityElementsHidden
-            />
-            <Text style={styles.addItemText}>Adicionar serviço</Text>
-          </Pressable>
-        </View>
+        <ItensStep
+          environments={draft.environments}
+          materials={draft.materials}
+          materialsCalc={materialsCalc}
+          materialsCalcPending={materialsCalcPending}
+          materialsCalcError={materialsCalcError}
+          serviceErrors={serviceErrors}
+          services={draft.services}
+          updateMaterialQuantity={updateMaterialQuantity}
+          handleRecalculate={handleRecalculate}
+          addService={addService}
+          updateService={updateService}
+          removeService={removeService}
+        />
       );
     }
 
     if (stepKey === 'valores') {
       return (
-        <View>
-          <AppCard shadow="light" style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Resumo dos valores</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Materiais</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(materialsTotal)}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Serviços</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(servicesTotal)}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(itemsTotal)}
-              </Text>
-            </View>
-
-            <View style={styles.summaryFieldsRow}>
-              <View style={styles.itemFieldHalf}>
-                <AppInput
-                  label="Desconto (R$)"
-                  value={draft.discount}
-                  onChangeText={(text) =>
-                    setDraft((d) => ({ ...d, discount: text }))
-                  }
-                  placeholder="0,00"
-                  keyboardType="decimal-pad"
-                  accessibilityLabel="Desconto"
-                  style={styles.summaryInput}
-                />
-              </View>
-              <PermissionGate allow={COST_VIEW_ROLES}>
-                <View style={styles.itemFieldHalf}>
-                  <AppInput
-                    label="Margem (%)"
-                    value={draft.marginPct}
-                    onChangeText={(text) =>
-                      setDraft((d) => ({ ...d, marginPct: text }))
-                    }
-                    placeholder="0"
-                    keyboardType="decimal-pad"
-                    accessibilityLabel="Margem percentual"
-                    style={styles.summaryInput}
-                  />
-                </View>
-              </PermissionGate>
-            </View>
-
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>TOTAL</Text>
-              <Text style={styles.totalValue}>{formatCurrency(quoteTotal)}</Text>
-            </View>
-          </AppCard>
-        </View>
+        <ValoresStep
+          materialsTotal={materialsTotal}
+          servicesTotal={servicesTotal}
+          itemsTotal={itemsTotal}
+          quoteTotal={quoteTotal}
+          discount={draft.discount}
+          marginPct={draft.marginPct}
+          onDiscountChange={(text) =>
+            setDraft((d) => ({ ...d, discount: text }))
+          }
+          onMarginPctChange={(text) =>
+            setDraft((d) => ({ ...d, marginPct: text }))
+          }
+        />
       );
     }
 
     if (stepKey === 'prazo') {
-      const prazoModes: {
-        value: PrazoMode;
-        label: string;
-        description: string;
-      }[] = [
-        {
-          value: 'A',
-          label: 'Início + prazo',
-          description: 'Previsão de início e prazo em dias',
-        },
-        {
-          value: 'B',
-          label: 'Início + conclusão',
-          description: 'Previsão de início e de conclusão',
-        },
-        {
-          value: 'C',
-          label: 'Entregar até',
-          description: 'Data-limite comercial',
-        },
-      ];
       return (
-        <View>
-          <Text style={styles.sectionLabel}>Como informar o prazo?</Text>
-          <View style={styles.paymentRow}>
-            {prazoModes.map((mode) => {
-              const selected = mode.value === draft.prazoMode;
-              return (
-                <Pressable
-                  key={mode.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Modo de prazo ${mode.label}`}
-                  accessibilityState={{ selected }}
-                  onPress={() =>
-                    setDraft((d) => ({ ...d, prazoMode: mode.value }))
-                  }
-                  style={[
-                    styles.paymentChip,
-                    selected && styles.paymentChipSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.paymentChipText,
-                      selected && styles.paymentChipTextSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {mode.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {draft.prazoMode === 'A' ? (
-            <View>
-              <AppInput
-                label="Previsão de início"
-                required
-                value={draft.startDate}
-                onChangeText={(text) =>
-                  setDraft((d) => ({ ...d, startDate: text }))
-                }
-                placeholder="AAAA-MM-DD"
-                autoCapitalize="none"
-                accessibilityLabel="Previsão de início"
-              />
-              <AppInput
-                label="Prazo estimado (dias)"
-                required
-                value={draft.durationDays}
-                onChangeText={(text) =>
-                  setDraft((d) => ({ ...d, durationDays: text }))
-                }
-                placeholder="Ex.: 3"
-                keyboardType="number-pad"
-                accessibilityLabel="Prazo estimado em dias"
-              />
-              <Text style={styles.sectionLabel}>Contagem do prazo</Text>
-              <View style={styles.paymentRow}>
-                {(['UTEIS', 'CORRIDOS'] as const).map((calendar) => {
-                  const selected = calendar === draft.prazoCalendar;
-                  return (
-                    <Pressable
-                      key={calendar}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Contagem em dias ${
-                        calendar === 'UTEIS' ? 'úteis' : 'corridos'
-                      }`}
-                      accessibilityState={{ selected }}
-                      onPress={() =>
-                        setDraft((d) => ({ ...d, prazoCalendar: calendar }))
-                      }
-                      style={[
-                        styles.paymentChip,
-                        selected && styles.paymentChipSelected,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.paymentChipText,
-                          selected && styles.paymentChipTextSelected,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {calendar === 'UTEIS' ? 'Dias úteis' : 'Dias corridos'}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <View style={styles.computedDateBox}>
-                <Text style={styles.computedDateLabel}>
-                  Previsão calculada de conclusão
-                </Text>
-                <Text style={styles.computedDateValue}>
-                  {computedEndDate ? formatIsoDate(computedEndDate) : '—'}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
-          {draft.prazoMode === 'B' ? (
-            <View>
-              <AppInput
-                label="Previsão de início"
-                required
-                value={draft.startDate}
-                onChangeText={(text) =>
-                  setDraft((d) => ({ ...d, startDate: text }))
-                }
-                placeholder="AAAA-MM-DD"
-                autoCapitalize="none"
-                accessibilityLabel="Previsão de início"
-              />
-              <AppInput
-                label="Previsão de conclusão"
-                required
-                value={draft.endDate}
-                onChangeText={(text) =>
-                  setDraft((d) => ({ ...d, endDate: text }))
-                }
-                placeholder="AAAA-MM-DD"
-                autoCapitalize="none"
-                accessibilityLabel="Previsão de conclusão"
-              />
-            </View>
-          ) : null}
-
-          {draft.prazoMode === 'C' ? (
-            <AppInput
-              label="Entregar até"
-              required
-              value={draft.deadlineDate}
-              onChangeText={(text) =>
-                setDraft((d) => ({ ...d, deadlineDate: text }))
-              }
-              placeholder="AAAA-MM-DD"
-              autoCapitalize="none"
-              accessibilityLabel="Data limite de entrega"
-            />
-          ) : null}
-
-          <AppInput
-            label="Observação de prazo"
-            value={draft.deadlineObservation}
-            onChangeText={(text) =>
-              setDraft((d) => ({ ...d, deadlineObservation: text }))
-            }
-            placeholder="Ex.: Cliente precisa do serviço concluído antes de um evento (opcional)"
-            accessibilityLabel="Observação de prazo"
-            multiline
-          />
-        </View>
+        <PrazoPagamentoStep
+          subStep="prazo"
+          prazoMode={draft.prazoMode}
+          prazoCalendar={draft.prazoCalendar}
+          startDate={draft.startDate}
+          durationDays={draft.durationDays}
+          endDate={draft.endDate}
+          deadlineDate={draft.deadlineDate}
+          deadlineObservation={draft.deadlineObservation}
+          paymentMethod={draft.paymentMethod}
+          computedEndDate={computedEndDate}
+          onPrazoModeChange={(value) =>
+            setDraft((d) => ({ ...d, prazoMode: value }))
+          }
+          onPrazoCalendarChange={(value) =>
+            setDraft((d) => ({ ...d, prazoCalendar: value }))
+          }
+          onStartDateChange={(value) =>
+            setDraft((d) => ({ ...d, startDate: value }))
+          }
+          onDurationDaysChange={(value) =>
+            setDraft((d) => ({ ...d, durationDays: value }))
+          }
+          onEndDateChange={(value) =>
+            setDraft((d) => ({ ...d, endDate: value }))
+          }
+          onDeadlineDateChange={(value) =>
+            setDraft((d) => ({ ...d, deadlineDate: value }))
+          }
+          onDeadlineObservationChange={(value) =>
+            setDraft((d) => ({ ...d, deadlineObservation: value }))
+          }
+          onPaymentMethodChange={(value) =>
+            setDraft((d) => ({ ...d, paymentMethod: value }))
+          }
+        />
       );
     }
 
     if (stepKey === 'pagamento') {
       return (
-        <View>
-          <Text style={styles.sectionLabel}>Forma de pagamento</Text>
-          <View style={styles.paymentRow}>
-            {PAYMENT_METHOD_OPTIONS.map((option) => {
-              const selected = option.value === draft.paymentMethod;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Forma de pagamento ${option.label}`}
-                  accessibilityState={{ selected }}
-                  onPress={() =>
-                    setDraft((d) => ({ ...d, paymentMethod: option.value }))
-                  }
-                  style={[
-                    styles.paymentChip,
-                    selected && styles.paymentChipSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.paymentChipText,
-                      selected && styles.paymentChipTextSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <PrazoPagamentoStep
+          subStep="pagamento"
+          prazoMode={draft.prazoMode}
+          prazoCalendar={draft.prazoCalendar}
+          startDate={draft.startDate}
+          durationDays={draft.durationDays}
+          endDate={draft.endDate}
+          deadlineDate={draft.deadlineDate}
+          deadlineObservation={draft.deadlineObservation}
+          paymentMethod={draft.paymentMethod}
+          computedEndDate={computedEndDate}
+          onPrazoModeChange={(value) =>
+            setDraft((d) => ({ ...d, prazoMode: value }))
+          }
+          onPrazoCalendarChange={(value) =>
+            setDraft((d) => ({ ...d, prazoCalendar: value }))
+          }
+          onStartDateChange={(value) =>
+            setDraft((d) => ({ ...d, startDate: value }))
+          }
+          onDurationDaysChange={(value) =>
+            setDraft((d) => ({ ...d, durationDays: value }))
+          }
+          onEndDateChange={(value) =>
+            setDraft((d) => ({ ...d, endDate: value }))
+          }
+          onDeadlineDateChange={(value) =>
+            setDraft((d) => ({ ...d, deadlineDate: value }))
+          }
+          onDeadlineObservationChange={(value) =>
+            setDraft((d) => ({ ...d, deadlineObservation: value }))
+          }
+          onPaymentMethodChange={(value) =>
+            setDraft((d) => ({ ...d, paymentMethod: value }))
+          }
+        />
       );
     }
 
@@ -2467,658 +1606,3 @@ export default function NovoOrcamentoScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  backButton: {
-    minWidth: sizes.touchTarget,
-    minHeight: sizes.touchTarget,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  sectionLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  // Progresso
-  progressWrap: {
-    marginBottom: spacing.lg,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  progressLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: colors.border,
-  },
-  progressLineActive: {
-    backgroundColor: colors.primary,
-  },
-  progressDot: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressDotCurrent: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  progressDotDone: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  progressNumber: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    color: colors.textLight,
-  },
-  progressNumberCurrent: {
-    color: colors.textOnPrimary,
-  },
-  progressCaptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  progressCaption: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  // Etapa 1 — Cliente
-  clientCard: {
-    padding: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  clientCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  clientIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clientInfo: {
-    flex: 1,
-  },
-  clientLabel: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  clientName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  clientChangeButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  clientChangeButtonPressed: {
-    opacity: 0.7,
-  },
-  clientChangeText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  selectorField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.inputBackground,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    height: sizes.inputHeight,
-    gap: spacing.sm,
-  },
-  selectorText: {
-    flex: 1,
-    fontSize: typography.sizes.md,
-    color: colors.text,
-  },
-  selectorPlaceholder: {
-    color: colors.textLight,
-  },
-  // Etapa 2 — Local
-  localRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  localFieldHalf: {
-    flex: 1,
-  },
-  // Etapa 3 — Medições
-  infoCard: {
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  measurementOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  measurementOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  measurementInfo: {
-    flex: 1,
-  },
-  measurementName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  measurementMeta: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  selectionCount: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  // Etapa 4 — Serviço/Materiais
-  compositionCard: {
-    marginBottom: spacing.lg,
-  },
-  compositionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  compositionCode: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  compositionName: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  materialCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  materialRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  materialInfo: {
-    flex: 1,
-  },
-  materialName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  materialMeta: {
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  materialQtyField: {
-    width: 96,
-  },
-  materialQtyInput: {
-    marginBottom: spacing.xs,
-  },
-  itemSubtotalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-  },
-  itemSubtotalLabel: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-  },
-  itemSubtotalValue: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  summaryCard: {
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  summaryTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  summaryFieldsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  itemFieldHalf: {
-    flex: 1,
-  },
-  summaryInput: {
-    marginBottom: spacing.xs,
-  },
-  summaryLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.textSecondary,
-  },
-  summaryValue: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  summaryCost: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  totalRow: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginBottom: 0,
-  },
-  totalLabel: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  totalValue: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  recalculateButton: {
-    marginBottom: spacing.sm,
-  },
-  // Etapa 4 — Serviço/Materiais
-  serviceCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  itemLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-  },
-  removeItemButton: {
-    padding: spacing.xs,
-  },
-  addItemButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  addItemButtonPressed: {
-    opacity: 0.7,
-  },
-  addItemText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  // Etapa 7 — Pagamento
-  paymentRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  paymentChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  paymentChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  paymentChipText: {
-    fontSize: typography.sizes.xs,
-    color: colors.text,
-  },
-  paymentChipTextSelected: {
-    color: colors.textOnPrimary,
-  },
-  // Etapa 6 — Prazo
-  computedDateBox: {
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
-    marginBottom: spacing.lg,
-  },
-  computedDateLabel: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  computedDateValue: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  // Etapa 8 — Revisão
-  reviewCard: {
-    marginBottom: spacing.md,
-  },
-  reviewSectionTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  reviewValue: {
-    fontSize: typography.sizes.md,
-    color: colors.text,
-  },
-  reviewMeta: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  reviewDivider: {
-    height: 1,
-    backgroundColor: colors.divider,
-    marginVertical: spacing.md,
-  },
-  reviewItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  reviewItemName: {
-    flex: 1,
-    fontSize: typography.sizes.md,
-    color: colors.text,
-  },
-  reviewItemQty: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  // Erro da etapa + rodapé de navegação
-  stepErrorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.dangerSoft,
-  },
-  stepErrorText: {
-    flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.error,
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-    marginBottom: spacing['3xl'],
-  },
-  footerButton: {
-    flex: 1,
-  },
-  // Modal styles
-  modalSafe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: sizes.screenPadding,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  modalClose: {
-    padding: spacing.xs,
-  },
-  modalSearch: {
-    padding: sizes.screenPadding,
-    paddingBottom: spacing.sm,
-  },
-  modalList: {
-    padding: sizes.screenPadding,
-    paddingBottom: spacing['3xl'],
-  },
-  clientOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: spacing.sm,
-    marginBottom: spacing.xs,
-    backgroundColor: colors.card,
-  },
-  clientOptionPressed: {
-    opacity: 0.7,
-  },
-  clientOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  clientOptionInfo: {
-    flex: 1,
-  },
-  clientOptionName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.text,
-  },
-  clientOptionMeta: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  modalBody: {
-    flex: 1,
-  },
-  modalFooter: {
-    padding: sizes.screenPadding,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  // Cadastro rápido de cliente (V3 §12)
-  quickForm: {
-    padding: sizes.screenPadding,
-    paddingBottom: spacing['3xl'],
-  },
-  quickFormHint: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
-  },
-  quickFormSection: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  quickFormRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  quickFormFieldHalf: {
-    flex: 1,
-  },
-  quickFormSubmit: {
-    marginTop: spacing.sm,
-  },
-  // Etapa 3 — Ambientes
-  environmentCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  environmentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  environmentNameField: {
-    flex: 1,
-  },
-  removeEnvironmentButton: {
-    padding: spacing.xs,
-  },
-  environmentSectionLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  applicationTypeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  applicationTypeChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  applicationTypeChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  applicationTypeChipText: {
-    fontSize: typography.sizes.xs,
-    color: colors.text,
-  },
-  applicationTypeChipTextSelected: {
-    color: colors.textOnPrimary,
-  },
-  environmentMeasurementRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  environmentMeasurementField: {
-    flex: 1,
-  },
-});
