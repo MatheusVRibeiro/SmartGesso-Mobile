@@ -27,9 +27,8 @@ import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge'
 import { toApiError } from '../../../src/services/api/client';
 import { clientsService } from '../../../src/services/api/clients';
 import { compositionsService } from '../../../src/services/api/compositions';
-import { measurementsService } from '../../../src/services/api/measurements';
 import { quotesService } from '../../../src/services/api/quotes';
-import { worksService } from '../../../src/services/api/works';
+import { quoteEnvironmentsService } from '../../../src/services/api/quoteEnvironments';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { PermissionGate } from '../../../src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '../../../src/types/permissions';
@@ -37,12 +36,12 @@ import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency, formatNumber } from '../../../src/utils/format';
 import { parseCurrencyInput } from '../../../src/utils/masks';
 import type { Client, CreateClientInput } from '../../../src/types/client';
-import type { Work } from '../../../src/types/work';
 import type { CreateQuoteInput, QuotePaymentMethod } from '../../../src/types/quote';
+import type { MeasurementApplicationType } from '../../../src/types/measurement';
 import type {
-  Measurement,
-  MeasurementApplicationType,
-} from '../../../src/types/measurement';
+  QuoteEnvironment,
+  QuoteEnvironmentMeasurement,
+} from '../../../src/types/quoteEnvironment';
 import type {
   CalculateMaterialsInput,
   CalculateMaterialsResponse,
@@ -55,7 +54,7 @@ import { createQuoteSchema } from '../../../src/validation/schemas';
 type StepKey =
   | 'cliente'
   | 'local'
-  | 'medicoes'
+  | 'ambientes'
   | 'itens'
   | 'valores'
   | 'prazo'
@@ -96,11 +95,30 @@ type PrazoMode = 'A' | 'B' | 'C';
 /** Contagem do prazo no Modo A: dias úteis ou corridos. */
 type PrazoCalendar = 'UTEIS' | 'CORRIDOS';
 
+/** Medição local de um ambiente dentro do wizard (campos em texto para edição). */
+interface QuoteEnvironmentMeasurementDraft {
+  length: string;
+  width: string;
+  height: string;
+  area: string;
+  perimeter: string;
+  observations: string;
+}
+
+/** Ambiente criado localmente no wizard — antes de ser persistido na API. */
+interface QuoteEnvironmentDraft {
+  id: string;
+  name: string;
+  description: string;
+  order: number;
+  applicationType: MeasurementApplicationType;
+  measurement: QuoteEnvironmentMeasurementDraft;
+}
+
 interface QuoteDraft {
   clientId: string;
-  workId: string;
   local: QuoteLocalDraft;
-  selectedMeasurementIds: string[];
+  environments: QuoteEnvironmentDraft[];
   materials: MaterialDraft[];
   services: ServiceDraft[];
   discount: string;
@@ -139,6 +157,26 @@ function parseNumber(value: string): number {
   if (normalized === '') return 0;
   const n = Number(normalized);
   return Number.isNaN(n) ? NaN : n;
+}
+
+/** Converte texto em número — retorna undefined quando vazio/NaN. */
+function parseMeasurementValue(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (trimmed === '') return undefined;
+  const n = parseNumber(value);
+  return Number.isNaN(n) ? undefined : n;
+}
+
+/** Verdadeiro se algum campo de medição do ambiente tem valor. */
+function environmentHasMeasurements(env: QuoteEnvironmentDraft): boolean {
+  const m = env.measurement;
+  return Boolean(
+    m.length.trim() ||
+      m.width.trim() ||
+      m.height.trim() ||
+      m.area.trim() ||
+      m.perimeter.trim(),
+  );
 }
 
 /** Valida data no formato AAAA-MM-DD (ISO). */
@@ -204,16 +242,26 @@ function computeEndDate(draft: QuoteDraft): string | null {
     : addDaysToIsoDate(start, days);
 }
 
-/** Monta o payload de cálculo de materiais a partir das medições selecionadas. */
-function buildCalculateInput(measurements: Measurement[]): CalculateMaterialsInput {
+/** Monta o payload de cálculo de materiais a partir das medições dos ambientes. */
+function buildCalculateInput(environments: QuoteEnvironmentDraft[]): CalculateMaterialsInput {
+  const measurements = environments
+    .filter(environmentHasMeasurements)
+    .flatMap((env) => {
+      const m = env.measurement;
+      return [
+        {
+          length: parseMeasurementValue(m.length),
+          width: parseMeasurementValue(m.width),
+          ceilingHeight: parseMeasurementValue(m.height),
+          area: parseMeasurementValue(m.area),
+          perimeter: parseMeasurementValue(m.perimeter),
+        },
+      ];
+    });
+
   return {
-    applicationType: measurements[0]?.applicationType ?? 'DRYWALL',
-    measurements: measurements.map((m) => ({
-      length: m.length ?? undefined,
-      width: m.width ?? undefined,
-      area: m.area ?? undefined,
-      perimeter: m.perimeter ?? undefined,
-    })),
+    applicationType: environments[0]?.applicationType ?? 'DRYWALL',
+    measurements,
   };
 }
 
@@ -254,7 +302,7 @@ const STEP_META: {
 }[] = [
   { key: 'cliente', title: 'Cliente', icon: 'person-outline' },
   { key: 'local', title: 'Local', icon: 'location-outline' },
-  { key: 'medicoes', title: 'Medições', icon: 'resize-outline' },
+  { key: 'ambientes', title: 'Ambientes', icon: 'home-outline' },
   { key: 'itens', title: 'Serviço/Materiais', icon: 'cube-outline' },
   { key: 'valores', title: 'Valores', icon: 'calculator-outline' },
   { key: 'prazo', title: 'Prazo', icon: 'time-outline' },
@@ -668,132 +716,6 @@ function QuickClientModal({ visible, loading, onSave, onClose }: QuickClientModa
   );
 }
 
-// ─── Modal de seleção de obra ───────────────────────────────────────────────
-
-interface WorkPickerModalProps {
-  visible: boolean;
-  works: Work[];
-  isLoading: boolean;
-  isError: boolean;
-  errorMessage: string;
-  onRetry: () => void;
-  onSelect: (workId: string) => void;
-  onClose: () => void;
-}
-
-function WorkPickerModal({
-  visible,
-  works,
-  isLoading,
-  isError,
-  errorMessage,
-  onRetry,
-  onSelect,
-  onClose,
-}: WorkPickerModalProps) {
-  const [search, setSearch] = useState('');
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return works;
-    return works.filter((work) =>
-      work.name.toLowerCase().includes(term),
-    );
-  }, [works, search]);
-
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom']}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Selecionar obra</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Fechar seleção de obra"
-            onPress={onClose}
-            hitSlop={8}
-            style={styles.modalClose}
-          >
-            <Ionicons name="close" size={sizes.icon.lg} color={colors.text} />
-          </Pressable>
-        </View>
-
-        <View style={styles.modalSearch}>
-          <AppInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar obra..."
-            accessibilityLabel="Buscar obra"
-            returnKeyType="search"
-          />
-        </View>
-
-        {isLoading ? (
-          <LoadingState text="Carregando obras..." />
-        ) : isError ? (
-          <ErrorState message={errorMessage} onRetry={onRetry} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title={
-              search.trim()
-                ? 'Nenhuma obra encontrada'
-                : 'Nenhuma obra cadastrada'
-            }
-            description={
-              search.trim()
-                ? 'Tente buscar com outro termo'
-                : 'Cadastre uma obra ou selecione sem obra'
-            }
-            icon="construct-outline"
-          />
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.modalList}
-            renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Selecionar obra ${item.name}`}
-                onPress={() => onSelect(item.id)}
-                style={({ pressed }) => [
-                  styles.clientOption,
-                  pressed && styles.clientOptionPressed,
-                ]}
-              >
-                <View style={styles.clientOptionIcon}>
-                  <Ionicons
-                    name="construct-outline"
-                    size={sizes.icon.md}
-                    color={colors.primary}
-                    accessibilityElementsHidden
-                  />
-                </View>
-                <View style={styles.clientOptionInfo}>
-                  <Text style={styles.clientOptionName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  {item.client?.name ? (
-                    <Text style={styles.clientOptionMeta} numberOfLines={1}>
-                      {item.client.name}
-                    </Text>
-                  ) : null}
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={sizes.icon.md}
-                  color={colors.textLight}
-                  accessibilityElementsHidden
-                />
-              </Pressable>
-            )}
-          />
-        )}
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
 // ─── Indicador de progresso das etapas ──────────────────────────────────────
 
 function StepProgress({ current }: { current: number }) {
@@ -873,7 +795,6 @@ export default function NovoOrcamentoScreen() {
   const [serviceErrors, setServiceErrors] = useState<ServiceErrors>({});
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [quickClientVisible, setQuickClientVisible] = useState(false);
-  const [workModalVisible, setWorkModalVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     type: AppSnackbarType;
     message: string;
@@ -881,7 +802,6 @@ export default function NovoOrcamentoScreen() {
 
   const [draft, setDraft] = useState<QuoteDraft>({
     clientId: '',
-    workId: '',
     local: {
       zipCode: '',
       street: '',
@@ -892,7 +812,7 @@ export default function NovoOrcamentoScreen() {
       state: '',
       reference: '',
     },
-    selectedMeasurementIds: [],
+    environments: [],
     materials: [],
     services: [],
     discount: '',
@@ -924,20 +844,6 @@ export default function NovoOrcamentoScreen() {
     enabled: Boolean(companyId),
   });
 
-  const worksQuery = useQuery({
-    queryKey: ['company', companyId, 'works'],
-    queryFn: () => worksService.list(),
-    select: (result) => toArray<Work>(result),
-    enabled: Boolean(companyId),
-  });
-
-  const measurementsQuery = useQuery({
-    queryKey: ['company', companyId, 'works', draft.workId, 'measurements'],
-    queryFn: () => measurementsService.listByWork(draft.workId as string),
-    select: (result) => toArray<Measurement>(result),
-    enabled: Boolean(companyId && draft.workId),
-  });
-
   // ── Derivados ──────────────────────────────────────────────────────────────
 
   const selectedClient = useMemo(
@@ -945,33 +851,16 @@ export default function NovoOrcamentoScreen() {
     [clientsQuery.data, draft.clientId],
   );
 
-  const selectedWork = useMemo(
-    () => worksQuery.data?.find((work) => work.id === draft.workId),
-    [worksQuery.data, draft.workId],
-  );
-
-  /** Obras filtradas pelo cliente selecionado (quando houver). */
-  const clientWorks = useMemo(() => {
-    const all = worksQuery.data ?? [];
-    if (!draft.clientId) return all;
-    return all.filter((work) => work.clientId === draft.clientId);
-  }, [worksQuery.data, draft.clientId]);
-
-  const measurements = measurementsQuery.data ?? [];
-
-  const selectedMeasurements = useMemo(
-    () => measurements.filter((m) => draft.selectedMeasurementIds.includes(m.id)),
-    [measurements, draft.selectedMeasurementIds],
-  );
-
-  const selectedMeasurementNames = useMemo(
-    () => selectedMeasurements.map((m) => m.environmentName),
-    [selectedMeasurements],
-  );
-
   const calcKey = useMemo(
-    () => draft.selectedMeasurementIds.slice().sort().join('|'),
-    [draft.selectedMeasurementIds],
+    () =>
+      draft.environments
+        .map(
+          (env) =>
+            `${env.id}:${env.measurement.length}:${env.measurement.width}:${env.measurement.height}:${env.measurement.area}:${env.measurement.perimeter}`,
+        )
+        .sort()
+        .join('|'),
+    [draft.environments],
   );
 
   const materialsTotal = useMemo(
@@ -1003,12 +892,15 @@ export default function NovoOrcamentoScreen() {
   // ── Cálculo de materiais (Etapa 4) ─────────────────────────────────────────
 
   const runMaterialsCalculation = useCallback(
-    (measurementsToCalc: Measurement[], key: string) => {
-      if (measurementsToCalc.length === 0) return;
+    (environments: QuoteEnvironmentDraft[], key: string) => {
+      const environmentsWithMeasurements = environments.filter(
+        environmentHasMeasurements,
+      );
+      if (environmentsWithMeasurements.length === 0) return;
       setMaterialsCalcPending(true);
       setMaterialsCalcError(null);
       compositionsService
-        .calculate(buildCalculateInput(measurementsToCalc))
+        .calculate(buildCalculateInput(environments))
         .then((result) => {
           setMaterialsCalc({ key, result });
           setDraft((d) => ({
@@ -1041,18 +933,59 @@ export default function NovoOrcamentoScreen() {
       return;
     }
     if (materialsCalc?.key === key) return;
-    if (selectedMeasurements.length === 0) return; // medições ainda carregando
-    runMaterialsCalculation(selectedMeasurements, key);
-  }, [currentStep, calcKey, selectedMeasurements, materialsCalc, runMaterialsCalculation]);
+    if (draft.environments.length === 0) return;
+    runMaterialsCalculation(draft.environments, key);
+  }, [currentStep, calcKey, draft.environments, materialsCalc, runMaterialsCalculation]);
 
   // ── Mutation ───────────────────────────────────────────────────────────────
 
+  /** Persiste ambientes e medições do draft após o orçamento ser criado. */
+  async function persistEnvironments(quoteId: string) {
+    if (draft.environments.length === 0) return;
+    for (const env of draft.environments) {
+      const createdEnv = await quoteEnvironmentsService.createEnvironment(
+        quoteId,
+        {
+          name: env.name.trim(),
+          description: env.description.trim() || undefined,
+          order: env.order,
+        },
+      );
+      const m = env.measurement;
+      const hasMeasurements =
+        m.length.trim() ||
+        m.width.trim() ||
+        m.height.trim() ||
+        m.area.trim() ||
+        m.perimeter.trim();
+      if (hasMeasurements) {
+        await quoteEnvironmentsService.addMeasurement(quoteId, createdEnv.id, {
+          length: parseMeasurementValue(m.length),
+          width: parseMeasurementValue(m.width),
+          height: parseMeasurementValue(m.height),
+          area: parseMeasurementValue(m.area),
+          perimeter: parseMeasurementValue(m.perimeter),
+          observations: m.observations.trim() || undefined,
+        });
+      }
+    }
+  }
+
   const createMutation = useMutation({
     mutationFn: (data: CreateQuoteInput) => quotesService.create(data),
-    onSuccess: () => {
+    onSuccess: async (quote) => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'quotes'],
       });
+      try {
+        await persistEnvironments(quote.id);
+      } catch (error) {
+        setSnackbar({
+          type: 'error',
+          message: `Orçamento criado, mas falha ao salvar ambientes: ${toApiError(error).message}`,
+        });
+        return;
+      }
       setSnackbar({ type: 'success', message: 'Orçamento criado com sucesso' });
       setTimeout(() => router.back(), 600);
     },
@@ -1191,35 +1124,92 @@ export default function NovoOrcamentoScreen() {
   }
 
   function handleSelectClient(clientId: string) {
-    setDraft((d) => {
-      const workStillValid =
-        d.workId &&
-        worksQuery.data?.some(
-          (work) => work.id === d.workId && work.clientId === clientId,
-        );
-      return {
-        ...d,
-        clientId,
-        workId: workStillValid ? d.workId : '',
-        selectedMeasurementIds: [],
-      };
-    });
+    setDraft((d) => ({
+      ...d,
+      clientId,
+      environments: [],
+    }));
     setMaterialsCalc(null);
     setClientModalVisible(false);
   }
 
-  function handleSelectWork(workId: string) {
-    setDraft((d) => ({ ...d, workId, selectedMeasurementIds: [] }));
-    setMaterialsCalc(null);
-    setWorkModalVisible(false);
+  // ── Handlers de ambientes ───────────────────────────────────────────────────
+
+  let environmentIdCounter = 0;
+  function nextEnvironmentId(): string {
+    environmentIdCounter += 1;
+    return `env-${environmentIdCounter}`;
   }
 
-  function toggleMeasurement(id: string) {
+  function addEnvironment() {
+    const newEnv: QuoteEnvironmentDraft = {
+      id: nextEnvironmentId(),
+      name: '',
+      description: '',
+      order: draft.environments.length,
+      applicationType: 'DRYWALL',
+      measurement: {
+        length: '',
+        width: '',
+        height: '',
+        area: '',
+        perimeter: '',
+        observations: '',
+      },
+    };
     setDraft((d) => ({
       ...d,
-      selectedMeasurementIds: d.selectedMeasurementIds.includes(id)
-        ? d.selectedMeasurementIds.filter((x) => x !== id)
-        : [...d.selectedMeasurementIds, id],
+      environments: [...d.environments, newEnv],
+    }));
+  }
+
+  function updateEnvironment(
+    id: string,
+    field: keyof QuoteEnvironmentDraft,
+    value: string | MeasurementApplicationType,
+  ) {
+    setDraft((d) => ({
+      ...d,
+      environments: d.environments.map((env) =>
+        env.id === id ? { ...env, [field]: value } : env,
+      ),
+    }));
+  }
+
+  function removeEnvironment(id: string) {
+    setDraft((d) => ({
+      ...d,
+      environments: d.environments
+        .filter((env) => env.id !== id)
+        .map((env, index) => ({ ...env, order: index })),
+    }));
+  }
+
+  function updateMeasurement(
+    envId: string,
+    field: keyof QuoteEnvironmentMeasurementDraft,
+    value: string,
+  ) {
+    setDraft((d) => ({
+      ...d,
+      environments: d.environments.map((env) => {
+        if (env.id !== envId) return env;
+        const updatedMeasurement = { ...env.measurement, [field]: value };
+        // Auto-calculate area when length or width changes
+        if (field === 'length' || field === 'width') {
+          const length = parseNumber(updatedMeasurement.length);
+          const width = parseNumber(updatedMeasurement.width);
+          if (
+            !Number.isNaN(length) &&
+            !Number.isNaN(width) &&
+            length > 0 &&
+            width > 0
+          ) {
+            updatedMeasurement.area = String(length * width);
+          }
+        }
+        return { ...env, measurement: updatedMeasurement };
+      }),
     }));
   }
 
@@ -1233,8 +1223,8 @@ export default function NovoOrcamentoScreen() {
   }
 
   function handleRecalculate() {
-    if (selectedMeasurements.length === 0 || calcKey === '') return;
-    runMaterialsCalculation(selectedMeasurements, calcKey);
+    if (draft.environments.length === 0 || calcKey === '') return;
+    runMaterialsCalculation(draft.environments, calcKey);
   }
 
   function addService() {
@@ -1310,7 +1300,6 @@ export default function NovoOrcamentoScreen() {
 
     return {
       clientId: draft.clientId,
-      workId: draft.workId?.trim() || undefined,
       localAddress: hasLocal
         ? {
             cep: local.zipCode.trim() || undefined,
@@ -1409,36 +1398,6 @@ export default function NovoOrcamentoScreen() {
               </Pressable>
             </View>
           </AppCard>
-
-          <Text style={styles.sectionLabel}>Obra (opcional)</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Selecionar obra"
-            onPress={() => setWorkModalVisible(true)}
-            style={styles.selectorField}
-          >
-            <Ionicons
-              name="construct-outline"
-              size={sizes.icon.md}
-              color={colors.textSecondary}
-              accessibilityElementsHidden
-            />
-            <Text
-              style={[
-                styles.selectorText,
-                draft.workId === '' && styles.selectorPlaceholder,
-              ]}
-              numberOfLines={1}
-            >
-              {selectedWork?.name ?? 'Selecione uma obra (opcional)'}
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={sizes.icon.md}
-              color={colors.textLight}
-              accessibilityElementsHidden
-            />
-          </Pressable>
         </View>
       );
     }
@@ -1527,102 +1486,206 @@ export default function NovoOrcamentoScreen() {
       );
     }
 
-    if (stepKey === 'medicoes') {
-      if (!draft.workId) {
-        return (
-          <AppCard shadow="light" style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Ionicons
-                name="information-circle-outline"
-                size={sizes.icon.lg}
-                color={colors.info}
-                accessibilityElementsHidden
-              />
-              <Text style={styles.infoText}>
-                Selecione uma obra na Etapa 1 para carregar os ambientes
-                medidos. Você pode continuar sem medições.
-              </Text>
-            </View>
-          </AppCard>
-        );
-      }
-
-      if (measurementsQuery.isLoading) {
-        return <LoadingState text="Carregando ambientes..." />;
-      }
-
-      if (measurementsQuery.isError) {
-        return (
-          <ErrorState
-            message={toApiError(measurementsQuery.error).message}
-            onRetry={measurementsQuery.refetch}
-          />
-        );
-      }
-
-      if (measurements.length === 0) {
-        return (
-          <EmptyState
-            title="Nenhuma medição nesta obra"
-            description="Esta obra ainda não possui ambientes medidos. Você pode continuar sem medições."
-            icon="resize-outline"
-          />
-        );
-      }
-
+    if (stepKey === 'ambientes') {
       return (
         <View>
-          <Text style={styles.sectionLabel}>Ambientes da obra</Text>
-          {measurements.map((measurement) => {
-            const selected = draft.selectedMeasurementIds.includes(
-              measurement.id,
-            );
-            const badge = APPLICATION_TYPE_BADGE[measurement.applicationType];
-            const dims =
-              measurement.length != null && measurement.width != null
-                ? `${formatNumber(measurement.length)} × ${formatNumber(
-                    measurement.width,
-                  )} m`
-                : null;
-            return (
-              <Pressable
-                key={measurement.id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: selected }}
-                accessibilityLabel={`Selecionar ambiente ${measurement.environmentName}`}
-                onPress={() => toggleMeasurement(measurement.id)}
-                style={({ pressed }) => [
-                  styles.measurementOption,
-                  selected && styles.measurementOptionSelected,
-                  pressed && styles.clientOptionPressed,
-                ]}
-              >
-                <Ionicons
-                  name={selected ? 'checkbox' : 'square-outline'}
-                  size={22}
-                  color={selected ? colors.primary : colors.textLight}
-                  accessibilityElementsHidden
-                />
-                <View style={styles.measurementInfo}>
-                  <Text style={styles.measurementName} numberOfLines={1}>
-                    {measurement.environmentName}
+          <Text style={styles.sectionLabel}>Ambientes e medições</Text>
+
+          {draft.environments.length === 0 ? (
+            <EmptyState
+              title="Nenhum ambiente adicionado"
+              description="Adicione ambientes com as medições do local para calcular os materiais da composição."
+              icon="home-outline"
+            />
+          ) : (
+            <View>
+              {draft.environments.map((env) => (
+                <AppCard
+                  key={env.id}
+                  shadow="light"
+                  style={styles.environmentCard}
+                >
+                  <View style={styles.environmentHeader}>
+                    <View style={styles.environmentNameField}>
+                      <AppInput
+                        label="Nome do ambiente"
+                        required
+                        value={env.name}
+                        onChangeText={(text) =>
+                          updateEnvironment(env.id, 'name', text)
+                        }
+                        placeholder="Ex.: Sala de estar"
+                        accessibilityLabel={`Nome do ambiente ${
+                          env.order + 1
+                        }`}
+                      />
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remover ambiente ${env.name}`}
+                      onPress={() => removeEnvironment(env.id)}
+                      hitSlop={8}
+                      style={styles.removeEnvironmentButton}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={sizes.icon.sm}
+                        color={colors.error}
+                      />
+                    </Pressable>
+                  </View>
+
+                  <Text style={styles.environmentSectionLabel}>
+                    Tipo de aplicação
                   </Text>
-                  <Text style={styles.measurementMeta} numberOfLines={1}>
-                    {[dims, measurement.area != null ? `${formatNumber(measurement.area)} m²` : null]
-                      .filter(Boolean)
-                      .join(' · ')}
+                  <View style={styles.applicationTypeRow}>
+                    {(
+                      [
+                        'DRYWALL',
+                        'FORRO',
+                        'PAREDE',
+                        'SANCA',
+                        'REBAIXAMENTO',
+                        'OUTRO',
+                      ] as const
+                    ).map((type) => {
+                      const selected = env.applicationType === type;
+                      const badge = APPLICATION_TYPE_BADGE[type];
+                      return (
+                        <Pressable
+                          key={type}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Tipo de aplicação ${badge.label}`}
+                          accessibilityState={{ selected }}
+                          onPress={() =>
+                            updateEnvironment(env.id, 'applicationType', type)
+                          }
+                          style={[
+                            styles.applicationTypeChip,
+                            selected && styles.applicationTypeChipSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.applicationTypeChipText,
+                              selected &&
+                                styles.applicationTypeChipTextSelected,
+                            ]}
+                          >
+                            {badge.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={styles.environmentSectionLabel}>
+                    Medidas (em metros)
                   </Text>
-                </View>
-                <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-              </Pressable>
-            );
-          })}
-          <Text style={styles.selectionCount}>
-            {draft.selectedMeasurementIds.length}{' '}
-            {draft.selectedMeasurementIds.length === 1
-              ? 'ambiente selecionado'
-              : 'ambientes selecionados'}
-          </Text>
+                  <View style={styles.environmentMeasurementRow}>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Comprimento"
+                        value={env.measurement.length}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'length', text)
+                        }
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Comprimento do ambiente ${env.name}`}
+                      />
+                    </View>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Largura"
+                        value={env.measurement.width}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'width', text)
+                        }
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Largura do ambiente ${env.name}`}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.environmentMeasurementRow}>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Altura"
+                        value={env.measurement.height}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'height', text)
+                        }
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Altura do ambiente ${env.name}`}
+                      />
+                    </View>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Área (m²)"
+                        value={env.measurement.area}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'area', text)
+                        }
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Área do ambiente ${env.name}`}
+                        helper={
+                          env.measurement.length && env.measurement.width
+                            ? 'Auto-calculada'
+                            : undefined
+                        }
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.environmentMeasurementRow}>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Perímetro (m)"
+                        value={env.measurement.perimeter}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'perimeter', text)
+                        }
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Perímetro do ambiente ${env.name}`}
+                      />
+                    </View>
+                    <View style={styles.environmentMeasurementField}>
+                      <AppInput
+                        label="Observações"
+                        value={env.measurement.observations}
+                        onChangeText={(text) =>
+                          updateMeasurement(env.id, 'observations', text)
+                        }
+                        placeholder="Opcional"
+                        accessibilityLabel={`Observações do ambiente ${env.name}`}
+                      />
+                    </View>
+                  </View>
+                </AppCard>
+              ))}
+            </View>
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Adicionar ambiente"
+            onPress={addEnvironment}
+            style={({ pressed }) => [
+              styles.addItemButton,
+              pressed && styles.addItemButtonPressed,
+            ]}
+          >
+            <Ionicons
+              name="add"
+              size={sizes.icon.md}
+              color={colors.primary}
+              accessibilityElementsHidden
+            />
+            <Text style={styles.addItemText}>Adicionar ambiente</Text>
+          </Pressable>
         </View>
       );
     }
@@ -1632,10 +1695,10 @@ export default function NovoOrcamentoScreen() {
       return (
         <View>
           <Text style={styles.sectionLabel}>Materiais</Text>
-          {draft.selectedMeasurementIds.length === 0 ? (
+          {draft.environments.filter(environmentHasMeasurements).length === 0 ? (
             <EmptyState
-              title="Nenhum ambiente selecionado"
-              description="Selecione ao menos um ambiente na Etapa 3 para calcular os materiais da composição."
+              title="Nenhum ambiente com medições"
+              description="Adicione ambientes com medições na Etapa 3 para calcular os materiais da composição."
               icon="cube-outline"
             />
           ) : materialsCalcPending ? (
@@ -2128,18 +2191,42 @@ export default function NovoOrcamentoScreen() {
           ) : null}
 
           <View style={styles.reviewDivider} />
-          <Text style={styles.reviewSectionTitle}>Obra</Text>
-          <Text style={styles.reviewValue}>
-            {selectedWork?.name ?? 'Sem obra vinculada'}
+          <Text style={styles.reviewSectionTitle}>
+            Ambientes ({draft.environments.length})
           </Text>
-
-          <View style={styles.reviewDivider} />
-          <Text style={styles.reviewSectionTitle}>Ambientes medidos</Text>
-          <Text style={styles.reviewValue}>
-            {selectedMeasurementNames.length > 0
-              ? selectedMeasurementNames.join(', ')
-              : 'Nenhum ambiente selecionado'}
-          </Text>
+          {draft.environments.length === 0 ? (
+            <Text style={styles.reviewValue}>Nenhum ambiente adicionado</Text>
+          ) : (
+            draft.environments.map((env) => {
+              const m = env.measurement;
+              const dims = [
+                m.length ? `${formatNumber(parseNumber(m.length))} m` : null,
+                m.width ? `${formatNumber(parseNumber(m.width))} m` : null,
+                m.height
+                  ? `${formatNumber(parseNumber(m.height))} m`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' × ');
+              const area = m.area
+                ? `${formatNumber(parseNumber(m.area))} m²`
+                : null;
+              return (
+                <View key={env.id} style={styles.reviewItemRow}>
+                  <View>
+                    <Text style={styles.reviewItemName} numberOfLines={1}>
+                      {env.name || 'Ambiente sem nome'}
+                    </Text>
+                    {dims || area ? (
+                      <Text style={styles.reviewMeta} numberOfLines={1}>
+                        {[dims, area].filter(Boolean).join(' · ')}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })
+          )}
         </AppCard>
 
         <AppCard shadow="light" style={styles.reviewCard}>

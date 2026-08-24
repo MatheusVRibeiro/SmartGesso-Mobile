@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = `null`;
+
+exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `null`;
+
+exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`] = `null`;
