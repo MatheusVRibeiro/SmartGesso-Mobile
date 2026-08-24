@@ -13,38 +13,38 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppButton } from '../../../src/components/ui/AppButton';
-import { AppCard } from '../../../src/components/ui/AppCard';
-import { AppInput } from '../../../src/components/ui/AppInput';
-import { AppSnackbar } from '../../../src/components/ui/AppSnackbar';
-import type { AppSnackbarType } from '../../../src/components/ui/AppSnackbar';
-import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
-import { ErrorState } from '../../../src/components/ui/ErrorState';
-import { LoadingState } from '../../../src/components/ui/LoadingState';
-import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
-import { StatusBadge } from '../../../src/components/ui/StatusBadge';
-import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
-import { toApiError } from '../../../src/services/api/client';
-import { clientsService } from '../../../src/services/api/clients';
-import { expensesService } from '../../../src/services/api/expenses';
-import { paymentsService } from '../../../src/services/api/payments';
-import { productionOrdersService } from '../../../src/services/api/productionOrders';
-import { quotesService } from '../../../src/services/api/quotes';
-import { serviceOrdersService } from '../../../src/services/api/serviceOrders';
-import { useSessionStore } from '../../../src/store/useSessionStore';
-import { PermissionGate } from '../../../src/components/domain/PermissionGate';
-import { PhotoPicker } from '../../../src/components/domain/PhotoPicker';
-import { COST_VIEW_ROLES } from '../../../src/types/permissions';
-import { savePhotoLocally } from '../../../src/services/photos/photoStorage';
-import { borders, colors, radius, sizes, spacing, typography } from '../../../src/theme';
-import { formatCurrency, formatNumber } from '../../../src/utils/format';
-import type { PhotoAttachment } from '../../../src/types/photo';
+import { AppButton } from '../../../../src/components/ui/AppButton';
+import { AppCard } from '../../../../src/components/ui/AppCard';
+import { AppInput } from '../../../../src/components/ui/AppInput';
+import { AppSnackbar } from '../../../../src/components/ui/AppSnackbar';
+import type { AppSnackbarType } from '../../../../src/components/ui/AppSnackbar';
+import { ConfirmDialog } from '../../../../src/components/ui/ConfirmDialog';
+import { ErrorState } from '../../../../src/components/ui/ErrorState';
+import { LoadingState } from '../../../../src/components/ui/LoadingState';
+import { ScreenContainer } from '../../../../src/components/ui/ScreenContainer';
+import { StatusBadge } from '../../../../src/components/ui/StatusBadge';
+import type { StatusBadgeVariant } from '../../../../src/components/ui/StatusBadge';
+import { toApiError } from '../../../../src/services/api/client';
+import { clientsService } from '../../../../src/services/api/clients';
+import { expensesService } from '../../../../src/services/api/expenses';
+import { paymentsService } from '../../../../src/services/api/payments';
+import { productionOrdersService } from '../../../../src/services/api/productionOrders';
+import { quotesService } from '../../../../src/services/api/quotes';
+import { serviceOrdersService } from '../../../../src/services/api/serviceOrders';
+import { useSessionStore } from '../../../../src/store/useSessionStore';
+import { PermissionGate } from '../../../../src/components/domain/PermissionGate';
+import { PhotoPicker } from '../../../../src/components/domain/PhotoPicker';
+import { COST_VIEW_ROLES } from '../../../../src/types/permissions';
+import { savePhotoLocally } from '../../../../src/services/photos/photoStorage';
+import { borders, colors, radius, sizes, spacing, typography } from '../../../../src/theme';
+import { formatCurrency, formatNumber } from '../../../../src/utils/format';
+import type { PhotoAttachment } from '../../../../src/types/photo';
 import type {
   ProductionOrder,
   RegisterServiceOrderResultInput,
   ServiceOrder,
   ServiceOrderStatus,
-} from '../../../src/types/serviceOrder';
+} from '../../../../src/types/serviceOrder';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -760,6 +760,17 @@ export default function DetalheOrdemServicoScreen() {
             router.push({
               pathname: '/despesas/novo',
               params: { serviceOrderId: order.id },
+            }),
+        },
+        {
+          key: 'garantia',
+          label: 'Garantia / Retorno',
+          icon: 'shield-checkmark-outline' as const,
+          color: colors.info,
+          backgroundColor: colors.infoSoft,
+          onPress: () =>
+            router.push({
+              pathname: `/(app)/servicos/${order.id}/garantia`,
             }),
         },
         {

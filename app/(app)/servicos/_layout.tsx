@@ -14,6 +14,7 @@ export default function ServicosLayout() {
     >
       <Stack.Screen name="novo" options={{ title: 'Nova Ordem de Serviço' }} />
       <Stack.Screen name="[id]" options={{ title: 'Detalhes do Serviço' }} />
+      <Stack.Screen name="[id]/garantia" options={{ title: 'Garantia e Retorno' }} />
     </Stack>
   );
 }

@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { borders, colors, radius, sizes, spacing, typography } from '../../theme';
+import { borders, colors, radius, sizes, spacing, typography } from '../../../theme';
 import type { PickedAttachment } from './types';
 
 /** Estados do picker (ciclo de vida interno). */
@@ -148,7 +148,6 @@ export function AttachmentPicker({
 }
 
 export default AttachmentPicker;
-export { AttachmentPicker };
 
 const styles = StyleSheet.create({
   container: {

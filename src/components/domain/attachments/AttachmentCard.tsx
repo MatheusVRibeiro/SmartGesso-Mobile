@@ -14,7 +14,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { borders, colors, radius, sizes, spacing, typography } from '../../theme';
+import { borders, colors, radius, sizes, spacing, typography } from '../../../theme';
 import type { Attachment, AttachmentStatus } from './types';
 
 export interface AttachmentCardProps {
@@ -44,7 +44,7 @@ const STATUS_COLORS: Record<AttachmentStatus, string> = {
   failed: colors.danger,
 };
 
-const STATUS_ICONS: Record<AttachmentStatus, string> = {
+const STATUS_ICONS: Record<AttachmentStatus, React.ComponentProps<typeof Ionicons>['name']> = {
   pending: 'time-outline',
   uploading: 'sync-outline',
   uploaded: 'checkmark-circle',
@@ -145,7 +145,6 @@ export function AttachmentCard({
 }
 
 export default AttachmentCard;
-export { AttachmentCard };
 
 const styles = StyleSheet.create({
   card: {

@@ -18,7 +18,7 @@ describe('AttachmentCard', () => {
       <AttachmentCard attachment={baseAttachment} onRemove={jest.fn()} />,
     );
     expect(screen.getByText('foto-obra.jpg')).toBeTruthy();
-    expect(screen.getByText('200 KB')).toBeTruthy();
+    expect(screen.getByText('200.0 KB')).toBeTruthy();
     expect(screen.getByText('Pendente')).toBeTruthy();
   });
 
@@ -54,7 +54,7 @@ describe('AttachmentCard', () => {
     unmount();
 
     render(<AttachmentCard attachment={mb} onRemove={jest.fn()} />);
-    expect(screen.getByText('5 MB')).toBeTruthy();
+    expect(screen.getByText('5.0 MB')).toBeTruthy();
   });
 
   it('chama onRemove ao pressionar o botão remover', () => {

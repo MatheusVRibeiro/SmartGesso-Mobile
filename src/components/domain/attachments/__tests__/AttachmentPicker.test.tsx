@@ -100,7 +100,7 @@ describe('AttachmentPicker', () => {
   it('desabilita o botão quando disabled=true', () => {
     render(<AttachmentPicker onPick={jest.fn()} disabled />);
     const button = screen.getByRole('button', { name: 'Anexar foto' });
-    expect(button).toBeDisabled();
+    expect(button.props.accessibilityState?.disabled).toBe(true);
   });
 
   it('aplica testID ao container', () => {

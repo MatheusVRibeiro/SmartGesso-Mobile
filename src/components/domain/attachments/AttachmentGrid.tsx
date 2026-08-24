@@ -9,7 +9,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sizes, spacing, typography } from '../../theme';
+import { colors, sizes, spacing, typography } from '../../../theme';
 import { AttachmentCard } from './AttachmentCard';
 import { AttachmentPicker } from './AttachmentPicker';
 import type { Attachment, PickedAttachment } from './types';
@@ -85,7 +85,6 @@ export function AttachmentGrid({
 }
 
 export default AttachmentGrid;
-export { AttachmentGrid };
 
 const styles = StyleSheet.create({
   container: {
