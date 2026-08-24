@@ -17,6 +17,7 @@ export { compositionsService } from './api/compositions';
 export { quotesService } from './api/quotes';
 export { quoteEnvironmentsService } from './api/quoteEnvironments';
 export { serviceOrdersService } from './api/serviceOrders';
+export { serviceAdditionalsService } from './api/serviceAdditionals';
 export { productionOrdersService } from './api/productionOrders';
 export { paymentsService } from './api/payments';
 export { expensesService } from './api/expenses';
