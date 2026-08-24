@@ -7,6 +7,7 @@ import type { ComponentProps } from 'react';
 import { ScreenContainer } from '../../../src/components/ui/ScreenContainer';
 import { AppCard } from '../../../src/components/ui/AppCard';
 import { ConfirmDialog } from '../../../src/components/ui/ConfirmDialog';
+import { FeatureGate } from '../../../src/components/ui/FeatureGate';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { SecureTokenStorage } from '../../../src/services/auth/SecureTokenStorage';
 import { countNotifications } from '../../../src/services/notifications';
@@ -23,6 +24,8 @@ interface MenuItem {
   action?: () => void;
   /** Contagem exibida em badge (oculta quando ausente ou 0). */
   badge?: number;
+  /** Feature que controla a visibilidade deste item. */
+  feature?: string;
 }
 
 export default function MaisScreen() {
@@ -78,6 +81,7 @@ export default function MaisScreen() {
       icon: 'layers-outline',
       section: 'Operação',
       action: () => router.push('/producao'),
+      feature: 'production',
     },
     {
       id: 'estoque',
@@ -85,6 +89,15 @@ export default function MaisScreen() {
       icon: 'cube-outline',
       section: 'Operação',
       action: () => router.push('/catalogo/materiais'),
+      feature: 'inventory',
+    },
+    {
+      id: 'compras',
+      title: 'Compras',
+      icon: 'cart-outline',
+      section: 'Operação',
+      action: () => router.push('/compras'),
+      feature: 'purchases',
     },
 
     // Financeiro
@@ -174,39 +187,40 @@ export default function MaisScreen() {
             {menuItems
               .filter((item) => item.section === section)
               .map((item, index, array) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={item.action}
-                  style={[
-                    styles.menuItem,
-                    index < array.length - 1 && styles.menuItemBorder,
-                  ]}
-                  accessibilityLabel={item.title}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.menuItemContent}>
-                    <View style={styles.menuItemIcon}>
-                      <Ionicons
-                        name={item.icon}
-                        size={sizes.icon.md}
-                        color={colors.textSecondary}
-                        accessibilityElementsHidden
-                      />
-                    </View>
-                    <Text style={styles.menuItemTitle}>{item.title}</Text>
-                    {item.badge != null && item.badge > 0 ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                <FeatureGate key={item.id} feature={item.feature ?? ''} fallback={null}>
+                  <TouchableOpacity
+                    onPress={item.action}
+                    style={[
+                      styles.menuItem,
+                      index < array.length - 1 && styles.menuItemBorder,
+                    ]}
+                    accessibilityLabel={item.title}
+                    accessibilityRole="button"
+                  >
+                    <View style={styles.menuItemContent}>
+                      <View style={styles.menuItemIcon}>
+                        <Ionicons
+                          name={item.icon}
+                          size={sizes.icon.md}
+                          color={colors.textSecondary}
+                          accessibilityElementsHidden
+                        />
                       </View>
-                    ) : null}
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={sizes.icon.md}
-                    color={colors.textLight}
-                    accessibilityElementsHidden
-                  />
-                </TouchableOpacity>
+                      <Text style={styles.menuItemTitle}>{item.title}</Text>
+                      {item.badge != null && item.badge > 0 ? (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={sizes.icon.md}
+                      color={colors.textLight}
+                      accessibilityElementsHidden
+                    />
+                  </TouchableOpacity>
+                </FeatureGate>
               ))}
           </AppCard>
         </View>

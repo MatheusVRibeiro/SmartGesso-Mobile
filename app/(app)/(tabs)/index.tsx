@@ -4,16 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { AppCard } from '../../../src/components/ui/AppCard';
+import { AppButton } from '../../../src/components/ui/AppButton';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { dashboardService } from '../../../src/services/api/dashboard';
+import { quoteFollowUpsService } from '../../../src/services/api/quoteFollowUps';
 import { toApiError } from '../../../src/services/api/client';
 import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
+import type { QuoteFollowUp } from '../../../src/types/followUp';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -37,6 +41,34 @@ function formatShortDate(iso?: string | null): string {
 
 function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural;
+}
+
+/** Follow-up type → icon */
+function getFollowUpIcon(type: QuoteFollowUp['type']): IconName {
+  switch (type) {
+    case 'CALL':
+      return 'call-outline';
+    case 'WHATSAPP':
+      return 'logo-whatsapp';
+    case 'EMAIL':
+      return 'mail-outline';
+    default:
+      return 'chatbubble-outline';
+  }
+}
+
+/** Follow-up type → label */
+function getFollowUpTypeLabel(type: QuoteFollowUp['type']): string {
+  switch (type) {
+    case 'CALL':
+      return 'Ligação';
+    case 'WHATSAPP':
+      return 'WhatsApp';
+    case 'EMAIL':
+      return 'E-mail';
+    default:
+      return 'Outro';
+  }
 }
 
 // Status do orçamento → StatusBadge variant
@@ -116,6 +148,7 @@ function MetricCard({
 export default function HomeScreen() {
   const activeCompany = useSessionStore((s) => s.activeCompany);
   const currentUser = useSessionStore((s) => s.currentUser);
+  const router = useRouter();
 
   const companyId = activeCompany?.company?.id;
   const userName = currentUser?.name?.split(' ')[0] ?? 'usuário';
@@ -131,6 +164,15 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['dashboard', companyId],
     queryFn: () => dashboardService.getMetrics(),
+    enabled: Boolean(companyId),
+  });
+
+  const {
+    data: followUps,
+    isRefetching: isRefetchingFollowUps,
+  } = useQuery({
+    queryKey: ['follow-ups-today', companyId],
+    queryFn: () => quoteFollowUpsService.listToday(),
     enabled: Boolean(companyId),
   });
 
@@ -171,7 +213,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
+            refreshing={isRefetching || isRefetchingFollowUps}
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
@@ -259,6 +301,71 @@ export default function HomeScreen() {
             iconColor={colors.danger}
             valueColor={colors.danger}
           />
+        </View>
+
+        {/* Ações rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ações rápidas</Text>
+
+          <View style={styles.actionsGrid}>
+            <AppButton
+              title="Novo orçamento"
+              onPress={() => router.push('/(app)/(tabs)/novo')}
+              style={styles.actionButton}
+              testID="btn-new-quote"
+            />
+            <AppButton
+              title="Novo cliente"
+              variant="outline"
+              onPress={() => router.push('/(app)/clientes/novo')}
+              style={styles.actionButton}
+              testID="btn-new-client"
+            />
+          </View>
+        </View>
+
+        {/* Seção: Follow-ups do dia */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Follow-ups do dia</Text>
+          <Text style={styles.sectionSubtitle}>Acompanhamentos pendentes</Text>
+
+          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+            {!followUps || followUps.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhum follow-up para hoje</Text>
+            ) : (
+              followUps.slice(0, 5).map((followUp, index, array) => (
+                <View
+                  key={followUp.id}
+                  style={[
+                    styles.listItem,
+                    index < array.length - 1 && styles.listItemBorder,
+                  ]}
+                >
+                  <View style={[styles.listIconContainer, styles.listIconInfo]}>
+                    <Ionicons
+                      name={getFollowUpIcon(followUp.type)}
+                      size={sizes.icon.md}
+                      color={colors.info}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <View style={styles.listItemContent}>
+                    <Text style={styles.listItemTitle} numberOfLines={1}>
+                      {getFollowUpTypeLabel(followUp.type)}
+                    </Text>
+                    <Text style={styles.listItemValue} numberOfLines={1}>
+                      {followUp.notes ?? 'Sem notas'}
+                    </Text>
+                  </View>
+                  <StatusBadge
+                    status={followUp.status === 'PENDING' ? 'warning' : 'active'}
+                    label={followUp.status === 'PENDING' ? 'Pendente' : 'Feito'}
+                    size="sm"
+                  />
+                </View>
+              ))
+            )}
+          </AppCard>
         </View>
 
         {/* Seção: Serviços de hoje */}
@@ -510,9 +617,19 @@ const styles = StyleSheet.create({
   listIconWarning: {
     backgroundColor: colors.warningSoft,
   },
+  listIconInfo: {
+    backgroundColor: colors.infoSoft,
+  },
   dueDateText: {
     fontSize: typography.sizes.xs,
     color: colors.textSecondary,
     fontWeight: typography.weights.medium,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  actionButton: {
+    flex: 1,
   },
 });
