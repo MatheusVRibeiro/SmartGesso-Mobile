@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "SmartGesso",
+    "slug": "smartgesso",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "smartgesso",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.smartgesso.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O SmartGesso usa a galeria para anexar fotos a medições, serviços e clientes.",
+          "cameraPermission": "O SmartGesso usa a câmera para fotografar ambientes, serviços e clientes."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6740b007-d7b2-456d-8ec6-5002cfe59764"
+      },
+      "router": {}
+    },
+    "owner": "matheusvribeiro"
+  }
+}
