@@ -15,16 +15,16 @@ describe('useNetworkStatus', () => {
     jest.clearAllMocks();
   });
 
-  it('should return online by default', () => {
+  it('should return online by default', async () => {
     mockNetInfo.addEventListener.mockReturnValue(jest.fn());
 
-    const { result } = renderHook(() => useNetworkStatus());
+    const { result } = await renderHook(() => useNetworkStatus());
 
     expect(result.current.isOnline).toBe(true);
     expect(result.current.isOffline).toBe(false);
   });
 
-  it('should update status when network changes', () => {
+  it('should update status when network changes', async () => {
     let networkCallback: (state: any) => void = jest.fn();
     
     mockNetInfo.addEventListener.mockImplementation((callback) => {
@@ -32,10 +32,10 @@ describe('useNetworkStatus', () => {
       return jest.fn();
     });
 
-    const { result } = renderHook(() => useNetworkStatus());
+    const { result } = await renderHook(() => useNetworkStatus());
 
     // Simulate going offline
-    act(() => {
+    await act(() => {
       networkCallback({
         isConnected: false,
         isInternetReachable: false,
@@ -46,7 +46,7 @@ describe('useNetworkStatus', () => {
     expect(result.current.isOffline).toBe(true);
 
     // Simulate going back online
-    act(() => {
+    await act(() => {
       networkCallback({
         isConnected: true,
         isInternetReachable: true,
@@ -57,7 +57,7 @@ describe('useNetworkStatus', () => {
     expect(result.current.isOffline).toBe(false);
   });
 
-  it('should handle null values as online (optimistic heuristic)', () => {
+  it('should handle null values as online (optimistic heuristic)', async () => {
     let networkCallback: (state: any) => void = jest.fn();
     
     mockNetInfo.addEventListener.mockImplementation((callback) => {
@@ -65,10 +65,10 @@ describe('useNetworkStatus', () => {
       return jest.fn();
     });
 
-    const { result } = renderHook(() => useNetworkStatus());
+    const { result } = await renderHook(() => useNetworkStatus());
 
     // Simulate null values (first reading)
-    act(() => {
+    await act(() => {
       networkCallback({
         isConnected: null,
         isInternetReachable: null,
