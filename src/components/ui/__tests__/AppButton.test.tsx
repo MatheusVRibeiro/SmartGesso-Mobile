@@ -3,46 +3,46 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import AppButton from '../AppButton';
 
 describe('AppButton', () => {
-  it('renderiza o título corretamente', () => {
-    render(<AppButton title="Salvar" onPress={() => {}} />);
+  it('renderiza o título corretamente', async () => {
+    await render(<AppButton title="Salvar" onPress={() => {}} />);
     expect(screen.getByText('Salvar')).toBeTruthy();
   });
 
-  it('renderiza com variante primária por padrão', () => {
-    render(<AppButton title="Enviar" onPress={() => {}} />);
+  it('renderiza com variante primária por padrão', async () => {
+    await render(<AppButton title="Enviar" onPress={() => {}} />);
     expect(screen.getByText('Enviar')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeTruthy();
   });
 
-  it('renderiza com variante secondary', () => {
-    render(<AppButton title="Cancelar" variant="secondary" onPress={() => {}} />);
+  it('renderiza com variante secondary', async () => {
+    await render(<AppButton title="Cancelar" variant="secondary" onPress={() => {}} />);
     expect(screen.getByText('Cancelar')).toBeTruthy();
   });
 
-  it('renderiza com variante outline', () => {
-    render(<AppButton title="Outline" variant="outline" onPress={() => {}} />);
+  it('renderiza com variante outline', async () => {
+    await render(<AppButton title="Outline" variant="outline" onPress={() => {}} />);
     expect(screen.getByText('Outline')).toBeTruthy();
   });
 
-  it('renderiza com variante danger', () => {
-    render(<AppButton title="Excluir" variant="danger" onPress={() => {}} />);
+  it('renderiza com variante danger', async () => {
+    await render(<AppButton title="Excluir" variant="danger" onPress={() => {}} />);
     expect(screen.getByText('Excluir')).toBeTruthy();
   });
 
-  it('renderiza com variante ghost', () => {
-    render(<AppButton title="Ghost" variant="ghost" onPress={() => {}} />);
+  it('renderiza com variante ghost', async () => {
+    await render(<AppButton title="Ghost" variant="ghost" onPress={() => {}} />);
     expect(screen.getByText('Ghost')).toBeTruthy();
   });
 
-  it('chama onPress ao pressionar', () => {
+  it('chama onPress ao pressionar', async () => {
     const onPress = jest.fn();
-    render(<AppButton title="Clicar" onPress={onPress} />);
-    fireEvent.press(screen.getByText('Clicar'));
+    await render(<AppButton title="Clicar" onPress={onPress} />);
+    await fireEvent.press(screen.getByText('Clicar'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('renderiza label de acessibilidade customizado', () => {
-    render(
+  it('renderiza label de acessibilidade customizado', async () => {
+    await render(
       <AppButton
         title="OK"
         accessibilityLabel="Confirmar ação"
@@ -52,13 +52,13 @@ describe('AppButton', () => {
     expect(screen.getByRole('button', { name: 'Confirmar ação' })).toBeTruthy();
   });
 
-  it('renderiza com tamanho sm', () => {
-    render(<AppButton title="Pequeno" size="sm" onPress={() => {}} />);
+  it('renderiza com tamanho sm', async () => {
+    await render(<AppButton title="Pequeno" size="sm" onPress={() => {}} />);
     expect(screen.getByText('Pequeno')).toBeTruthy();
   });
 
-  it('renderiza com tamanho lg', () => {
-    render(<AppButton title="Grande" size="lg" onPress={() => {}} />);
+  it('renderiza com tamanho lg', async () => {
+    await render(<AppButton title="Grande" size="lg" onPress={() => {}} />);
     expect(screen.getByText('Grande')).toBeTruthy();
   });
 });

@@ -15,14 +15,14 @@ describe('FeatureGate', () => {
     jest.clearAllMocks();
   });
 
-  it('renderiza children quando feature está habilitada', () => {
+  it('renderiza children quando feature está habilitada', async () => {
     mockedUseCompanyFeatures.mockReturnValue({
       data: ['production', 'inventory'],
       isLoading: false,
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production">
         <View testID="content">
           <Text>Conteúdo protegido</Text>
@@ -34,14 +34,14 @@ describe('FeatureGate', () => {
     expect(screen.getByText('Conteúdo protegido')).toBeTruthy();
   });
 
-  it('renderiza fallback quando feature não está habilitada', () => {
+  it('renderiza fallback quando feature não está habilitada', async () => {
     mockedUseCompanyFeatures.mockReturnValue({
       data: ['inventory'],
       isLoading: false,
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production" fallback={
         <View testID="fallback">
           <Text>Fallback</Text>
@@ -58,14 +58,14 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('renderiza null quando feature não está habilitada e não há fallback', () => {
+  it('renderiza null quando feature não está habilitada e não há fallback', async () => {
     mockedUseCompanyFeatures.mockReturnValue({
       data: ['inventory'],
       isLoading: false,
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production">
         <View testID="content">
           <Text>Conteúdo protegido</Text>
@@ -76,14 +76,14 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('renderiza fallback durante carregamento', () => {
+  it('renderiza fallback durante carregamento', async () => {
     mockedUseCompanyFeatures.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production" fallback={
         <View testID="fallback">
           <Text>Carregando...</Text>
@@ -100,7 +100,7 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('não renderiza children quando features estão undefined (ex.: erro) — comportamento defensivo', () => {
+  it('não renderiza children quando features estão undefined (ex.: erro) — comportamento defensivo', async () => {
     // Com features indefinidas (erro/sem dados) e sem loading, o gate
     // NÃO libera o conteúdo: `features?.includes(...) ?? false` → false.
     mockedUseCompanyFeatures.mockReturnValue({
@@ -109,7 +109,7 @@ describe('FeatureGate', () => {
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production">
         <View testID="content">
           <Text>Conteúdo protegido</Text>
@@ -120,14 +120,14 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('repassa accessibilityLabel ao filho renderizado', () => {
+  it('repassa accessibilityLabel ao filho renderizado', async () => {
     mockedUseCompanyFeatures.mockReturnValue({
       data: ['production'],
       isLoading: false,
       error: null,
     } as any);
 
-    render(
+    await render(
       <FeatureGate feature="production" accessibilityLabel="Nova produção">
         <View testID="gated">
           <Text>Botão</Text>
