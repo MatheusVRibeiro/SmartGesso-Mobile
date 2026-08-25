@@ -44,7 +44,7 @@ describe('useCompanyFeatures', () => {
   it('inicia em loading e retorna features após sucesso', async () => {
     mockClient.get.mockResolvedValue({ data: ['production', 'inventory'] });
 
-    const { result } = renderHook(() => useCompanyFeatures(), {
+    const { result } = await renderHook(() => useCompanyFeatures(), {
       wrapper: createWrapper(),
     });
 
@@ -58,7 +58,7 @@ describe('useCompanyFeatures', () => {
   it('retorna array vazio quando não há features', async () => {
     mockClient.get.mockResolvedValue({ data: [] });
 
-    const { result } = renderHook(() => useCompanyFeatures(), {
+    const { result } = await renderHook(() => useCompanyFeatures(), {
       wrapper: createWrapper(),
     });
 
@@ -69,7 +69,7 @@ describe('useCompanyFeatures', () => {
   it('propaga erro quando a requisição falha', async () => {
     mockClient.get.mockRejectedValue(new Error('Network error'));
 
-    const { result } = renderHook(() => useCompanyFeatures(), {
+    const { result } = await renderHook(() => useCompanyFeatures(), {
       wrapper: createWrapper(),
     });
 

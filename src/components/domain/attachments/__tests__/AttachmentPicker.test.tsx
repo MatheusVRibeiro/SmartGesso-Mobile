@@ -38,14 +38,14 @@ describe('AttachmentPicker', () => {
     } as any);
   });
 
-  it('renderiza o rótulo e o hint por padrão', () => {
-    render(<AttachmentPicker onPick={jest.fn()} />);
+  it('renderiza o rótulo e o hint por padrão', async () => {
+    await render(<AttachmentPicker onPick={jest.fn()} />);
     expect(screen.getByText('Anexar foto')).toBeTruthy();
     expect(screen.getByText('Toque para escolher na galeria')).toBeTruthy();
   });
 
-  it('renderiza rótulo customizado', () => {
-    render(
+  it('renderiza rótulo customizado', async () => {
+    await render(
       <AttachmentPicker onPick={jest.fn()} label="Anexar documento" hint="PDF ou imagem" />,
     );
     expect(screen.getByText('Anexar documento')).toBeTruthy();
@@ -54,9 +54,9 @@ describe('AttachmentPicker', () => {
 
   it('chama onPick com uri, mimeType e size ao selecionar uma imagem', async () => {
     const onPick = jest.fn();
-    render(<AttachmentPicker onPick={onPick} />);
+    await render(<AttachmentPicker onPick={onPick} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
 
     await waitFor(() => {
       expect(onPick).toHaveBeenCalledTimes(1);
@@ -75,9 +75,9 @@ describe('AttachmentPicker', () => {
     } as any);
 
     const onPick = jest.fn();
-    render(<AttachmentPicker onPick={onPick} />);
+    await render(<AttachmentPicker onPick={onPick} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
 
     await waitFor(() => {
       expect(onPick).not.toHaveBeenCalled();
@@ -88,23 +88,23 @@ describe('AttachmentPicker', () => {
     mockedRequestPermission.mockResolvedValue({ granted: false } as any);
 
     const onPick = jest.fn();
-    render(<AttachmentPicker onPick={onPick} />);
+    await render(<AttachmentPicker onPick={onPick} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Anexar foto' }));
 
     await waitFor(() => {
       expect(onPick).not.toHaveBeenCalled();
     });
   });
 
-  it('desabilita o botão quando disabled=true', () => {
-    render(<AttachmentPicker onPick={jest.fn()} disabled />);
+  it('desabilita o botão quando disabled=true', async () => {
+    await render(<AttachmentPicker onPick={jest.fn()} disabled />);
     const button = screen.getByRole('button', { name: 'Anexar foto' });
     expect(button.props.accessibilityState?.disabled).toBe(true);
   });
 
-  it('aplica testID ao container', () => {
-    render(<AttachmentPicker onPick={jest.fn()} testID="my-picker" />);
+  it('aplica testID ao container', async () => {
+    await render(<AttachmentPicker onPick={jest.fn()} testID="my-picker" />);
     expect(screen.getByTestId('my-picker')).toBeTruthy();
   });
 });

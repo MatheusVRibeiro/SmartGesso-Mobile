@@ -13,8 +13,8 @@ const baseAttachment: Attachment = {
 };
 
 describe('AttachmentCard', () => {
-  it('renderiza nome, tamanho e estado do anexo', () => {
-    render(
+  it('renderiza nome, tamanho e estado do anexo', async () => {
+    await render(
       <AttachmentCard attachment={baseAttachment} onRemove={jest.fn()} />,
     );
     expect(screen.getByText('foto-obra.jpg')).toBeTruthy();
@@ -22,52 +22,52 @@ describe('AttachmentCard', () => {
     expect(screen.getByText('Pendente')).toBeTruthy();
   });
 
-  it('exibe estado "Enviando" com cor info', () => {
+  it('exibe estado "Enviando" com cor info', async () => {
     const attachment: Attachment = { ...baseAttachment, status: 'uploading' };
-    render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
     expect(screen.getByText('Enviando')).toBeTruthy();
   });
 
-  it('exibe estado "Enviado" com cor success', () => {
+  it('exibe estado "Enviado" com cor success', async () => {
     const attachment: Attachment = { ...baseAttachment, status: 'uploaded' };
-    render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
     expect(screen.getByText('Enviado')).toBeTruthy();
   });
 
-  it('exibe estado "Falhou" com cor danger', () => {
+  it('exibe estado "Falhou" com cor danger', async () => {
     const attachment: Attachment = { ...baseAttachment, status: 'failed' };
-    render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
     expect(screen.getByText('Falhou')).toBeTruthy();
   });
 
-  it('formata tamanho em bytes, KB, MB', () => {
+  it('formata tamanho em bytes, KB, MB', async () => {
     const bytes: Attachment = { ...baseAttachment, size: 500 };
     const kb: Attachment = { ...baseAttachment, size: 1536 };
     const mb: Attachment = { ...baseAttachment, size: 5242880 };
 
-    const { unmount } = render(<AttachmentCard attachment={bytes} onRemove={jest.fn()} />);
+    const { unmount } = await render(<AttachmentCard attachment={bytes} onRemove={jest.fn()} />);
     expect(screen.getByText('500 B')).toBeTruthy();
-    unmount();
+    await unmount();
 
-    render(<AttachmentCard attachment={kb} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={kb} onRemove={jest.fn()} />);
     expect(screen.getByText('1.5 KB')).toBeTruthy();
-    unmount();
+    await unmount();
 
-    render(<AttachmentCard attachment={mb} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={mb} onRemove={jest.fn()} />);
     expect(screen.getByText('5.0 MB')).toBeTruthy();
   });
 
-  it('chama onRemove ao pressionar o botão remover', () => {
+  it('chama onRemove ao pressionar o botão remover', async () => {
     const onRemove = jest.fn();
-    render(<AttachmentCard attachment={baseAttachment} onRemove={onRemove} />);
-    fireEvent.press(screen.getByTestId('remove-1'));
+    await render(<AttachmentCard attachment={baseAttachment} onRemove={onRemove} />);
+    await fireEvent.press(screen.getByTestId('remove-1'));
     expect(onRemove).toHaveBeenCalledTimes(1);
     expect(onRemove).toHaveBeenCalledWith(baseAttachment);
   });
 
-  it('mostra botão de retry apenas quando status é failed e onRetry é fornecido', () => {
+  it('mostra botão de retry apenas quando status é failed e onRetry é fornecido', async () => {
     const attachment: Attachment = { ...baseAttachment, status: 'failed' };
-    render(
+    await render(
       <AttachmentCard
         attachment={attachment}
         onRemove={jest.fn()}
@@ -77,34 +77,34 @@ describe('AttachmentCard', () => {
     expect(screen.getByTestId('retry-1')).toBeTruthy();
   });
 
-  it('não mostra botão de retry quando status não é failed', () => {
-    render(<AttachmentCard attachment={baseAttachment} onRemove={jest.fn()} />);
+  it('não mostra botão de retry quando status não é failed', async () => {
+    await render(<AttachmentCard attachment={baseAttachment} onRemove={jest.fn()} />);
     expect(screen.queryByTestId('retry-1')).toBeNull();
   });
 
-  it('não mostra botão de retry quando onRetry não é fornecido', () => {
+  it('não mostra botão de retry quando onRetry não é fornecido', async () => {
     const attachment: Attachment = { ...baseAttachment, status: 'failed' };
-    render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
+    await render(<AttachmentCard attachment={attachment} onRemove={jest.fn()} />);
     expect(screen.queryByTestId('retry-1')).toBeNull();
   });
 
-  it('chama onRetry ao pressionar o botão de retry', () => {
+  it('chama onRetry ao pressionar o botão de retry', async () => {
     const onRetry = jest.fn();
     const attachment: Attachment = { ...baseAttachment, status: 'failed' };
-    render(
+    await render(
       <AttachmentCard
         attachment={attachment}
         onRemove={jest.fn()}
         onRetry={onRetry}
       />,
     );
-    fireEvent.press(screen.getByTestId('retry-1'));
+    await fireEvent.press(screen.getByTestId('retry-1'));
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onRetry).toHaveBeenCalledWith(attachment);
   });
 
-  it('aplica testID ao card', () => {
-    render(
+  it('aplica testID ao card', async () => {
+    await render(
       <AttachmentCard
         attachment={baseAttachment}
         onRemove={jest.fn()}

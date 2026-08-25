@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import TestRenderer from 'react-test-renderer';
 
 // Mock useQuery with a mutable implementation
 const mockUseQuery = jest.fn();
@@ -68,37 +67,37 @@ describe('HomeScreen (Dashboard)', () => {
     mockUseQuery.mockReturnValue(defaultQueryResult);
   });
 
-  it('renderiza a saudação com o nome do usuário', () => {
-    render(<HomeScreen />);
+  it('renderiza a saudação com o nome do usuário', async () => {
+    await render(<HomeScreen />);
     expect(screen.getByText('Olá, João')).toBeTruthy();
   });
 
-  it('renderiza o nome da empresa', () => {
-    render(<HomeScreen />);
+  it('renderiza o nome da empresa', async () => {
+    await render(<HomeScreen />);
     expect(screen.getByText('SmartGesso Test')).toBeTruthy();
   });
 
-  it('renderiza os cards de métricas', () => {
-    render(<HomeScreen />);
+  it('renderiza os cards de métricas', async () => {
+    await render(<HomeScreen />);
     expect(screen.getByText('A receber')).toBeTruthy();
     expect(screen.getByText('Serviços hoje')).toBeTruthy();
     expect(screen.getByText('Orçamentos abertos')).toBeTruthy();
     expect(screen.getByText('Despesas do mês')).toBeTruthy();
   });
 
-  it('renderiza as ações rápidas', () => {
-    render(<HomeScreen />);
+  it('renderiza as ações rápidas', async () => {
+    await render(<HomeScreen />);
     expect(screen.getByText('Novo orçamento')).toBeTruthy();
     expect(screen.getByText('Novo cliente')).toBeTruthy();
   });
 
-  it('renderiza a seção de follow-ups', () => {
-    render(<HomeScreen />);
+  it('renderiza a seção de follow-ups', async () => {
+    await render(<HomeScreen />);
     expect(screen.getByText('Follow-ups do dia')).toBeTruthy();
     expect(screen.getByText('Acompanhamentos pendentes')).toBeTruthy();
   });
 
-  it('renderiza loading state quando isLoading é true', () => {
+  it('renderiza loading state quando isLoading é true', async () => {
     // Configura mock para retornar isLoading: true na primeira chamada (dashboard)
     mockUseQuery
       .mockReturnValueOnce({
@@ -107,11 +106,11 @@ describe('HomeScreen (Dashboard)', () => {
       })
       .mockReturnValue(defaultQueryResult);
 
-    render(<HomeScreen />);
+    await render(<HomeScreen />);
     expect(screen.getByText('Carregando dashboard...')).toBeTruthy();
   });
 
-  it('renderiza follow-ups quando há dados', () => {
+  it('renderiza follow-ups quando há dados', async () => {
     const mockFollowUps = [
       {
         id: '1',
@@ -137,7 +136,7 @@ describe('HomeScreen (Dashboard)', () => {
         data: mockFollowUps,
       });
 
-    render(<HomeScreen />);
+    await render(<HomeScreen />);
     expect(screen.getByText('Ligação')).toBeTruthy();
     expect(screen.getByText('Retorno sobre orçamento')).toBeTruthy();
     expect(screen.getByText('WhatsApp')).toBeTruthy();

@@ -14,31 +14,31 @@ describe('ValoresStep', () => {
     onMarginPctChange: jest.fn(),
   };
 
-  it('renderiza os totais de materiais, serviços e subtotal', () => {
-    render(<ValoresStep {...defaultProps} />);
+  it('renderiza os totais de materiais, serviços e subtotal', async () => {
+    await render(<ValoresStep {...defaultProps} />);
     expect(screen.getByText('R$ 1.500,00')).toBeTruthy();
     expect(screen.getByText('R$ 500,00')).toBeTruthy();
     expect(screen.getByText('R$ 2.000,00')).toBeTruthy();
   });
 
-  it('renderiza o total final com desconto aplicado', () => {
-    render(<ValoresStep {...defaultProps} />);
+  it('renderiza o total final com desconto aplicado', async () => {
+    await render(<ValoresStep {...defaultProps} />);
     expect(screen.getByText('R$ 1.900,00')).toBeTruthy();
   });
 
-  it('chama onDiscountChange ao editar o desconto', () => {
+  it('chama onDiscountChange ao editar o desconto', async () => {
     const onDiscountChange = jest.fn();
-    render(<ValoresStep {...defaultProps} onDiscountChange={onDiscountChange} />);
+    await render(<ValoresStep {...defaultProps} onDiscountChange={onDiscountChange} />);
     const input = screen.getByLabelText('Desconto');
-    fireEvent.changeText(input, '200');
+    await fireEvent.changeText(input, '200');
     expect(onDiscountChange).toHaveBeenCalledWith('200');
   });
 
-  it('chama onMarginPctChange ao editar a margem', () => {
+  it('chama onMarginPctChange ao editar a margem', async () => {
     const onMarginPctChange = jest.fn();
-    render(<ValoresStep {...defaultProps} onMarginPctChange={onMarginPctChange} />);
+    await render(<ValoresStep {...defaultProps} onMarginPctChange={onMarginPctChange} />);
     const input = screen.getByLabelText('Margem percentual');
-    fireEvent.changeText(input, '10');
+    await fireEvent.changeText(input, '10');
     expect(onMarginPctChange).toHaveBeenCalledWith('10');
   });
 });

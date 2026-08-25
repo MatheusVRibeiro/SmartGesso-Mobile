@@ -18,8 +18,8 @@ describe('ClienteStep', () => {
     updatedAt: '2024-01-01',
   };
 
-  it('renderiza o nome do cliente selecionado', () => {
-    render(
+  it('renderiza o nome do cliente selecionado', async () => {
+    await render(
       <ClienteStep
         clientId="client-1"
         selectedClient={mockClient}
@@ -29,8 +29,8 @@ describe('ClienteStep', () => {
     expect(screen.getByText('João da Silva')).toBeTruthy();
   });
 
-  it('renderiza placeholder quando nenhum cliente selecionado', () => {
-    render(
+  it('renderiza placeholder quando nenhum cliente selecionado', async () => {
+    await render(
       <ClienteStep
         clientId=""
         selectedClient={undefined}
@@ -40,16 +40,16 @@ describe('ClienteStep', () => {
     expect(screen.getByText('Selecione um cliente')).toBeTruthy();
   });
 
-  it('chama onOpenClientModal ao pressionar "Trocar"', () => {
+  it('chama onOpenClientModal ao pressionar "Trocar"', async () => {
     const onOpenClientModal = jest.fn();
-    render(
+    await render(
       <ClienteStep
         clientId="client-1"
         selectedClient={mockClient}
         onOpenClientModal={onOpenClientModal}
       />,
     );
-    fireEvent.press(screen.getByText('Trocar'));
+    await fireEvent.press(screen.getByText('Trocar'));
     expect(onOpenClientModal).toHaveBeenCalledTimes(1);
   });
 });
