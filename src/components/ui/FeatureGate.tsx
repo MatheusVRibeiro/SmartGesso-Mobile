@@ -6,19 +6,20 @@ import { useCompanyFeatures } from '../../services/api/companyFeatures';
  *
  * - Se a feature estiver habilitada, renderiza `children`.
  * - Caso contrário, renderiza `fallback` (ou null se não fornecido).
+ * - Se `feature` for vazio/undefined, SEMPRE renderiza children
+ *   (feature não é obrigatória — itens comuns não são gated).
  *
  * Uso:
  * <FeatureGate feature="production">
  *   <BotaoProducao />
  * </FeatureGate>
- *
- * ETAPA 17a — Acessibilidade: `accessibilityLabel` opcional é repassado ao
- * filho renderizado quando ele é um único elemento (ex.: um TouchableOpacity),
- * permitindo rotular botões protegidos por feature sem duplicar o wrapper.
+ * <FeatureGate>  (sem feature = sempre visível)
+ *   <ItemComum />
+ * </FeatureGate>
  */
 export interface FeatureGateProps {
-  /** Nome da feature (ex.: 'production', 'inventory', 'purchases'). */
-  feature: string;
+  /** Nome da feature (ex.: 'production', 'inventory', 'purchases'). Vazio = sem gate. */
+  feature?: string;
   children: React.ReactNode;
   /** Conteúdo exibido quando a feature NÃO está habilitada. */
   fallback?: React.ReactNode;
@@ -32,6 +33,11 @@ function FeatureGate({
   fallback = null,
   accessibilityLabel,
 }: FeatureGateProps) {
+  // Sem feature definida → sempre visível (não é um item feature-gated)
+  if (!feature) {
+    return <>{children}</>;
+  }
+
   const { data: features, isLoading } = useCompanyFeatures();
 
   // Enquanto carrega, não renderiza nada (ou fallback)
@@ -39,7 +45,15 @@ function FeatureGate({
     return <>{fallback}</>;
   }
 
-  const isEnabled = features?.includes(feature) ?? false;
+  const featureList = Array.isArray(features)
+    ? features
+    : (features && Array.isArray((features as any).features))
+    ? (features as any).features
+    : (features && Array.isArray((features as any).data))
+    ? (features as any).data
+    : [];
+
+  const isEnabled = featureList.includes(feature);
   const content = isEnabled ? children : fallback;
 
   // Repassa o rótulo ao filho quando é um único elemento (não Fragment),

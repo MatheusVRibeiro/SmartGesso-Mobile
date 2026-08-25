@@ -187,7 +187,7 @@ export default function MaisScreen() {
             {menuItems
               .filter((item) => item.section === section)
               .map((item, index, array) => (
-                <FeatureGate key={item.id} feature={item.feature ?? ''} fallback={null}>
+                <FeatureGate key={item.id} feature={item.feature} fallback={null}>
                   <TouchableOpacity
                     onPress={item.action}
                     style={[
