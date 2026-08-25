@@ -6,7 +6,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
     [
       {
         "backgroundColor": "#FFFFFF",
-        "borderColor": "#E0E7FF",
+        "borderColor": "#E2E8F0",
         "borderWidth": 1,
       },
       {
@@ -28,7 +28,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
     accessibilityRole="header"
     style={
       {
-        "color": "#312E81",
+        "color": "#0F172A",
         "fontSize": 16,
         "fontWeight": "600",
         "marginBottom": 8,
@@ -40,7 +40,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -67,7 +67,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -86,7 +86,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -109,7 +109,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -128,7 +128,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -151,7 +151,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -170,7 +170,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#6366F1",
+            "color": "#2563EB",
           },
         ]
       }
@@ -193,7 +193,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -212,7 +212,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#059669",
+            "color": "#10B981",
           },
         ]
       }
@@ -235,7 +235,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -254,7 +254,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -265,7 +265,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -292,7 +292,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -311,7 +311,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -322,7 +322,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -349,7 +349,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -368,7 +368,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -391,7 +391,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -410,7 +410,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -433,7 +433,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -452,7 +452,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -469,7 +469,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
     [
       {
         "backgroundColor": "#FFFFFF",
-        "borderColor": "#E0E7FF",
+        "borderColor": "#E2E8F0",
         "borderWidth": 1,
       },
       {
@@ -491,7 +491,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
     accessibilityRole="header"
     style={
       {
-        "color": "#312E81",
+        "color": "#0F172A",
         "fontSize": 16,
         "fontWeight": "600",
         "marginBottom": 8,
@@ -503,7 +503,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -530,7 +530,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -549,7 +549,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -572,7 +572,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -591,7 +591,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -614,7 +614,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -633,7 +633,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#6366F1",
+            "color": "#2563EB",
           },
         ]
       }
@@ -656,7 +656,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -675,7 +675,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#6D6A9E",
+            "color": "#475569",
           },
         ]
       }
@@ -698,7 +698,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -717,7 +717,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -728,7 +728,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -755,7 +755,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -774,7 +774,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -785,7 +785,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -812,7 +812,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -831,7 +831,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#6D6A9E",
+            "color": "#475569",
           },
         ]
       }
@@ -854,7 +854,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -873,7 +873,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#6D6A9E",
+            "color": "#475569",
           },
         ]
       }
@@ -896,7 +896,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -915,7 +915,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
             "textAlign": "right",
           },
           {
-            "color": "#6D6A9E",
+            "color": "#475569",
           },
         ]
       }
@@ -932,7 +932,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
     [
       {
         "backgroundColor": "#FFFFFF",
-        "borderColor": "#E0E7FF",
+        "borderColor": "#E2E8F0",
         "borderWidth": 1,
       },
       {
@@ -954,7 +954,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
     accessibilityRole="header"
     style={
       {
-        "color": "#312E81",
+        "color": "#0F172A",
         "fontSize": 16,
         "fontWeight": "600",
         "marginBottom": 8,
@@ -966,7 +966,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -993,7 +993,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1012,7 +1012,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -1035,7 +1035,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1054,7 +1054,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#312E81",
+            "color": "#0F172A",
           },
         ]
       }
@@ -1077,7 +1077,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1096,7 +1096,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#6366F1",
+            "color": "#2563EB",
           },
         ]
       }
@@ -1119,7 +1119,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1138,7 +1138,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#059669",
+            "color": "#10B981",
           },
         ]
       }
@@ -1161,7 +1161,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1180,7 +1180,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -1191,7 +1191,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -1218,7 +1218,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1237,7 +1237,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#DC2626",
+            "color": "#EF4444",
           },
         ]
       }
@@ -1248,7 +1248,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
   <Text
     style={
       {
-        "color": "#9B98C4",
+        "color": "#94A3B8",
         "fontSize": 12,
         "fontWeight": "500",
         "letterSpacing": 0.5,
@@ -1275,7 +1275,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1294,7 +1294,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#059669",
+            "color": "#10B981",
           },
         ]
       }
@@ -1317,7 +1317,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1336,7 +1336,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#059669",
+            "color": "#10B981",
           },
         ]
       }
@@ -1359,7 +1359,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
       numberOfLines={1}
       style={
         {
-          "color": "#6D6A9E",
+          "color": "#475569",
           "flex": 1,
           "fontSize": 14,
         }
@@ -1378,7 +1378,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
             "textAlign": "right",
           },
           {
-            "color": "#059669",
+            "color": "#10B981",
           },
         ]
       }

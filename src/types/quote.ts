@@ -112,6 +112,12 @@ export interface ApproveQuoteResponse {
   serviceOrderCreated: boolean;
 }
 
+/** Resposta de POST /quotes/:id/share — link público do orçamento (deep link). */
+export interface ShareQuoteResponse {
+  publicToken: string;
+  url: string;
+}
+
 /** Endereço/local onde o serviço será realizado (contexto do orçamento).
  * Campos em PT-BR — alinhados ao LocalAddressDto da API (create-quote.dto.ts). */
 export interface QuoteLocalAddress {

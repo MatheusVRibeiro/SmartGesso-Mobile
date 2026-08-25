@@ -1,149 +1,26 @@
 import React, { useCallback } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppCard } from '../../../src/components/ui/AppCard';
-import { AppButton } from '../../../src/components/ui/AppButton';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
-import type { StatusBadgeVariant } from '../../../src/components/ui/StatusBadge';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { dashboardService } from '../../../src/services/api/dashboard';
-import { quoteFollowUpsService } from '../../../src/services/api/quoteFollowUps';
 import { toApiError } from '../../../src/services/api/client';
-import { colors, radius, sizes, spacing, typography } from '../../../src/theme';
+import { colors, radius, spacing } from '../../../src/theme';
 import { formatCurrency } from '../../../src/utils/format';
-import type { QuoteFollowUp } from '../../../src/types/followUp';
-
-type IconName = ComponentProps<typeof Ionicons>['name'];
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-/** "2026-08-19T14:30:00.000Z" → "11:30" (hora local). */
-function formatTime(iso?: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-/** "2026-08-19T14:30:00.000Z" → "19/08" (dd/mm local). */
-function formatShortDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-}
-
-function pluralize(count: number, singular: string, plural: string): string {
-  return count === 1 ? singular : plural;
-}
-
-/** Follow-up type → icon */
-function getFollowUpIcon(type: QuoteFollowUp['type']): IconName {
-  switch (type) {
-    case 'CALL':
-      return 'call-outline';
-    case 'WHATSAPP':
-      return 'logo-whatsapp';
-    case 'EMAIL':
-      return 'mail-outline';
-    default:
-      return 'chatbubble-outline';
-  }
-}
-
-/** Follow-up type → label */
-function getFollowUpTypeLabel(type: QuoteFollowUp['type']): string {
-  switch (type) {
-    case 'CALL':
-      return 'Ligação';
-    case 'WHATSAPP':
-      return 'WhatsApp';
-    case 'EMAIL':
-      return 'E-mail';
-    default:
-      return 'Outro';
-  }
-}
-
-// Status do orçamento → StatusBadge variant
-const getQuoteStatusBadge = (status: string): { variant: StatusBadgeVariant; label: string } => {
-  switch (status) {
-    case 'ENVIADO':
-      return { variant: 'warning', label: 'Enviado' };
-    case 'AGUARDANDO_APROVACAO':
-      return { variant: 'warning', label: 'Aguardando aprovação' };
-    case 'APROVADO':
-      return { variant: 'active', label: 'Aprovado' };
-    case 'PRONTO_PARA_ENVIAR':
-      return { variant: 'info', label: 'Pronto para enviar' };
-    case 'RASCUNHO':
-      return { variant: 'expired', label: 'Rascunho' };
-    case 'VENCIDO':
-      return { variant: 'expired', label: 'Vencido' };
-    default:
-      return { variant: 'cancelled', label: status };
-  }
-};
-
-// Status da OS → "tipo" do serviço (badge)
-const SERVICE_STATUS_BADGE: Record<string, { variant: StatusBadgeVariant; label: string }> = {
-  PENDENTE: { variant: 'expired', label: 'Pendente' },
-  EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento' },
-  CONCLUIDA: { variant: 'active', label: 'Concluída' },
-  CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
-};
-
-// ─── Card de métrica ────────────────────────────────────────────────────────
-
-interface MetricCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: IconName;
-  iconBackground: string;
-  iconColor: string;
-  valueColor?: string;
-}
-
-function MetricCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  iconBackground,
-  iconColor,
-  valueColor,
-}: MetricCardProps) {
-  return (
-    <AppCard shadow="light" radius={radius.lg} style={styles.metricCard}>
-      <View style={[styles.metricIconContainer, { backgroundColor: iconBackground }]}>
-        <Ionicons
-          name={icon}
-          size={sizes.icon.md}
-          color={iconColor}
-          accessibilityElementsHidden
-        />
-      </View>
-      <Text style={styles.metricTitle}>{title}</Text>
-      <Text
-        style={[styles.metricValue, valueColor ? { color: valueColor } : undefined]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-      >
-        {value}
-      </Text>
-      <Text style={styles.metricSubtitle}>{subtitle}</Text>
-    </AppCard>
-  );
-}
-
-// ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const activeCompany = useSessionStore((s) => s.activeCompany);
@@ -151,28 +28,19 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const companyId = activeCompany?.company?.id;
-  const userName = currentUser?.name?.split(' ')[0] ?? 'usuário';
-  const companyName = activeCompany?.company?.tradeName ?? 'SmartGesso';
+  const userName = currentUser?.name?.split(' ')[0] ?? 'Usuário';
+  const companyName = activeCompany?.company?.tradeName ?? 'Minha Empresa';
 
   const {
-    data: metrics,
+    data: overview,
     isLoading,
     isError,
     error,
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['dashboard', companyId],
-    queryFn: () => dashboardService.getMetrics(),
-    enabled: Boolean(companyId),
-  });
-
-  const {
-    data: followUps,
-    isRefetching: isRefetchingFollowUps,
-  } = useQuery({
-    queryKey: ['follow-ups-today', companyId],
-    queryFn: () => quoteFollowUpsService.listToday(),
+    queryKey: ['dashboard-overview', companyId],
+    queryFn: () => dashboardService.getOverview(),
     enabled: Boolean(companyId),
   });
 
@@ -180,8 +48,7 @@ export default function HomeScreen() {
     refetch();
   }, [refetch]);
 
-  // Loading state
-  if (isLoading) {
+  if (isLoading && !overview) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <LoadingState text="Carregando dashboard..." />
@@ -189,7 +56,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Error state
   if (isError) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -198,303 +64,519 @@ export default function HomeScreen() {
     );
   }
 
-  const toReceiveCount = metrics?.toReceive?.count ?? 0;
-  const todayServicesCount = metrics?.todayServices?.count ?? 0;
-  const openQuotesCount = metrics?.openQuotes?.count ?? 0;
-  const monthExpensesCount = metrics?.monthExpenses?.count ?? 0;
+  const summary = overview?.summary;
+  const goals = overview?.goals;
+  const operationalToday = overview?.operationalToday;
+  const charts = overview?.charts;
+  const alerts = overview?.alerts;
 
-  const todayServices = metrics?.todayServices?.list ?? [];
-  const recentQuotes = metrics?.recentQuotes ?? [];
-  const pendingPayments = metrics?.pendingPayments ?? [];
+  const revenue = summary?.revenue.monthRevenue ?? 0;
+  const expenses = summary?.revenue.monthExpenses ?? 0;
+  const profit = summary?.revenue.monthProfit ?? 0;
+  const profitMarginPct = summary?.revenue.profitMarginPct ?? 0;
+
+  const safeRevenuePct = Math.min(100, Math.max(0, goals?.revenuePct ?? 0));
+  const maxEvolutionValue = Math.max(
+    ...(charts?.monthlyEvolution?.map((m) => Math.max(m.revenue, m.expenses, 1)) ?? [1]),
+  );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching || isRefetchingFollowUps}
+            refreshing={isRefetching}
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
         }
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
       >
-        {/* Saudação */}
+        {/* Header Elegante com Período & Empresa */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Olá, {userName}</Text>
-          <Text style={styles.companyName}>{companyName}</Text>
-        </View>
-
-        {/* Métricas (grade 2x2) */}
-        <View style={styles.metricsGrid}>
-          <MetricCard
-            title="A receber"
-            value={formatCurrency(metrics?.toReceive?.total ?? 0)}
-            subtitle={
-              toReceiveCount > 0
-                ? `${toReceiveCount} ${pluralize(
-                    toReceiveCount,
-                    'pagamento pendente',
-                    'pagamentos pendentes',
-                  )}`
-                : 'Nenhum pagamento pendente'
-            }
-            icon="cash-outline"
-            iconBackground={colors.warningSoft}
-            iconColor={colors.warning}
-            valueColor={colors.warning}
-          />
-
-          <MetricCard
-            title="Serviços hoje"
-            value={String(todayServicesCount)}
-            subtitle={
-              todayServicesCount > 0
-                ? `${todayServicesCount} ${pluralize(
-                    todayServicesCount,
-                    'serviço agendado',
-                    'serviços agendados',
-                  )}`
-                : 'Nenhum serviço hoje'
-            }
-            icon="hammer-outline"
-            iconBackground={colors.primarySoft}
-            iconColor={colors.primary}
-            valueColor={colors.primary}
-          />
-
-          <MetricCard
-            title="Orçamentos abertos"
-            value={String(openQuotesCount)}
-            subtitle={
-              openQuotesCount > 0
-                ? `${openQuotesCount} ${pluralize(
-                    openQuotesCount,
-                    'orçamento aberto',
-                    'orçamentos abertos',
-                  )}`
-                : 'Nenhum orçamento aberto'
-            }
-            icon="document-text-outline"
-            iconBackground={colors.infoSoft}
-            iconColor={colors.info}
-            valueColor={colors.info}
-          />
-
-          <MetricCard
-            title="Despesas do mês"
-            value={formatCurrency(metrics?.monthExpenses?.total ?? 0)}
-            subtitle={
-              monthExpensesCount > 0
-                ? `${monthExpensesCount} ${pluralize(
-                    monthExpensesCount,
-                    'despesa no mês',
-                    'despesas no mês',
-                  )}`
-                : 'Nenhuma despesa no mês'
-            }
-            icon="receipt-outline"
-            iconBackground={colors.dangerSoft}
-            iconColor={colors.danger}
-            valueColor={colors.danger}
-          />
-        </View>
-
-        {/* Ações rápidas */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ações rápidas</Text>
-
-          <View style={styles.actionsGrid}>
-            <AppButton
-              title="Novo orçamento"
-              onPress={() => router.push('/(app)/(tabs)/novo')}
-              style={styles.actionButton}
-              accessibilityLabel="Novo orçamento"
-              testID="btn-new-quote"
-            />
-            <AppButton
-              title="Novo cliente"
-              variant="outline"
-              onPress={() => router.push('/(app)/clientes/novo')}
-              style={styles.actionButton}
-              accessibilityLabel="Novo cliente"
-              testID="btn-new-client"
-            />
+          <View>
+            <Text style={styles.greeting}>Olá, {userName} 👋</Text>
+            <Text style={styles.companyName}>{companyName}</Text>
           </View>
+          <TouchableOpacity
+            style={styles.periodBadge}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/relatorios')}
+          >
+            <Ionicons name="calendar-outline" size={13} color="#2563EB" />
+            <Text style={styles.periodText}>{overview?.period?.formattedPeriod || 'Mês Atual'}</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Seção: Follow-ups do dia */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Follow-ups do dia</Text>
-          <Text style={styles.sectionSubtitle}>Acompanhamentos pendentes</Text>
+        {/* ⚡ Barra de Ações Rápidas (1 Toque) */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/orcamentos/novo')}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: '#EFF6FF' }]}>
+              <Ionicons name="document-text" size={20} color="#2563EB" />
+            </View>
+            <Text style={styles.actionLabel}>Orçamento</Text>
+          </TouchableOpacity>
 
-          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {!followUps || followUps.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum follow-up para hoje</Text>
-            ) : (
-              followUps.slice(0, 5).map((followUp, index, array) => (
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/servicos/novo')}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: '#ECFDF5' }]}>
+              <Ionicons name="hammer" size={20} color="#10B981" />
+            </View>
+            <Text style={styles.actionLabel}>Nova OS</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/pagamentos/novo')}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: '#FFFBEB' }]}>
+              <Ionicons name="cash" size={20} color="#F59E0B" />
+            </View>
+            <Text style={styles.actionLabel}>Receber</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/despesas/novo')}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: '#FEF2F2' }]}>
+              <Ionicons name="card" size={20} color="#EF4444" />
+            </View>
+            <Text style={styles.actionLabel}>Despesa</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 🏆 Hero Card: Resultado Financeiro do Mês (Clicável -> Fluxo de Caixa) */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/(app)/relatorios/fluxo-caixa')}
+        >
+          <AppCard shadow="light" radius={radius.xl} style={styles.heroCard}>
+            <View style={styles.heroHeader}>
+              <View>
+                <View style={styles.cardHeaderWithArrow}>
+                  <Text style={styles.heroSubtitle}>Lucro Operacional Líquido</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#94A3B8" />
+                </View>
+                <Text style={styles.profitText}>{formatCurrency(profit)}</Text>
+              </View>
+              <View style={styles.marginBadge}>
+                <Ionicons name="trending-up" size={13} color="#059669" />
+                <Text style={styles.marginText}>{profitMarginPct.toFixed(1)}% margem</Text>
+              </View>
+            </View>
+
+            <View style={styles.heroDivider} />
+
+            <View style={styles.heroDetailsRow}>
+              <View style={styles.heroDetailItem}>
+                <Text style={styles.heroDetailLabel}>Faturamento</Text>
+                <Text style={styles.revenueText}>{formatCurrency(revenue)}</Text>
+              </View>
+              <View style={styles.heroVerticalDivider} />
+              <View style={styles.heroDetailItem}>
+                <Text style={styles.heroDetailLabel}>Despesas</Text>
+                <Text style={styles.expenseText}>{formatCurrency(expenses)}</Text>
+              </View>
+            </View>
+          </AppCard>
+        </TouchableOpacity>
+
+        {/* 🎯 Meta Mensal de Faturamento (Clicável -> Metas) */}
+        {goals?.hasGoal && goals.targetRevenue ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push('/(app)/metas')}
+          >
+            <AppCard shadow="light" radius={radius.lg} style={styles.goalCard}>
+              <View style={styles.goalHeader}>
+                <View style={styles.goalTitleRow}>
+                  <Ionicons name="trophy" size={17} color="#F59E0B" />
+                  <Text style={styles.goalTitle}>Meta de Faturamento</Text>
+                </View>
+                <View style={styles.rowCentered}>
+                  <Text style={styles.goalPctBadge}>{safeRevenuePct.toFixed(0)}%</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#94A3B8" />
+                </View>
+              </View>
+              <View style={styles.progressBarBg}>
                 <View
-                  key={followUp.id}
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${safeRevenuePct}%`,
+                      backgroundColor: safeRevenuePct >= 100 ? '#10B981' : '#2563EB',
+                    },
+                  ]}
+                />
+              </View>
+              <View style={styles.goalFooter}>
+                <Text style={styles.goalFooterLabel}>
+                  Meta: {formatCurrency(goals.targetRevenue)}
+                </Text>
+                {goals.targetApprovedQuotes ? (
+                  <Text style={styles.goalFooterSub}>
+                    {goals.approvedQuotesPct?.toFixed(0)}% de {goals.targetApprovedQuotes} fechados
+                  </Text>
+                ) : null}
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* 📊 Grid de KPIs Clicáveis (Orçamentos, Visitas, OS Hoje, A Receber) */}
+        <View style={styles.kpiGrid}>
+          {/* 1. Orçamentos em Aberto (Clicável -> Orçamentos) */}
+          <TouchableOpacity
+            style={styles.kpiCardWrapper}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(app)/(tabs)/orcamentos')}
+          >
+            <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+              <View style={styles.kpiCardHeader}>
+                <Text style={styles.kpiTitle}>Em Aberto</Text>
+                <View style={styles.kpiIconBadge}>
+                  <Ionicons name="document-text-outline" size={14} color="#2563EB" />
+                </View>
+              </View>
+              <Text style={styles.kpiValue}>
+                {summary?.quotes.openCount ?? 0} orçamentos
+              </Text>
+              <View style={styles.kpiFooterRow}>
+                <Text style={styles.kpiSub}>
+                  {formatCurrency(summary?.quotes.openTotal ?? 0)}
+                </Text>
+                <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+
+          {/* 2. Visitas de Hoje (Clicável -> Agenda) */}
+          <TouchableOpacity
+            style={styles.kpiCardWrapper}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(app)/agenda')}
+          >
+            <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+              <View style={styles.kpiCardHeader}>
+                <Text style={styles.kpiTitle}>Visitas Hoje</Text>
+                <View style={[styles.kpiIconBadge, { backgroundColor: '#F3E8FF' }]}>
+                  <Ionicons name="eye-outline" size={14} color="#9333EA" />
+                </View>
+              </View>
+              <Text style={styles.kpiValue}>
+                {operationalToday?.visitsCount ?? 0} agendadas
+              </Text>
+              <View style={styles.kpiFooterRow}>
+                <Text style={styles.kpiSub}>Ver agenda do dia</Text>
+                <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+
+          {/* 3. OS para Hoje (Clicável -> Serviços) */}
+          <TouchableOpacity
+            style={styles.kpiCardWrapper}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(app)/(tabs)/servicos')}
+          >
+            <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+              <View style={styles.kpiCardHeader}>
+                <Text style={styles.kpiTitle}>OS Hoje</Text>
+                <View style={[styles.kpiIconBadge, { backgroundColor: '#EFF6FF' }]}>
+                  <Ionicons name="hammer-outline" size={14} color="#2563EB" />
+                </View>
+              </View>
+              <Text style={styles.kpiValue}>
+                {operationalToday?.servicesCount ?? 0} agendadas
+              </Text>
+              <View style={styles.kpiFooterRow}>
+                <Text style={styles.kpiSub}>Em campo</Text>
+                <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+
+          {/* 4. A Receber (Clicável -> Pagamentos) */}
+          <TouchableOpacity
+            style={styles.kpiCardWrapper}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(app)/pagamentos')}
+          >
+            <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+              <View style={styles.kpiCardHeader}>
+                <Text style={styles.kpiTitle}>A Receber</Text>
+                <View style={[styles.kpiIconBadge, { backgroundColor: '#FFFBEB' }]}>
+                  <Ionicons name="cash-outline" size={14} color="#D97706" />
+                </View>
+              </View>
+              <Text style={styles.kpiValue}>
+                {formatCurrency(summary?.toReceive.total ?? 0)}
+              </Text>
+              <View style={styles.kpiFooterRow}>
+                {(summary?.toReceive.overdue ?? 0) > 0 ? (
+                  <Text style={styles.overdueText}>
+                    ⚠️ {formatCurrency(summary?.toReceive.overdue ?? 0)} vencidos
+                  </Text>
+                ) : (
+                  <Text style={styles.okText}>✓ Em dia</Text>
+                )}
+                <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+        </View>
+
+        {/* 👁️ Seção: Visitas & Medições Técnicas de Hoje */}
+        {operationalToday?.visits && operationalToday.visits.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Visitas de Hoje ({operationalToday.visitsCount})</Text>
+                <Text style={styles.sectionSubtitle}>Compromissos e medições agendadas</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.seeAllBtn}
+                onPress={() => router.push('/(app)/agenda')}
+              >
+                <Text style={styles.seeAllText}>Ver Agenda</Text>
+                <Ionicons name="chevron-forward" size={13} color="#2563EB" />
+              </TouchableOpacity>
+            </View>
+
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+              {operationalToday.visits.map((v, index, array) => (
+                <TouchableOpacity
+                  key={v.id}
                   style={[
                     styles.listItem,
                     index < array.length - 1 && styles.listItemBorder,
                   ]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (v.quoteId) {
+                      router.push(`/(app)/orcamentos/${v.quoteId}`);
+                    } else if (v.serviceOrderId) {
+                      router.push(`/(app)/servicos/${v.serviceOrderId}`);
+                    } else {
+                      router.push('/(app)/agenda');
+                    }
+                  }}
                 >
-                  <View style={[styles.listIconContainer, styles.listIconInfo]}>
-                    <Ionicons
-                      name={getFollowUpIcon(followUp.type)}
-                      size={sizes.icon.md}
-                      color={colors.info}
-                      accessibilityElementsHidden
-                    />
+                  <View style={[styles.listIconContainer, { backgroundColor: '#F3E8FF' }]}>
+                    <Ionicons name="eye" size={18} color="#9333EA" />
                   </View>
                   <View style={styles.listItemContent}>
                     <Text style={styles.listItemTitle} numberOfLines={1}>
-                      {getFollowUpTypeLabel(followUp.type)}
+                      {v.title}
                     </Text>
                     <Text style={styles.listItemValue} numberOfLines={1}>
-                      {followUp.notes ?? 'Sem notas'}
+                      👤 {v.client?.name ?? 'Cliente'} {v.time ? `• ⏰ ${v.time}` : ''}
+                    </Text>
+                  </View>
+                  <StatusBadge status="info" label={v.type} size="sm" />
+                </TouchableOpacity>
+              ))}
+            </AppCard>
+          </View>
+        ) : null}
+
+        {/* 📈 Mini Gráfico de Evolução 6 Meses (Clicável -> Comparativo) */}
+        {charts?.monthlyEvolution && charts.monthlyEvolution.length > 0 ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push('/(app)/relatorios/comparativo')}
+          >
+            <AppCard shadow="light" radius={radius.xl} style={styles.chartCard}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Evolução Financeira (6 Meses)</Text>
+                <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+              </View>
+              <View style={styles.chartRow}>
+                {charts.monthlyEvolution.map((item, idx) => {
+                  const revH = Math.max(8, (item.revenue / maxEvolutionValue) * 100);
+                  const expH = Math.max(8, (item.expenses / maxEvolutionValue) * 100);
+                  return (
+                    <View key={idx} style={styles.barCol}>
+                      <View style={styles.barsWrapper}>
+                        <View style={[styles.barItem, { height: `${revH}%`, backgroundColor: '#2563EB' }]} />
+                        <View style={[styles.barItem, { height: `${expH}%`, backgroundColor: '#EF4444' }]} />
+                      </View>
+                      <Text style={styles.barMonthLabel}>{item.monthLabel}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={styles.chartLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
+                  <Text style={styles.legendLabel}>Faturamento</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                  <Text style={styles.legendLabel}>Despesas</Text>
+                </View>
+              </View>
+            </AppCard>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* 💬 Follow-ups Comerciais de Hoje com WhatsApp 1-Clique */}
+        {operationalToday?.followUps && operationalToday.followUps.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Follow-ups Pendentes</Text>
+                <Text style={styles.sectionSubtitle}>Contate os clientes para fechar orçamentos</Text>
+              </View>
+            </View>
+
+            {operationalToday.followUps.map((fu) => (
+              <AppCard key={fu.id} shadow="light" radius={radius.lg} style={styles.followUpCard}>
+                <TouchableOpacity
+                  style={styles.followUpInfo}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/(app)/orcamentos/${fu.quoteId}`)}
+                >
+                  <Text style={styles.followUpTitle}>
+                    Orçamento #{fu.quoteNumber} • {fu.client?.name ?? 'Cliente'}
+                  </Text>
+                  {fu.notes ? (
+                    <Text style={styles.followUpNotes} numberOfLines={1}>
+                      {fu.notes}
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
+                {fu.client?.whatsAppUrl ? (
+                  <TouchableOpacity
+                    style={styles.whatsappBtn}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (fu.client?.whatsAppUrl) {
+                        Linking.openURL(fu.client.whatsAppUrl).catch(() => {});
+                      }
+                    }}
+                  >
+                    <Ionicons name="logo-whatsapp" size={15} color="#FFF" />
+                    <Text style={styles.whatsappBtnText}>WhatsApp</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </AppCard>
+            ))}
+          </View>
+        ) : null}
+
+        {/* 🔨 Serviços de Hoje (Clicável -> OS) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View>
+              <Text style={styles.sectionTitle}>Serviços de Hoje ({operationalToday?.servicesCount ?? 0})</Text>
+              <Text style={styles.sectionSubtitle}>Ordens de serviço agendadas</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.seeAllBtn}
+              onPress={() => router.push('/(app)/(tabs)/servicos')}
+            >
+              <Text style={styles.seeAllText}>Ver todas</Text>
+              <Ionicons name="chevron-forward" size={13} color="#2563EB" />
+            </TouchableOpacity>
+          </View>
+
+          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+            {!operationalToday?.services || operationalToday.services.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhum serviço agendado para hoje</Text>
+            ) : (
+              operationalToday.services.map((service, index, array) => (
+                <TouchableOpacity
+                  key={service.id}
+                  style={[
+                    styles.listItem,
+                    index < array.length - 1 && styles.listItemBorder,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/(app)/servicos/${service.id}`)}
+                >
+                  <View style={[styles.listIconContainer, styles.listIconPrimary]}>
+                    <Ionicons name="hammer-outline" size={18} color="#2563EB" />
+                  </View>
+                  <View style={styles.listItemContent}>
+                    <Text style={styles.listItemTitle} numberOfLines={1}>
+                      OS #{service.code} • {service.client?.name ?? 'Cliente'}
+                    </Text>
+                    <Text style={styles.listItemValue} numberOfLines={1}>
+                      {service.work?.name ? `📍 ${service.work.name}` : formatCurrency(service.saleValue)}
                     </Text>
                   </View>
                   <StatusBadge
-                    status={followUp.status === 'PENDING' ? 'warning' : 'active'}
-                    label={followUp.status === 'PENDING' ? 'Pendente' : 'Feito'}
+                    status={service.status === 'CONCLUIDA' ? 'active' : 'warning'}
+                    label={service.status}
                     size="sm"
                   />
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </AppCard>
         </View>
 
-        {/* Seção: Serviços de hoje */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Serviços de hoje</Text>
-          <Text style={styles.sectionSubtitle}>Serviços agendados para hoje</Text>
+        {/* ⚠️ Alertas de Estoque Mínimo */}
+        {alerts?.stockAlerts && alerts.stockAlerts.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Alertas de Estoque</Text>
+                <Text style={styles.sectionSubtitle}>Materiais abaixo do estoque de segurança</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.seeAllBtn}
+                onPress={() => router.push('/(app)/compras')}
+              >
+                <Text style={styles.seeAllText}>Compras</Text>
+                <Ionicons name="chevron-forward" size={13} color="#2563EB" />
+              </TouchableOpacity>
+            </View>
 
-          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {todayServices.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum serviço agendado para hoje</Text>
-            ) : (
-              todayServices.map((service, index, array) => {
-                const badge =
-                  SERVICE_STATUS_BADGE[service.status] ?? {
-                    variant: 'info' as const,
-                    label: service.status,
-                  };
-                return (
-                  <View
-                    key={service.id}
-                    style={[
-                      styles.listItem,
-                      index < array.length - 1 && styles.listItemBorder,
-                    ]}
-                  >
-                    <View style={[styles.listIconContainer, styles.listIconPrimary]}>
-                      <Ionicons
-                        name="hammer-outline"
-                        size={sizes.icon.md}
-                        color={colors.primary}
-                        accessibilityElementsHidden
-                      />
-                    </View>
-                    <View style={styles.listItemContent}>
-                      <Text style={styles.listItemTitle} numberOfLines={1}>
-                        {formatTime(service.scheduledDate)} ·{' '}
-                        {service.client?.name ?? 'Cliente'}
-                      </Text>
-                      <Text style={styles.listItemValue} numberOfLines={1}>
-                        {service.work?.name ?? 'Serviço'}
-                      </Text>
-                    </View>
-                    <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-                  </View>
-                );
-              })
-            )}
-          </AppCard>
-        </View>
-
-        {/* Seção: Orçamentos recentes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Orçamentos recentes</Text>
-          <Text style={styles.sectionSubtitle}>Últimos orçamentos da empresa</Text>
-
-          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {recentQuotes.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum orçamento recente</Text>
-            ) : (
-              recentQuotes.slice(0, 5).map((quote, index, array) => {
-                const badge = getQuoteStatusBadge(quote.status);
-                return (
-                  <View
-                    key={quote.id}
-                    style={[
-                      styles.listItem,
-                      index < array.length - 1 && styles.listItemBorder,
-                    ]}
-                  >
-                    <View style={styles.listItemContent}>
-                      <Text style={styles.listItemTitle} numberOfLines={1}>
-                        #{quote.quoteNumber} v{quote.version} —{' '}
-                        {quote.client?.name ?? 'Cliente'}
-                      </Text>
-                      <Text style={styles.listItemValue}>
-                        {formatCurrency(quote.total)}
-                      </Text>
-                    </View>
-                    <StatusBadge status={badge.variant} label={badge.label} size="sm" />
-                  </View>
-                );
-              })
-            )}
-          </AppCard>
-        </View>
-
-        {/* Seção: Pagamentos pendentes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pagamentos pendentes</Text>
-          <Text style={styles.sectionSubtitle}>Recebimentos aguardando confirmação</Text>
-
-          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {pendingPayments.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum pagamento pendente</Text>
-            ) : (
-              pendingPayments.slice(0, 5).map((payment, index, array) => (
+            <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+              {alerts.stockAlerts.map((mat, index, array) => (
                 <View
-                  key={payment.id}
+                  key={mat.id}
                   style={[
                     styles.listItem,
                     index < array.length - 1 && styles.listItemBorder,
                   ]}
                 >
                   <View style={[styles.listIconContainer, styles.listIconWarning]}>
-                    <Ionicons
-                      name="cash-outline"
-                      size={sizes.icon.md}
-                      color={colors.warning}
-                      accessibilityElementsHidden
-                    />
+                    <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
                   </View>
                   <View style={styles.listItemContent}>
                     <Text style={styles.listItemTitle} numberOfLines={1}>
-                      {payment.client?.name ?? 'Cliente'}
+                      {mat.name}
                     </Text>
-                    <Text style={styles.listItemValue}>
-                      {formatCurrency(payment.amount)}
+                    <Text style={styles.stockAlertDetail}>
+                      Estoque: {mat.stockQty} {mat.unit} (Mín: {mat.minStockQty})
                     </Text>
                   </View>
-                  <Text style={styles.dueDateText}>
-                    {payment.dueDate ? `Vence ${formatShortDate(payment.dueDate)}` : 'Sem vencimento'}
-                  </Text>
+                  <TouchableOpacity
+                    style={styles.buyActionBtn}
+                    onPress={() => router.push('/(app)/compras/novo')}
+                  >
+                    <Text style={styles.buyActionText}>Comprar</Text>
+                  </TouchableOpacity>
                 </View>
-              ))
-            )}
-          </AppCard>
-        </View>
+              ))}
+            </AppCard>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -503,135 +585,453 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
-    padding: sizes.screenPadding,
+    padding: spacing.md,
     paddingBottom: spacing['3xl'],
   },
   header: {
-    marginBottom: spacing['2xl'],
-    paddingTop: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    paddingTop: spacing.xs,
   },
   greeting: {
-    fontSize: typography.sizes['2xl'],
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
   },
   companyName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.regular,
-    color: colors.textSecondary,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 1,
   },
-  metricsGrid: {
+  periodBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  periodText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2563EB',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  quickActionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  actionIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#334155',
+    textAlign: 'center',
+  },
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  heroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardHeaderWithArrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  heroSubtitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  profitText: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  marginBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    gap: 4,
+  },
+  marginText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  heroDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: spacing.md,
+  },
+  heroDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  heroDetailItem: {
+    flex: 1,
+  },
+  heroDetailLabel: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  revenueText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2563EB',
+    marginTop: 2,
+  },
+  expenseText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#EF4444',
+    marginTop: 2,
+  },
+  heroVerticalDivider: {
+    width: 1,
+    backgroundColor: '#F1F5F9',
+    marginHorizontal: spacing.md,
+  },
+  goalCard: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  goalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  rowCentered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  goalTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  goalPctBadge: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#2563EB',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    marginVertical: 6,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: radius.full,
+  },
+  goalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  goalFooterLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  goalFooterSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: spacing.md,
-    marginBottom: spacing['2xl'],
-  },
-  metricCard: {
-    width: '48%',
-    padding: spacing.lg,
-  },
-  metricIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
+    rowGap: spacing.sm,
     marginBottom: spacing.md,
   },
-  metricTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  kpiCardWrapper: {
+    width: '48.5%',
   },
-  metricValue: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  kpiCard: {
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  metricSubtitle: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    lineHeight: 16,
-  },
-  section: {
-    marginBottom: spacing['2xl'],
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  sectionSubtitle: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  sectionCard: {
-    padding: spacing.lg,
-  },
-  emptyText: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-  },
-  listItem: {
+  kpiCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    marginBottom: 2,
+  },
+  kpiTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    textTransform: 'uppercase',
+  },
+  kpiIconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kpiValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  kpiFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  kpiSub: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  overdueText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+  okText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  chartCard: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  chartRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 100,
+    marginVertical: spacing.sm,
+  },
+  barCol: {
+    flex: 1,
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  barsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+    height: 80,
+  },
+  barItem: {
+    width: 7,
+    borderRadius: 3,
+  },
+  barMonthLabel: {
+    fontSize: 9,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 4,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendLabel: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  section: {
+    marginBottom: spacing.md,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 2,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2563EB',
+  },
+  sectionCard: {
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  followUpCard: {
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: spacing.xs,
+  },
+  followUpInfo: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  followUpTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  followUpNotes: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  whatsappBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    gap: 4,
+  },
+  whatsappBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
   listItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: '#F1F5F9',
   },
   listItemContent: {
     flex: 1,
-    marginRight: spacing.md,
   },
   listItemTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0F172A',
   },
   listItemValue: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: '#64748B',
   },
   listIconContainer: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   listIconPrimary: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: '#EFF6FF',
   },
   listIconWarning: {
-    backgroundColor: colors.warningSoft,
+    backgroundColor: '#FFFBEB',
   },
-  listIconInfo: {
-    backgroundColor: colors.infoSoft,
+  stockAlertDetail: {
+    fontSize: 11,
+    color: '#EF4444',
+    fontWeight: '500',
   },
-  dueDateText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.weights.medium,
+  buyActionBtn: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.md,
   },
-  actionsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  actionButton: {
-    flex: 1,
+  buyActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB',
   },
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 
-// Mock useQuery with a mutable implementation
+// Mock useQuery com implementação mutável
 const mockUseQuery = jest.fn();
 
 jest.mock('expo-router', () => ({
@@ -34,6 +34,7 @@ jest.mock('../../../../src/store/useSessionStore', () => ({
 
 jest.mock('../../../../src/services/api/dashboard', () => ({
   dashboardService: {
+    getOverview: jest.fn(),
     getMetrics: jest.fn(),
   },
 }));
@@ -51,8 +52,60 @@ jest.mock('../../../../src/services/api/client', () => ({
 // Importar DEPOIS dos mocks
 import HomeScreen from '../index';
 
+const defaultOverview = {
+  company: { id: 'company-1', tradeName: 'SmartGesso Test' },
+  period: { currentYear: 2026, currentMonth: 8, formattedPeriod: 'Agosto 2026' },
+  summary: {
+    toReceive: {
+      total: 0,
+      overdue: 0,
+      dueToday: 0,
+      pendingCount: 0,
+      overdueCount: 0,
+    },
+    revenue: {
+      monthRevenue: 10000,
+      monthExpenses: 4000,
+      monthProfit: 6000,
+      profitMarginPct: 60,
+    },
+    quotes: {
+      openCount: 3,
+      openTotal: 5000,
+      monthApprovedCount: 1,
+      conversionRatePct: 33,
+    },
+  },
+  goals: {
+    hasGoal: true,
+    targetRevenue: 20000,
+    revenuePct: 50,
+    targetApprovedQuotes: 4,
+    approvedQuotesPct: 25,
+    targetQuoteAmount: 10000,
+    quoteAmountPct: 50,
+  },
+  operationalToday: {
+    servicesCount: 0,
+    services: [],
+    visitsCount: 0,
+    visits: [],
+    followUpsCount: 0,
+    followUps: [],
+  },
+  charts: {
+    monthlyEvolution: [
+      { monthLabel: 'Jan', year: 2026, month: 1, revenue: 1000, expenses: 500, profit: 500, approvedQuotes: 1 },
+    ],
+  },
+  alerts: {
+    stockLowCount: 0,
+    stockAlerts: [],
+  },
+};
+
 const defaultQueryResult = {
-  data: null,
+  data: defaultOverview,
   isLoading: false,
   isError: false,
   error: null,
@@ -63,13 +116,12 @@ const defaultQueryResult = {
 describe('HomeScreen (Dashboard)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default mock - retorna dados vazios
     mockUseQuery.mockReturnValue(defaultQueryResult);
   });
 
   it('renderiza a saudação com o nome do usuário', async () => {
     await render(<HomeScreen />);
-    expect(screen.getByText('Olá, João')).toBeTruthy();
+    expect(screen.getByText(/Olá, João/)).toBeTruthy();
   });
 
   it('renderiza o nome da empresa', async () => {
@@ -77,34 +129,48 @@ describe('HomeScreen (Dashboard)', () => {
     expect(screen.getByText('SmartGesso Test')).toBeTruthy();
   });
 
-  it('renderiza os cards de métricas', async () => {
-    await render(<HomeScreen />);
-    expect(screen.getByText('A receber')).toBeTruthy();
-    expect(screen.getByText('Serviços hoje')).toBeTruthy();
-    expect(screen.getByText('Orçamentos abertos')).toBeTruthy();
-    expect(screen.getByText('Despesas do mês')).toBeTruthy();
-  });
-
   it('renderiza as ações rápidas', async () => {
     await render(<HomeScreen />);
-    expect(screen.getByText('Novo orçamento')).toBeTruthy();
-    expect(screen.getByText('Novo cliente')).toBeTruthy();
+    expect(screen.getByText('Orçamento')).toBeTruthy();
+    expect(screen.getByText('Nova OS')).toBeTruthy();
   });
 
-  it('renderiza a seção de follow-ups', async () => {
+  it('renderiza seção de follow-ups quando há follow-ups', async () => {
+    const overviewWithFollowUps = {
+      ...defaultOverview,
+      operationalToday: {
+        ...defaultOverview.operationalToday,
+        followUpsCount: 1,
+        followUps: [
+          {
+            id: '1',
+            quoteId: 'quote-1',
+            quoteNumber: 1001,
+            type: 'CALL',
+            notes: 'Retorno sobre orçamento',
+            scheduledAt: null,
+            status: 'PENDING',
+            client: { id: 'c1', name: 'Cliente A', phone: null, whatsapp: null, whatsAppUrl: null },
+          },
+        ],
+      },
+    };
+    mockUseQuery.mockReturnValue({ ...defaultQueryResult, data: overviewWithFollowUps });
     await render(<HomeScreen />);
-    expect(screen.getByText('Follow-ups do dia')).toBeTruthy();
-    expect(screen.getByText('Acompanhamentos pendentes')).toBeTruthy();
+    expect(screen.getByText('Follow-ups Pendentes')).toBeTruthy();
+  });
+
+  it('renderiza serviços de hoje', async () => {
+    await render(<HomeScreen />);
+    expect(screen.getByText(/Serviços de Hoje/)).toBeTruthy();
   });
 
   it('renderiza loading state quando isLoading é true', async () => {
-    // Configura mock para retornar isLoading: true na primeira chamada (dashboard)
-    mockUseQuery
-      .mockReturnValueOnce({
-        ...defaultQueryResult,
-        isLoading: true,
-      })
-      .mockReturnValue(defaultQueryResult);
+    mockUseQuery.mockReturnValue({
+      ...defaultQueryResult,
+      isLoading: true,
+      data: undefined,
+    });
 
     await render(<HomeScreen />);
     expect(screen.getByText('Carregando dashboard...')).toBeTruthy();
@@ -115,31 +181,28 @@ describe('HomeScreen (Dashboard)', () => {
       {
         id: '1',
         quoteId: 'quote-1',
+        quoteNumber: 1001,
         type: 'CALL',
         notes: 'Retorno sobre orçamento',
+        scheduledAt: null,
         status: 'PENDING',
-      },
-      {
-        id: '2',
-        quoteId: 'quote-2',
-        type: 'WHATSAPP',
-        notes: 'Enviar proposta',
-        status: 'PENDING',
+        client: { id: 'c1', name: 'Cliente A', phone: null, whatsapp: null, whatsAppUrl: null },
       },
     ];
 
-    // Primeira chamada: dashboard (return default), segunda chamada: follow-ups
-    mockUseQuery
-      .mockReturnValueOnce(defaultQueryResult)
-      .mockReturnValueOnce({
-        ...defaultQueryResult,
-        data: mockFollowUps,
-      });
+    mockUseQuery.mockReturnValue({
+      ...defaultQueryResult,
+      data: {
+        ...defaultOverview,
+        operationalToday: {
+          ...defaultOverview.operationalToday,
+          followUpsCount: 1,
+          followUps: mockFollowUps,
+        },
+      },
+    });
 
     await render(<HomeScreen />);
-    expect(screen.getByText('Ligação')).toBeTruthy();
-    expect(screen.getByText('Retorno sobre orçamento')).toBeTruthy();
-    expect(screen.getByText('WhatsApp')).toBeTruthy();
-    expect(screen.getByText('Enviar proposta')).toBeTruthy();
+    expect(screen.getByText(/Orçamento #1001/)).toBeTruthy();
   });
 });

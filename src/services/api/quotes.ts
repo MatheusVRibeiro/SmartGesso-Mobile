@@ -6,6 +6,7 @@ import type {
   QuoteSummary,
   CreateQuoteInput,
   UpdateQuoteInput,
+  ShareQuoteResponse,
 } from '../../types/quote';
 
 function api() {
@@ -81,11 +82,15 @@ export const quotesService = {
     return response.data;
   },
 
-  /** POST /quotes/:id/share — gera link público de aprovação. */
-  async share(id: string): Promise<{ publicToken: string; url: string }> {
-    const response = await api().post<{ publicToken: string; url: string }>(
-      `/quotes/${id}/share`,
-    );
+  /** POST /quotes/:id/share — gera link público de aprovação (deep link). */
+  async share(id: string): Promise<ShareQuoteResponse> {
+    const response = await api().post<ShareQuoteResponse>(`/quotes/${id}/share`);
+    return response.data;
+  },
+
+  /** GET /quotes/by-token/:token — localiza o orçamento pelo token público (deep link). */
+  async getByToken(token: string): Promise<Quote> {
+    const response = await api().get<Quote>(`/quotes/by-token/${token}`);
     return response.data;
   },
 };

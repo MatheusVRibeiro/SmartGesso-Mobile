@@ -6,6 +6,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textLight,
         tabBarStyle: {
@@ -21,6 +22,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Início',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -30,6 +32,7 @@ export default function TabsLayout() {
         name="orcamentos"
         options={{
           title: 'Orçamentos',
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="document-text" size={size} color={color} />
           ),
@@ -39,6 +42,7 @@ export default function TabsLayout() {
         name="novo"
         options={{
           title: 'Novo',
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
@@ -48,6 +52,7 @@ export default function TabsLayout() {
         name="servicos"
         options={{
           title: 'Serviços',
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="hammer" size={size} color={color} />
           ),
@@ -57,6 +62,7 @@ export default function TabsLayout() {
         name="mais"
         options={{
           title: 'Mais',
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="menu" size={size} color={color} />
           ),

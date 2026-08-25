@@ -8,8 +8,6 @@ import type { Expense, Payment } from '../../types/finance';
 import type { QuoteSummary } from '../../types/quote';
 import type { ServiceOrder } from '../../types/serviceOrder';
 
-// ─── Tipos do dashboard ─────────────────────────────────────────────────────
-
 export interface DashboardTodayService {
   id: string;
   code: number;
@@ -42,6 +40,136 @@ export interface DashboardStockAlert {
   unit: string;
   stockQty: number;
   minStockQty: number;
+  suggestedRestockQty?: number;
+}
+
+export interface DashboardOverviewData {
+  company: {
+    id: string;
+    tradeName?: string;
+  };
+  period: {
+    currentYear: number;
+    currentMonth: number;
+    formattedPeriod: string;
+  };
+  summary: {
+    toReceive: {
+      total: number;
+      overdue: number;
+      dueToday: number;
+      pendingCount: number;
+      overdueCount: number;
+    };
+    revenue: {
+      monthRevenue: number;
+      monthExpenses: number;
+      monthProfit: number;
+      profitMarginPct: number;
+    };
+    quotes: {
+      openCount: number;
+      openTotal: number;
+      monthApprovedCount: number;
+      conversionRatePct: number | null;
+    };
+  };
+  goals: {
+    hasGoal: boolean;
+    targetRevenue: number | null;
+    revenuePct: number | null;
+    targetApprovedQuotes: number | null;
+    approvedQuotesPct: number | null;
+    targetQuoteAmount: number | null;
+    quoteAmountPct: number | null;
+  };
+  charts: {
+    monthlyEvolution: Array<{
+      monthLabel: string;
+      year: number;
+      month: number;
+      revenue: number;
+      expenses: number;
+      profit: number;
+      approvedQuotes: number;
+    }>;
+  };
+  operationalToday: {
+    servicesCount: number;
+    services: Array<{
+      id: string;
+      code: number;
+      status: string;
+      scheduledDate: string | null;
+      saleValue: number;
+      client: {
+        id: string;
+        name: string;
+        phone: string | null;
+        whatsapp: string | null;
+      } | null;
+      work: {
+        id: string;
+        name: string;
+      } | null;
+    }>;
+    visitsCount: number;
+    visits: Array<{
+      id: string;
+      type: string;
+      title: string;
+      time: string | null;
+      quoteId: string | null;
+      serviceOrderId: string | null;
+      client: {
+        id: string;
+        name: string;
+        phone: string | null;
+        whatsapp: string | null;
+      } | null;
+      notes: string | null;
+    }>;
+    followUpsCount: number;
+    followUps: Array<{
+      id: string;
+      quoteId: string;
+      quoteNumber: number;
+      type: string;
+      notes: string | null;
+      scheduledAt: string | null;
+      status: string;
+      client: {
+        id: string;
+        name: string;
+        phone: string | null;
+        whatsapp: string | null;
+        whatsAppUrl: string | null;
+      } | null;
+    }>;
+  };
+  alerts: {
+    stockLowCount: number;
+    stockAlerts: Array<{
+      id: string;
+      name: string;
+      unit: string;
+      stockQty: number;
+      minStockQty: number;
+      suggestedRestockQty: number;
+    }>;
+    recentQuotes: Array<{
+      id: string;
+      quoteNumber: number;
+      version: number;
+      status: string;
+      total: number;
+      createdAt: string;
+      client: {
+        id: string;
+        name: string;
+      } | null;
+    }>;
+  };
 }
 
 export interface DashboardMetrics {
@@ -65,8 +193,6 @@ export interface DashboardMetrics {
   stockAlerts: DashboardStockAlert[];
 }
 
-// ─── Helpers de normalização/fallback ───────────────────────────────────────
-
 function isSameLocalDay(iso?: string | null, ref = new Date()): boolean {
   if (!iso) return false;
   const d = new Date(iso);
@@ -83,10 +209,6 @@ function isSameLocalMonth(iso?: string | null, ref = new Date()): boolean {
   return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
 }
 
-/**
- * Se a API ainda não retornar openQuotes/monthExpenses/pendingPayments/lista de
- * serviços de hoje, calcula no mobile a partir dos services de listagem.
- */
 async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMetrics> {
   const now = new Date();
 
@@ -102,7 +224,6 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
     needsTodayList ? serviceOrdersService.list() : null,
   ]);
 
-  // Pagamentos pendentes (fallback): ordena por vencimento, take 5.
   const pendingPayments: DashboardPendingPayment[] = needsPendingPayments
     ? toArray<Payment>(paymentsResult)
         .sort((a, b) => {
@@ -119,7 +240,6 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
         }))
     : (raw.pendingPayments ?? []);
 
-  // Orçamentos abertos (fallback): RASCUNHO ou ENVIADO.
   const openQuotes = needsOpenQuotes
     ? {
         count: toArray<QuoteSummary>(quotesResult).filter(
@@ -128,7 +248,6 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
       }
     : (raw.openQuotes ?? { count: 0 });
 
-  // Despesas do mês (fallback): soma das despesas do mês corrente.
   const monthExpenses = needsMonthExpenses
     ? (() => {
         const list = toArray<Expense>(expensesResult).filter((e) =>
@@ -141,7 +260,6 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
       })()
     : (raw.monthExpenses ?? { total: 0, count: 0 });
 
-  // Serviços de hoje (fallback): OS agendadas para hoje, take 5.
   const todayList: DashboardTodayService[] = needsTodayList
     ? toArray<ServiceOrder>(ordersResult)
         .filter(
@@ -179,14 +297,19 @@ async function resolveMissingMetrics(raw: DashboardMetrics): Promise<DashboardMe
   };
 }
 
-// ─── Service ────────────────────────────────────────────────────────────────
-
 async function api() {
   return getApiClient();
 }
 
 export const dashboardService = {
-  /** GET /company/dashboard/metrics — com fallback client-side para campos ausentes. */
+  /** GET /company/dashboard/overview - Dados consolidados de alta performance */
+  async getOverview(): Promise<DashboardOverviewData> {
+    const client = await api();
+    const { data } = await client.get<DashboardOverviewData>('/company/dashboard/overview');
+    return data;
+  },
+
+  /** GET /company/dashboard/metrics */
   async getMetrics(): Promise<DashboardMetrics> {
     const client = await api();
     const { data } = await client.get<DashboardMetrics>('/company/dashboard/metrics');

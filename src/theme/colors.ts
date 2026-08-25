@@ -1,65 +1,65 @@
 /**
  * SmartGesso Mobile — Tokens de cor.
  *
- * UI/UX Pro Max — "Soft UI Evolution" (indigo vibrante + fundo indigo claro).
- * WCAG AA+, melhor contraste, sombras aprimoradas.
+ * Design System Moderno & Limpo (Clean Slate + Tech Blue).
+ * Alta legibilidade, contraste WCAG AA+, visual profissional para SaaS de Construção.
  */
 export const colors = {
-  // Marca — indigo vibrante
-  primary: '#6366F1',
-  primaryDark: '#4F46E5',
-  primaryLight: '#818CF8',
-  primarySoft: '#EEF2FF',
+  // Marca — Tech Blue moderno
+  primary: '#2563EB',
+  primaryDark: '#1D4ED8',
+  primaryLight: '#3B82F6',
+  primarySoft: '#EFF6FF',
 
-  // Secundária / destaque
-  secondary: '#818CF8',
-  secondaryDark: '#6366F1',
-  secondaryLight: '#A5B4FC',
+  // Secundária — Sky Blue
+  secondary: '#0EA5E9',
+  secondaryDark: '#0284C7',
+  secondaryLight: '#38BDF8',
 
   // Semânticos
-  success: '#059669',
-  successSoft: '#E7F6F0',
-  danger: '#DC2626',
-  dangerSoft: '#FDECEC',
-  /** Alias de compatibilidade — usa o mesmo valor que `danger`. */
-  error: '#DC2626',
-  warning: '#D97706',
-  warningSoft: '#FDF1E3',
-  info: '#2563EB',
-  infoSoft: '#E8F0FE',
+  success: '#10B981',
+  successSoft: '#ECFDF5',
+  danger: '#EF4444',
+  dangerSoft: '#FEF2F2',
+  /** Alias de compatibilidade */
+  error: '#EF4444',
+  warning: '#F59E0B',
+  warningSoft: '#FFFBEB',
+  info: '#3B82F6',
+  infoSoft: '#EFF6FF',
 
-  // Fundos e superfícies (indigo claro — Soft UI Evolution)
-  background: '#F5F3FF',
+  // Fundos e superfícies (Clean Slate - Neutro e elegante)
+  background: '#F8FAFC',
   surface: '#FFFFFF',
   card: '#FFFFFF',
 
-  // Texto (indigo profundo)
-  text: '#312E81',
-  textSecondary: '#6D6A9E',
-  textLight: '#9B98C4',
+  // Texto (Slate Escuro - Excelente contraste)
+  text: '#0F172A',
+  textSecondary: '#475569',
+  textLight: '#94A3B8',
   textOnPrimary: '#FFFFFF',
   textOnSecondary: '#FFFFFF',
 
-  // Bordas e divisores (indigo claro)
-  border: '#E0E7FF',
-  divider: '#EDF0FA',
+  // Bordas e divisores
+  border: '#E2E8F0',
+  divider: '#F1F5F9',
 
   // Inputs
   inputBackground: '#FFFFFF',
-  inputBorder: '#D4D9F5',
-  inputFocus: '#6366F1',
+  inputBorder: '#CBD5E1',
+  inputFocus: '#2563EB',
 
   // Estados desabilitados
-  disabled: '#C7C9E8',
-  disabledBackground: '#EDF0FA',
-  disabledText: '#9B98C4',
+  disabled: '#94A3B8',
+  disabledBackground: '#F1F5F9',
+  disabledText: '#64748B',
 
   // Utilitários
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
-  focusRing: 'rgba(99, 102, 241, 0.12)',
-  overlay: 'rgba(49, 46, 129, 0.55)',
+  focusRing: 'rgba(37, 99, 235, 0.12)',
+  overlay: 'rgba(15, 23, 42, 0.55)',
 } as const;
 
 export type Colors = typeof colors;
