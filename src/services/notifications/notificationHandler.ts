@@ -23,7 +23,9 @@ import { useSessionStore } from '../../store/useSessionStore';
  * como `Href` para o expo-router. Retorna `null` quando não há rota.
  */
 function extractRoute(response: Notifications.NotificationResponse): Href | null {
-  const data = response?.notification?.data;
+  // expo-notifications v57+: Notification = { date, request }, os dados
+  // enviados pelo servidor ficam em `request.content.data`.
+  const data = response?.notification?.request?.content?.data;
   if (!data) return null;
   const route = data.route;
   if (typeof route === 'string' && route.length > 0) {
