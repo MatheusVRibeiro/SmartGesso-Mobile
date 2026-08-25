@@ -11,6 +11,8 @@ import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { usePendingMutationsCount } from '../src/hooks/usePendingMutationsCount';
+import { usePushRegistration } from '../src/hooks/usePushRegistration';
+import { setupNotificationHandler } from '../src/services/notifications/notificationHandler';
 import { colors } from '../src/theme';
 
 export default function RootLayout() {
@@ -26,6 +28,14 @@ export default function RootLayout() {
   // Antes rodava só em app/index.tsx — navegação direta deixava activeCompany null
   // e as queries escopadas por empresa desabilitadas (telas vazias).
   useSessionBootstrap();
+
+  // V3 §79: registra o token push quando há sessão logada + empresa ativa.
+  usePushRegistration();
+
+  // V3 §79: handler global de notificações (toque navega, foreground invalida).
+  useEffect(() => {
+    return setupNotificationHandler();
+  }, []);
 
   // Quando o refresh token falha (401), limpa a sessão e o cache.
   useEffect(() => {
