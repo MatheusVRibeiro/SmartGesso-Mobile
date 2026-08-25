@@ -1,6 +1,5 @@
 import React from 'react';
-import TestRenderer from 'react-test-renderer';
-import { Text } from 'react-native';
+import { render, screen } from '@testing-library/react-native';
 import { FinancialSummaryCard } from '../FinancialSummaryCard';
 import type { FinancialSummary } from '../../../../types/financialSummary';
 
@@ -18,80 +17,59 @@ const mockSummary: FinancialSummary = {
 };
 
 /**
- * Extrai todo o texto visível da árvore de renderização usando react-test-renderer.
+ * Migração RNTL v14:
+ * - `render` é assíncrono (React 19 + React.act) → `await render(...)`.
+ * - Cleanup automático entre testes (sem unmount manual).
+ * - Textos via `screen.getByText` (em vez de react-test-renderer.root).
+ * - Cores via `toJSON()` do TestInstance escopado por testID.
  */
-function extractAllText(testRenderer: TestRenderer.ReactTestRenderer): string {
-  const textElements = testRenderer.root.findAllByType(Text);
-  return textElements
-    .map((el) => {
-      const children = el.props.children;
-      if (typeof children === 'string') return children;
-      if (Array.isArray(children)) return children.join('');
-      return '';
-    })
-    .filter(Boolean)
-    .join('\n');
-}
-
 describe('FinancialSummaryCard', () => {
-  it('renderiza snapshot estável com dados completos', () => {
-    const testRenderer = TestRenderer.create(
+  it('renderiza snapshot estável com dados completos', async () => {
+    const { toJSON } = await render(
       <FinancialSummaryCard financialSummary={mockSummary} />
     );
 
-    expect(testRenderer.toJSON()).toMatchSnapshot();
+    expect(toJSON()).toMatchSnapshot();
   });
 
-  it('exibe todos os rótulos esperados', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('exibe todos os rótulos esperados', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const text = extractAllText(testRenderer);
-
-    expect(text).toContain('Resumo Financeiro');
-    expect(text).toContain('Receita');
-    expect(text).toContain('Custo');
-    expect(text).toContain('Resultado');
-    expect(text).toContain('Valor contratado');
-    expect(text).toContain('Aditivos aprovados');
-    expect(text).toContain('Total contratado');
-    expect(text).toContain('Recebido');
-    expect(text).toContain('A receber');
-    expect(text).toContain('Custo realizado');
-    expect(text).toContain('Resultado projetado');
-    expect(text).toContain('Resultado realizado');
-    expect(text).toContain('Margem');
+    expect(screen.getByText('Resumo Financeiro')).toBeTruthy();
+    expect(screen.getByText('Receita')).toBeTruthy();
+    expect(screen.getByText('Custo')).toBeTruthy();
+    expect(screen.getByText('Resultado')).toBeTruthy();
+    expect(screen.getByText('Valor contratado')).toBeTruthy();
+    expect(screen.getByText('Aditivos aprovados')).toBeTruthy();
+    expect(screen.getByText('Total contratado')).toBeTruthy();
+    expect(screen.getByText('Recebido')).toBeTruthy();
+    expect(screen.getByText('A receber')).toBeTruthy();
+    expect(screen.getByText('Custo realizado')).toBeTruthy();
+    expect(screen.getByText('Resultado projetado')).toBeTruthy();
+    expect(screen.getByText('Resultado realizado')).toBeTruthy();
+    expect(screen.getByText('Margem')).toBeTruthy();
   });
 
-  it('exibe valores formatados em moeda (BRL)', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('exibe valores formatados em moeda (BRL)', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const text = extractAllText(testRenderer);
-
-    expect(text).toContain('R$ 10.000,00');
-    expect(text).toContain('R$ 500,00');
-    expect(text).toContain('R$ 10.500,00');
-    expect(text).toContain('R$ 6.000,00');
-    expect(text).toContain('R$ 4.500,00');
-    expect(text).toContain('R$ 5.500,00');
-    expect(text).toContain('R$ 3.500,00');
-    expect(text).toContain('R$ 5.000,00');
+    expect(screen.getByText('R$ 10.000,00')).toBeTruthy();
+    expect(screen.getByText('R$ 500,00')).toBeTruthy();
+    expect(screen.getByText('R$ 10.500,00')).toBeTruthy();
+    expect(screen.getByText('R$ 6.000,00')).toBeTruthy();
+    expect(screen.getByText('R$ 4.500,00')).toBeTruthy();
+    expect(screen.getByText('R$ 5.500,00')).toBeTruthy();
+    expect(screen.getByText('R$ 3.500,00')).toBeTruthy();
+    expect(screen.getByText('R$ 5.000,00')).toBeTruthy();
   });
 
-  it('exibe margem como percentual formatado', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('exibe margem como percentual formatado', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const text = extractAllText(testRenderer);
-
-    expect(text).toContain('47,6%');
+    expect(screen.getByText('47,6%')).toBeTruthy();
   });
 
-  it('renderiza sem quebrar com valores zero', () => {
+  it('renderiza sem quebrar com valores zero', async () => {
     const zeroSummary: FinancialSummary = {
       contractedValue: 0,
       additionalApproved: 0,
@@ -105,14 +83,14 @@ describe('FinancialSummaryCard', () => {
       margin: 0,
     };
 
-    const testRenderer = TestRenderer.create(
+    const { toJSON } = await render(
       <FinancialSummaryCard financialSummary={zeroSummary} />
     );
 
-    expect(testRenderer.toJSON()).toMatchSnapshot();
+    expect(toJSON()).toMatchSnapshot();
   });
 
-  it('renderiza sem quebrar com valores negativos', () => {
+  it('renderiza sem quebrar com valores negativos', async () => {
     const negativeSummary: FinancialSummary = {
       contractedValue: 5000,
       additionalApproved: 0,
@@ -126,64 +104,53 @@ describe('FinancialSummaryCard', () => {
       margin: -30,
     };
 
-    const testRenderer = TestRenderer.create(
+    const { toJSON } = await render(
       <FinancialSummaryCard financialSummary={negativeSummary} />
     );
 
-    expect(testRenderer.toJSON()).toMatchSnapshot();
+    expect(toJSON()).toMatchSnapshot();
   });
 
-  it('aplica cor verde (success) ao valor Recebido positivo', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('aplica cor verde (success) ao valor Recebido positivo', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const json = JSON.stringify(testRenderer.toJSON());
+    const json = JSON.stringify(screen.getByTestId('row-received').toJSON());
     // received = 6000 > 0 → success (#059669)
     expect(json).toContain('#059669');
   });
 
-  it('aplica cor vermelha (danger) ao valor A receber', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('aplica cor vermelha (danger) ao valor A receber', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const json = JSON.stringify(testRenderer.toJSON());
+    const json = JSON.stringify(screen.getByTestId('row-to-receive').toJSON());
     // toReceive é sempre tratado como dívida → danger (#DC2626)
     expect(json).toContain('#DC2626');
   });
 
-  it('aplica cor vermelha (danger) ao Custo realizado', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('aplica cor vermelha (danger) ao Custo realizado', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const json = JSON.stringify(testRenderer.toJSON());
+    const json = JSON.stringify(screen.getByTestId('row-realized-cost').toJSON());
     // realizedCost é sempre tratado como saída → danger (#DC2626)
     expect(json).toContain('#DC2626');
   });
 
-  it('aplica cor verde (success) ao Resultado realizado positivo', () => {
-    const testRenderer = TestRenderer.create(
-      <FinancialSummaryCard financialSummary={mockSummary} />
-    );
+  it('aplica cor verde (success) ao Resultado realizado positivo', async () => {
+    await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
-    const json = JSON.stringify(testRenderer.toJSON());
+    const json = JSON.stringify(screen.getByTestId('row-cash-result').toJSON());
     // cashResult = 5000 > 0 → success (#059669)
     expect(json).toContain('#059669');
   });
 
-  it('passa testID para o card raiz', () => {
-    const testRenderer = TestRenderer.create(
+  it('passa testID para o card raiz', async () => {
+    await render(
       <FinancialSummaryCard
         financialSummary={mockSummary}
         testID="financial-summary-card"
       />
     );
 
-    expect(testRenderer.toJSON()).toHaveProperty(
-      'props.testID',
-      'financial-summary-card'
-    );
+    expect(screen.getByTestId('financial-summary-card')).toBeTruthy();
   });
 });
