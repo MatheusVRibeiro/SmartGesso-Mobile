@@ -312,6 +312,7 @@ export default function HomeScreen() {
               title="Novo orçamento"
               onPress={() => router.push('/(app)/(tabs)/novo')}
               style={styles.actionButton}
+              accessibilityLabel="Novo orçamento"
               testID="btn-new-quote"
             />
             <AppButton
@@ -319,6 +320,7 @@ export default function HomeScreen() {
               variant="outline"
               onPress={() => router.push('/(app)/clientes/novo')}
               style={styles.actionButton}
+              accessibilityLabel="Novo cliente"
               testID="btn-new-client"
             />
           </View>

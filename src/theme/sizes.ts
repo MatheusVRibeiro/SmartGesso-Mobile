@@ -6,9 +6,9 @@ export const sizes = {
   touchTarget: 44,
   /** Altura padrão de inputs. */
   inputHeight: 48,
-  /** Alturas de botão por tamanho. */
+  /** Alturas de botão por tamanho (mínimo WCAG de 44px de área de toque). */
   buttonHeight: {
-    sm: 40,
+    sm: 44,
     md: 48,
     lg: 52,
   },

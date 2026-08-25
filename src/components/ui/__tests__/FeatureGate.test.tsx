@@ -100,7 +100,9 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('renderiza children quando features não estão definidas (undefined)', () => {
+  it('não renderiza children quando features estão undefined (ex.: erro) — comportamento defensivo', () => {
+    // Com features indefinidas (erro/sem dados) e sem loading, o gate
+    // NÃO libera o conteúdo: `features?.includes(...) ?? false` → false.
     mockedUseCompanyFeatures.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -115,7 +117,25 @@ describe('FeatureGate', () => {
       </FeatureGate>
     );
 
-    expect(screen.getByTestId('content')).toBeTruthy();
-    expect(screen.getByText('Conteúdo protegido')).toBeTruthy();
+    expect(screen.queryByTestId('content')).toBeNull();
+  });
+
+  it('repassa accessibilityLabel ao filho renderizado', () => {
+    mockedUseCompanyFeatures.mockReturnValue({
+      data: ['production'],
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(
+      <FeatureGate feature="production" accessibilityLabel="Nova produção">
+        <View testID="gated">
+          <Text>Botão</Text>
+        </View>
+      </FeatureGate>
+    );
+
+    expect(screen.getByLabelText('Nova produção')).toBeTruthy();
+    expect(screen.getByTestId('gated')).toBeTruthy();
   });
 });
