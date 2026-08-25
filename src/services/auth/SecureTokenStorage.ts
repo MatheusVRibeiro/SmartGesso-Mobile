@@ -6,6 +6,12 @@ import { config } from '../../constants/config';
  * Secure abstraction over expo-secure-store for JWT token management.
  * On native platforms (iOS/Android), uses SecureStore (Keychain / KeyStore).
  * On web platform, falls back to localStorage.
+ *
+ * TODO(security): o fallback web usa localStorage (acessível a XSS e a
+ * qualquer script da origem). Migração para algo mais seguro no web
+ * (ex.: cookie httpOnly via backend, ou expo-secure-store web) fica
+ * para uma etapa dedicada — NÃO migrar agora (pode quebrar sessões web).
+ * Regra mantida: tokens NUNCA em AsyncStorage (apenas SecureStore).
  */
 export const SecureTokenStorage = {
   async getAccessToken(): Promise<string | null> {

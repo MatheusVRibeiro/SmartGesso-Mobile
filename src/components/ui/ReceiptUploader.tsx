@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadsService } from '../../services/api/uploads';
 import type { UploadEntityType } from '../../services/api/uploads';
 import type { PhotoAttachment } from '../../types/photo';
+import { safeErrorMessage } from '../../utils/secureLog';
 import { colors, radius, spacing, typography } from '../../theme';
 
 export interface ReceiptUploaderProps {
@@ -95,13 +96,15 @@ export function ReceiptUploader({
         );
         onUploaded(uploadResult.url);
       } catch (error) {
-        console.error('Erro ao fazer upload:', error);
+        // safeErrorMessage: erros do Axios carregam config.headers.Authorization
+        // (Bearer token) — nunca logar o objeto inteiro.
+        console.error('Erro ao fazer upload:', safeErrorMessage(error));
         Alert.alert('Erro', 'Não foi possível fazer upload do comprovante.');
       } finally {
         setUploading(false);
       }
     } catch (error) {
-      console.error('Erro ao selecionar imagem:', error);
+      console.error('Erro ao selecionar imagem:', safeErrorMessage(error));
       Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
     }
   }
