@@ -138,4 +138,22 @@ describe('FeatureGate', () => {
     expect(screen.getByLabelText('Nova produção')).toBeTruthy();
     expect(screen.getByTestId('gated')).toBeTruthy();
   });
+
+  it('suporta resposta de features embrulhada em objeto sem estourar TypeError', async () => {
+    mockedUseCompanyFeatures.mockReturnValue({
+      data: { features: ['production'] },
+      isLoading: false,
+      error: null,
+    } as any);
+
+    await render(
+      <FeatureGate feature="production">
+        <View testID="content">
+          <Text>Conteúdo protegido</Text>
+        </View>
+      </FeatureGate>
+    );
+
+    expect(screen.getByTestId('content')).toBeTruthy();
+  });
 });
