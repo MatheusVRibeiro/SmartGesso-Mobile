@@ -125,6 +125,14 @@ export default function MaisScreen() {
       action: () => router.push('/relatorios'),
     },
     {
+      id: 'metas',
+      title: 'Metas & Performance',
+      icon: 'flag-outline',
+      section: 'Gestão',
+      action: () => router.push('/metas'),
+      feature: 'team',
+    },
+    {
       id: 'configuracoes',
       title: 'Configurações',
       icon: 'settings-outline',
