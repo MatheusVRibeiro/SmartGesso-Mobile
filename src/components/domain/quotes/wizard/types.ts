@@ -20,6 +20,7 @@ import type {
 } from '../../../../types/composition';
 import { z } from 'zod';
 import { createQuoteSchema } from '../../../../validation/schemas';
+import { parseCurrencyInput } from '../../../../utils/masks';
 
 // ─── Tipos do wizard ────────────────────────────────────────────────────────
 
@@ -311,15 +312,15 @@ export const serviceRowSchema = z.object({
     .string()
     .trim()
     .min(1, 'Informe o valor do serviço')
-    .refine((v) => !Number.isNaN(parseNumber(v)), 'Valor inválido')
-    .refine((v) => parseNumber(v) >= 0, 'Valor não pode ser negativo'),
+    .refine((v) => !Number.isNaN(parseCurrencyInput(v)), 'Valor inválido')
+    .refine((v) => parseCurrencyInput(v) >= 0, 'Valor não pode ser negativo'),
 });
 
 export const stepValoresSchema = z.object({
   discount: z
     .string()
-    .refine((v) => !Number.isNaN(parseNumber(v)), 'Desconto inválido')
-    .refine((v) => parseNumber(v) >= 0, 'Desconto não pode ser negativo'),
+    .refine((v) => !Number.isNaN(parseCurrencyInput(v)), 'Desconto inválido')
+    .refine((v) => parseCurrencyInput(v) >= 0, 'Desconto não pode ser negativo'),
   marginPct: z
     .string()
     .refine((v) => !Number.isNaN(parseNumber(v)), 'Margem inválida')
