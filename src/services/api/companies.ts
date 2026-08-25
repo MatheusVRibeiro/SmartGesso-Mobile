@@ -45,10 +45,10 @@ export const companyService = {
     return companies.find((c) => c.company.id === id);
   },
 
-  /** GET /companies/branding — contatos comerciais da empresa ativa. */
+  /** GET /company/branding — contatos comerciais da empresa ativa. */
   async getBranding(): Promise<CompanyBranding> {
     const client = getApiClient();
-    const { data } = await client.get<CompanyBranding>('/companies/branding');
+    const { data } = await client.get<CompanyBranding>('/company/branding');
     return data;
   },
 };
