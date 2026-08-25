@@ -9,8 +9,17 @@ export type EffectiveFeatures = string[];
  */
 export async function getEffectiveFeatures(): Promise<EffectiveFeatures> {
   const client = getApiClient();
-  const { data } = await client.get<EffectiveFeatures>('/companies/features');
-  return data;
+  const { data } = await client.get<any>('/companies/features');
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.features)) {
+    return data.features;
+  }
+  if (data && Array.isArray(data.data)) {
+    return data.data;
+  }
+  return [];
 }
 
 /**
