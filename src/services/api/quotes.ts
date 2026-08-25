@@ -80,4 +80,12 @@ export const quotesService = {
     const response = await api().get<Blob>(`/quotes/${id}/pdf`, { responseType: 'blob' });
     return response.data;
   },
+
+  /** POST /quotes/:id/share — gera link público de aprovação. */
+  async share(id: string): Promise<{ publicToken: string; url: string }> {
+    const response = await api().post<{ publicToken: string; url: string }>(
+      `/quotes/${id}/share`,
+    );
+    return response.data;
+  },
 };

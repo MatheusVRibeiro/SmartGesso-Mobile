@@ -237,6 +237,24 @@ export default function DetalheOrcamentoScreen() {
     }
   }
 
+  /** Compartilha o link público de aprovação do orçamento (deep link). */
+  async function handleShareLink() {
+    try {
+      setSnackbar({ type: 'info', message: 'Gerando link...' });
+      const { url } = await quotesService.share(quoteId as string);
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(url, { dialogTitle: 'Compartilhar orçamento' });
+      } else {
+        Alert.alert('Link do orçamento', url);
+      }
+      setSnackbar({ type: 'success', message: 'Link gerado com sucesso' });
+    } catch (shareError) {
+      console.error('Erro ao gerar link:', shareError);
+      setSnackbar({ type: 'error', message: toApiError(shareError).message });
+    }
+  }
+
   if (!quoteId) {
     return (
       <ScreenContainer padding keyboard={false}>
@@ -507,6 +525,14 @@ export default function DetalheOrcamentoScreen() {
                 size="lg"
                 accessibilityLabel="Gerar e compartilhar PDF"
                 onPress={handleSharePdf}
+                style={styles.actionButton}
+              />
+              <AppButton
+                title="Compartilhar link"
+                variant="secondary"
+                size="lg"
+                accessibilityLabel="Compartilhar link público do orçamento"
+                onPress={handleShareLink}
                 style={styles.actionButton}
               />
               <AppButton

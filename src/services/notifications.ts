@@ -269,6 +269,15 @@ export async function loadNotifications(): Promise<Notificacao[]> {
 
 /** Contagem total de notificações (usada no badge do menu). */
 export async function countNotifications(): Promise<number> {
+  try {
+    // Endpoint dedicado eficiente (GET /notifications/unread-count).
+    const { getApiClient } = await import('./api/client');
+    const client = getApiClient();
+    const { data } = await client.get<{ count: number }>('/notifications/unread-count');
+    if (typeof data?.count === 'number') return data.count;
+  } catch {
+    // Fallback: conta todas as notificações (compat com API antiga).
+  }
   const notifications = await loadNotifications();
   return notifications.length;
 }
