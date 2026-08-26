@@ -77,6 +77,7 @@ function AppButton({
   style,
   testID,
 }: AppButtonProps) {
+  const { colors } = useAppTheme();
   const isDisabled = disabled || loading;
   const textColor = isDisabled ? colors.disabledText : TEXT_COLORS[variant];
 
