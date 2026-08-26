@@ -32,7 +32,9 @@ export interface AppButtonProps {
 }
 
 const VARIANT_STYLES: Record<AppButtonVariant, ViewStyle> = {
-  primary: { backgroundColor: colors.primary },
+  // Etapa 3: gradiente indigo #1E40AF→#3B82F6 (design system).
+  // expo-linear-gradient não instalado → fallback sólido com primaryLight.
+  primary: { backgroundColor: colors.primaryLight },
   secondary: {
     backgroundColor: colors.transparent,
     borderWidth: borders.width.thin,
@@ -138,7 +140,8 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   pressedPrimary: {
-    backgroundColor: colors.primaryDark,
+    // Press: tom mais escuro do novo primary (primaryLight → primary).
+    backgroundColor: colors.primary,
   },
   label: {
     fontWeight: typography.weights.semibold,
