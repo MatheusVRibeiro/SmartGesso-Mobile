@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, sizes, spacing } from '../../theme';
+import { sizes, spacing } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export interface ScreenContainerProps {
   children: React.ReactNode;
@@ -33,13 +34,15 @@ function ScreenContainer({
   scroll = false,
   padding = true,
   keyboard = true,
-  backgroundColor = colors.background,
+  backgroundColor,
   edges = ['top', 'left', 'right'],
   style,
   contentContainerStyle,
   testID,
   scrollRef,
 }: ScreenContainerProps) {
+  const { colors } = useAppTheme();
+  const bg = backgroundColor ?? colors.background;
   const paddingValue =
     typeof padding === 'number' ? padding : padding ? sizes.screenPadding : 0;
 
@@ -79,7 +82,7 @@ function ScreenContainer({
     <SafeAreaView
       testID={testID}
       edges={edges}
-      style={[styles.safe, { backgroundColor }, style]}
+      style={[styles.safe, { backgroundColor: bg }, style]}
     >
       {inner}
     </SafeAreaView>
