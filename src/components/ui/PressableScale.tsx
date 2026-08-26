@@ -16,7 +16,6 @@ interface PressableScaleProps {
   /** Escala ao pressionar (default 0.97 — spring do design system). */
   scaleTo?: number;
 }
-
 /**
  * PressableScale — botão com feedback de press (spring scale).
  *
@@ -29,7 +28,7 @@ export function PressableScale({
   style,
   disabled,
   accessibilityLabel,
-  accessibilityRole = 'button',
+  accessibilityRole,
   scaleTo = 0.97,
 }: PressableScaleProps) {
   const scale = useRef(new Animated.Value(1)).current;

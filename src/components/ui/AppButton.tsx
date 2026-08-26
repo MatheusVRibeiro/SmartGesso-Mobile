@@ -7,6 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borders, colors, radius, sizes, typography } from '../../theme';
+import { PressableScale } from './PressableScale';
 
 export type AppButtonVariant =
   | 'primary'
@@ -80,36 +81,41 @@ function AppButton({
   const textColor = isDisabled ? colors.disabledText : TEXT_COLORS[variant];
 
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
-      disabled={isDisabled}
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        VARIANT_STYLES[variant],
-        SIZE_STYLES[size],
-        isDisabled && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
-        pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
-        style,
-      ]}
+      disabled={isDisabled}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
+      style={style}
     >
-      {loading ? (
-        <ActivityIndicator color={textColor} size="small" />
-      ) : (
-        <Text
-          style={[
-            styles.label,
-            { color: textColor, fontSize: FONT_SIZES[size] },
-          ]}
-        >
-          {title}
-        </Text>
-      )}
-    </Pressable>
+      <Pressable
+        testID={testID}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        disabled={isDisabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.base,
+          VARIANT_STYLES[variant],
+          SIZE_STYLES[size],
+          isDisabled && styles.disabled,
+          pressed && !isDisabled && styles.pressed,
+          pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <Text
+            style={[
+              styles.label,
+              { color: textColor, fontSize: FONT_SIZES[size] },
+            ]}
+          >
+            {title}
+          </Text>
+        )}
+      </Pressable>
+    </PressableScale>
   );
 }
 
