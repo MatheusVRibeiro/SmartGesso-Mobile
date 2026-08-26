@@ -115,32 +115,32 @@ describe('FinancialSummaryCard', () => {
     await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
     const json = JSON.stringify(screen.getByTestId('row-received').toJSON());
-    // received = 6000 > 0 → success (#10B981)
-    expect(json).toContain('#10B981');
+    // received = 6000 > 0 → success (#059669)
+    expect(json).toContain('#059669');
   });
 
   it('aplica cor vermelha (danger) ao valor A receber', async () => {
     await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
     const json = JSON.stringify(screen.getByTestId('row-to-receive').toJSON());
-    // toReceive é sempre tratado como dívida → danger (#EF4444)
-    expect(json).toContain('#EF4444');
+    // toReceive é sempre tratado como dívida → danger (#DC2626)
+    expect(json).toContain('#DC2626');
   });
 
   it('aplica cor vermelha (danger) ao Custo realizado', async () => {
     await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
     const json = JSON.stringify(screen.getByTestId('row-realized-cost').toJSON());
-    // realizedCost é sempre tratado como saída → danger (#EF4444)
-    expect(json).toContain('#EF4444');
+    // realizedCost é sempre tratado como saída → danger (#DC2626)
+    expect(json).toContain('#DC2626');
   });
 
   it('aplica cor verde (success) ao Resultado realizado positivo', async () => {
     await render(<FinancialSummaryCard financialSummary={mockSummary} />);
 
     const json = JSON.stringify(screen.getByTestId('row-cash-result').toJSON());
-    // cashResult = 5000 > 0 → success (#10B981)
-    expect(json).toContain('#10B981');
+    // cashResult = 5000 > 0 → success (#059669)
+    expect(json).toContain('#059669');
   });
 
   it('passa testID para o card raiz', async () => {
