@@ -16,6 +16,8 @@ import { AppCard } from '../../../src/components/ui/AppCard';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import { LoadingState } from '../../../src/components/ui/LoadingState';
 import { ErrorState } from '../../../src/components/ui/ErrorState';
+import { FadeInView } from '../../../src/components/ui/FadeInView';
+import { AnimatedCounter } from '../../../src/components/ui/AnimatedCounter';
 import { useSessionStore } from '../../../src/store/useSessionStore';
 import { dashboardService } from '../../../src/services/api/dashboard';
 import { toApiError } from '../../../src/services/api/client';
@@ -95,20 +97,22 @@ export default function HomeScreen() {
         }
       >
         {/* Header Elegante com Período & Empresa */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Olá, {userName} 👋</Text>
-            <Text style={styles.companyName}>{companyName}</Text>
+        <FadeInView>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Olá, {userName} 👋</Text>
+              <Text style={styles.companyName}>{companyName}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.periodBadge}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(app)/relatorios')}
+            >
+              <Ionicons name="calendar-outline" size={13} color="#2563EB" />
+              <Text style={styles.periodText}>{overview?.period?.formattedPeriod || 'Mês Atual'}</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.periodBadge}
-            activeOpacity={0.7}
-            onPress={() => router.push('/(app)/relatorios')}
-          >
-            <Ionicons name="calendar-outline" size={13} color="#2563EB" />
-            <Text style={styles.periodText}>{overview?.period?.formattedPeriod || 'Mês Atual'}</Text>
-          </TouchableOpacity>
-        </View>
+        </FadeInView>
 
         {/* ⚡ Barra de Ações Rápidas (1 Toque) */}
         <View style={styles.quickActionsContainer}>
@@ -143,6 +147,17 @@ export default function HomeScreen() {
               <Ionicons name="cash" size={20} color="#F59E0B" />
             </View>
             <Text style={styles.actionLabel}>Receber</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(app)/ferramentas/calculadora')}
+          >
+            <View style={[styles.actionIconWrapper, { backgroundColor: '#F3E8FF' }]}>
+              <Ionicons name="calculator" size={20} color="#9333EA" />
+            </View>
+            <Text style={styles.actionLabel}>Calculadora</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -251,7 +266,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               <Text style={styles.kpiValue}>
-                {summary?.quotes.openCount ?? 0} orçamentos
+                <AnimatedCounter value={summary?.quotes.openCount ?? 0} /> orçamentos
               </Text>
               <View style={styles.kpiFooterRow}>
                 <Text style={styles.kpiSub}>
@@ -276,7 +291,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               <Text style={styles.kpiValue}>
-                {operationalToday?.visitsCount ?? 0} agendadas
+                <AnimatedCounter value={operationalToday?.visitsCount ?? 0} /> agendadas
               </Text>
               <View style={styles.kpiFooterRow}>
                 <Text style={styles.kpiSub}>Ver agenda do dia</Text>
@@ -299,7 +314,7 @@ export default function HomeScreen() {
                 </View>
               </View>
               <Text style={styles.kpiValue}>
-                {operationalToday?.servicesCount ?? 0} agendadas
+                <AnimatedCounter value={operationalToday?.servicesCount ?? 0} /> agendadas
               </Text>
               <View style={styles.kpiFooterRow}>
                 <Text style={styles.kpiSub}>Em campo</Text>
@@ -434,7 +449,7 @@ export default function HomeScreen() {
 
         {/* 💬 Follow-ups Comerciais de Hoje com WhatsApp 1-Clique */}
         {operationalToday?.followUps && operationalToday.followUps.length > 0 ? (
-          <View style={styles.section}>
+          <FadeInView delay={150} style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <View>
                 <Text style={styles.sectionTitle}>Follow-ups Pendentes</Text>
@@ -474,7 +489,7 @@ export default function HomeScreen() {
                 ) : null}
               </AppCard>
             ))}
-          </View>
+          </FadeInView>
         ) : null}
 
         {/* 🔨 Serviços de Hoje (Clicável -> OS) */}

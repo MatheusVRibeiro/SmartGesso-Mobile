@@ -7,7 +7,7 @@ export interface AppCardProps {
   children: React.ReactNode;
   /** Padding interno (default: spacing.lg = 16). */
   padding?: number;
-  /** Raio dos cantos (default: radius.md = 12). */
+  /** Raio dos cantos (default: radius.md = 12; cards de destaque usam lg=16). */
   radius?: number;
   /** Sombra opcional (default: 'light'). */
   shadow?: ShadowName | 'none';
