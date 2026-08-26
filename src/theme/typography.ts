@@ -2,9 +2,9 @@ import { Platform } from 'react-native';
 
 /**
  * SmartGesso Mobile — Tokens de tipografia.
- * UI/UX Pro Max — Plus Jakarta Sans (enterprise, moderna, legível).
- * Sem fonte custom instalada → fallback System/sans-serif com pesos corretos.
- * TODO: instalar Plus Jakarta Sans via @expo-google-fonts/plus-jakarta-sans
+ * Design system Enterprise SaaS Mobile (ui-ux-pro-max) — Plus Jakarta Sans.
+ * A fonte real (Plus Jakarta Sans) virá via expo-font (loadAsync + useFonts);
+ * até lá usamos fallback System (iOS) / sans-serif (Android) com pesos corretos.
  */
 export const typography = {
   sizes: {
@@ -23,6 +23,7 @@ export const typography = {
     bold: '700',
     extraBold: '800',
   },
+  // Fallback até a fonte Plus Jakarta Sans ser carregada via expo-font.
   fontFamily: Platform.select({
     ios: 'System',
     android: 'sans-serif',
