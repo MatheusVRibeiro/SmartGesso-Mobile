@@ -36,11 +36,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<ThemeContextValue>(() => {
     const isDark = mode === 'dark';
-    // Remove a chave `dark` aninhada antes de mergear os overrides.
-    const { dark: _dark, ...base } = colors;
-    const palette = isDark
-      ? ({ ...base, ...colors.dark } as typeof colors)
-      : base;
+    const palette = (
+      isDark ? { ...colors, ...colors.dark } : colors
+    ) as unknown as typeof colors;
     return {
       mode,
       isDark,
