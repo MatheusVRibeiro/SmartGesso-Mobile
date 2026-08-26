@@ -7,6 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borders, colors, radius, sizes, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 import { PressableScale } from './PressableScale';
 
 export type AppButtonVariant =
