@@ -8,6 +8,7 @@ import { queryClient } from '../src/lib/queryClient';
 import { setUnauthorizedHandler, setAccessDeniedHandler } from '../src/services/api/client';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
+import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { usePendingMutationsCount } from '../src/hooks/usePendingMutationsCount';
@@ -61,19 +62,21 @@ export default function RootLayout() {
   }, [sessionStatus, router]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <View style={{ flex: 1 }}>
-          {/* V3 — seção 66: banner offline global (não bloqueia navegação). */}
-          {isOffline ? (
-            <SafeAreaView edges={['top']} style={{ backgroundColor: colors.warning }}>
-              <OfflineBanner visible pendingCount={pendingCount} />
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <View style={{ flex: 1 }}>
+            {/* V3 — seção 66: banner offline global (não bloqueia navegação). */}
+            {isOffline ? (
+              <SafeAreaView edges={['top']} style={{ backgroundColor: colors.warning }}>
+                <OfflineBanner visible pendingCount={pendingCount} />
             </SafeAreaView>
           ) : null}
           <Stack screenOptions={{ headerShown: false }} />
-        </View>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+          </View>
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
