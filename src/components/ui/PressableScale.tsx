@@ -6,7 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-interface PressableScaleProps {
+export interface PressableScaleProps {
   children: React.ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;

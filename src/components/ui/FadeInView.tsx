@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleProp, ViewStyle } from 'react-native';
 
-interface FadeInViewProps {
+export interface FadeInViewProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   /** Duração em ms (default 300 — design system ui-ux-pro-max). */

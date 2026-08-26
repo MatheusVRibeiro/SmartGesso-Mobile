@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleProp, TextStyle } from 'react-native';
 
-interface AnimatedCounterProps {
+export interface AnimatedCounterProps {
   value: number;
   /** Prefixo (ex: 'R$ '). */
   prefix?: string;
