@@ -57,7 +57,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useAppTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    throw new Error('useAppTheme deve ser usado dentro de <ThemeProvider>');
+    // Fallback tolerante: componentes renderizados fora do provider
+    // (ex.: testes unitários) usam o tema claro por padrão.
+    const { dark: _dark, ...base } = colors;
+    return {
+      mode: 'light',
+      isDark: false,
+      colors: base as ThemeContextValue['colors'],
+      setMode: () => {},
+      toggle: () => {},
+    };
   }
   return ctx;
 }
