@@ -10,7 +10,7 @@ import {
   QuickCreditCardIcon,
   QuickDocumentIcon,
   QuickDollarIcon,
-  QuickHammerIcon,
+  QuickWrenchIcon,
   QuickUserPlusIcon,
   type LucideIconComponent,
 } from '@/src/components/ui/LucideIcons';
@@ -21,9 +21,6 @@ interface QuickAction {
   title: string;
   Icon: LucideIconComponent;
   route?: string;
-  color: string;
-  bgLight: string;
-  bgDark: string;
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -32,54 +29,36 @@ const QUICK_ACTIONS: QuickAction[] = [
     title: 'Novo orçamento',
     Icon: QuickDocumentIcon,
     route: '/orcamentos/novo',
-    color: '#2563EB',
-    bgLight: '#EFF6FF',
-    bgDark: 'rgba(37,99,235,0.18)',
   },
   {
     id: 'cliente',
     title: 'Novo cliente',
     Icon: QuickUserPlusIcon,
     route: '/clientes/novo',
-    color: '#059669',
-    bgLight: '#ECFDF5',
-    bgDark: 'rgba(5,150,105,0.18)',
   },
   {
     id: 'calculadora',
     title: 'Calculadora Drywall',
     Icon: QuickCalculatorIcon,
     route: '/ferramentas/calculadora',
-    color: '#9333EA',
-    bgLight: '#F3E8FF',
-    bgDark: 'rgba(147,51,234,0.18)',
   },
   {
     id: 'pagamento',
     title: 'Registrar pagamento',
     Icon: QuickDollarIcon,
     route: '/pagamentos/novo',
-    color: '#D97706',
-    bgLight: '#FFFBEB',
-    bgDark: 'rgba(217,119,6,0.18)',
   },
   {
     id: 'despesa',
     title: 'Nova despesa',
     Icon: QuickCreditCardIcon,
     route: '/despesas/novo',
-    color: '#DC2626',
-    bgLight: '#FEF2F2',
-    bgDark: 'rgba(220,38,38,0.18)',
   },
   {
     id: 'producao',
     title: 'Nova produção',
-    Icon: QuickHammerIcon,
+    Icon: QuickWrenchIcon,
     route: '/producao/novo',
-    color: '#475569',
-    bgLight: '#F1F5F9',
-    bgDark: 'rgba(71,85,105,0.18)',
   },
 ];
 
@@ -87,6 +66,7 @@ export default function NovoScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createNovoStyles(colors, isDark), [colors, isDark]);
+  const iconColor = isDark ? '#818CF8' : colors.primary;
 
   const handleAction = (action: QuickAction) => {
     if (action.route) {
@@ -118,15 +98,10 @@ export default function NovoScreen() {
             accessibilityRole="button"
           >
             <AppCard shadow="light" radius={radius.lg} style={styles.actionCard}>
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: isDark ? action.bgDark : action.bgLight },
-                ]}
-              >
+              <View style={styles.actionIconContainer}>
                 <action.Icon
                   size={26}
-                  color={action.color}
+                  color={iconColor}
                   strokeWidth={2}
                 />
               </View>

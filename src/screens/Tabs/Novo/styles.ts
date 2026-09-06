@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { typography, spacing, radius, sizes } from '@/src/theme';
+import { typography, spacing, radius } from '@/src/theme';
 import type { ActivePalette } from '@/src/theme/ThemeProvider';
 
 export const createNovoStyles = (colors: ActivePalette, isDark: boolean) =>
@@ -34,14 +34,17 @@ export const createNovoStyles = (colors: ActivePalette, isDark: boolean) =>
       alignItems: 'center',
       backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
       minHeight: 140,
       justifyContent: 'center',
     },
     actionIconContainer: {
-      width: 52,
-      height: 52,
-      borderRadius: 16,
+      width: 56,
+      height: 56,
+      borderRadius: 14,
+      backgroundColor: isDark ? '#1C1F28' : 'rgba(99, 102, 241, 0.08)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(99, 102, 241, 0.15)',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: spacing.md,
