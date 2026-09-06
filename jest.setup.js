@@ -47,12 +47,3 @@ jest.mock('react-native-svg', () => {
   };
 });
 
-// Mock de lucide-react-native para testes
-jest.mock('lucide-react-native', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const MockLucideIcon = (props) => React.createElement(View, props);
-  return new Proxy({}, {
-    get: () => MockLucideIcon,
-  });
-});

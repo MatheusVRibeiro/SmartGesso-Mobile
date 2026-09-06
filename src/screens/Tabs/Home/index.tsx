@@ -10,13 +10,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  FileSpreadsheet,
-  Hammer,
-  CircleDollarSign,
-  Calculator,
-  Receipt,
-  LucideIcon,
-} from 'lucide-react-native';
+  QuickQuoteIcon,
+  QuickServiceIcon,
+  QuickIncomeIcon,
+  QuickCalculatorIcon,
+  QuickExpenseIcon,
+  ActionIconProps,
+} from '@/src/components/ui/QuickActionIcons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppCard } from '@/src/components/ui/AppCard';
@@ -37,7 +37,7 @@ import { createHomeScreenStyles } from './styles';
 interface QuickActionItem {
   id: string;
   label: string;
-  Icon: LucideIcon;
+  Icon: React.FC<ActionIconProps>;
   route: string;
   lightBg: string;
   lightBorder: string;
@@ -51,7 +51,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'orcamento',
     label: 'Orçamento',
-    Icon: FileSpreadsheet,
+    Icon: QuickQuoteIcon,
     route: '/(app)/orcamentos/novo',
     lightBg: '#EEF2FF',
     lightBorder: '#C7D2FE',
@@ -63,7 +63,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'os',
     label: 'Nova OS',
-    Icon: Hammer,
+    Icon: QuickServiceIcon,
     route: '/(app)/servicos/novo',
     lightBg: '#ECFDF5',
     lightBorder: '#A7F3D0',
@@ -75,7 +75,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'receber',
     label: 'Receber',
-    Icon: CircleDollarSign,
+    Icon: QuickIncomeIcon,
     route: '/(app)/pagamentos/novo',
     lightBg: '#FFFBEB',
     lightBorder: '#FDE68A',
@@ -87,7 +87,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'calc',
     label: 'Calculadora',
-    Icon: Calculator,
+    Icon: QuickCalculatorIcon,
     route: '/(app)/ferramentas/calculadora',
     lightBg: '#FAF5FF',
     lightBorder: '#E9D5FF',
@@ -99,7 +99,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'despesa',
     label: 'Despesa',
-    Icon: Receipt,
+    Icon: QuickExpenseIcon,
     route: '/(app)/despesas/novo',
     lightBg: '#FEF2F2',
     lightBorder: '#FECACA',
@@ -224,11 +224,7 @@ export default function HomeScreen() {
                       },
                     ]}
                   >
-                    <Icon
-                      size={23}
-                      color={iconColor}
-                      strokeWidth={2.2}
-                    />
+                    <Icon size={24} color={iconColor} />
                   </View>
                   <Text
                     style={styles.actionLabel}
