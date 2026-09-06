@@ -1,21 +1,29 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../../src/theme';
+import { useAppTheme } from '../../../src/theme/ThemeProvider';
 
 export default function TabsLayout() {
+  const { colors } = useAppTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
-        headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.text,
-        headerShadowVisible: false,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
       }}
     >
       <Tabs.Screen
@@ -23,8 +31,12 @@ export default function TabsLayout() {
         options={{
           title: 'Início',
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -32,9 +44,13 @@ export default function TabsLayout() {
         name="orcamentos"
         options={{
           title: 'Orçamentos',
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text" size={size} color={color} />
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'document-text' : 'document-text-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -42,9 +58,13 @@ export default function TabsLayout() {
         name="novo"
         options={{
           title: 'Novo',
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size} color={color} />
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'add-circle' : 'add-circle-outline'}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
@@ -52,9 +72,13 @@ export default function TabsLayout() {
         name="servicos"
         options={{
           title: 'Serviços',
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="hammer" size={size} color={color} />
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'hammer' : 'hammer-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -62,9 +86,13 @@ export default function TabsLayout() {
         name="mais"
         options={{
           title: 'Mais',
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="menu" size={size} color={color} />
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'grid' : 'grid-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />

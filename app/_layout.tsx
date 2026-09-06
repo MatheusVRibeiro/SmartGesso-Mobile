@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,37 +8,29 @@ import { queryClient } from '../src/lib/queryClient';
 import { setUnauthorizedHandler, setAccessDeniedHandler } from '../src/services/api/client';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useSessionBootstrap } from '../src/hooks/useSessionBootstrap';
-import { ThemeProvider } from '../src/theme/ThemeProvider';
+import { ThemeProvider, useAppTheme } from '../src/theme/ThemeProvider';
 import { OfflineBanner } from '../src/components/ui/OfflineBanner';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { usePendingMutationsCount } from '../src/hooks/usePendingMutationsCount';
 import { usePushRegistration } from '../src/hooks/usePushRegistration';
 import { setupNotificationHandler } from '../src/services/notifications/notificationHandler';
-import { colors } from '../src/theme';
 
-export default function RootLayout() {
+function ThemedRootApp() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const sessionStatus = useSessionStore((s) => s.sessionStatus);
   const clearSession = useSessionStore((s) => s.clearSession);
   const { isOffline } = useNetworkStatus();
   const pendingCount = usePendingMutationsCount();
-
   const setAccessStatus = useSessionStore((s) => s.setAccessStatus);
 
-  // V3: restaura a sessão em QUALQUER rota (inclusive deep-link/reload no web).
-  // Antes rodava só em app/index.tsx — navegação direta deixava activeCompany null
-  // e as queries escopadas por empresa desabilitadas (telas vazias).
   useSessionBootstrap();
-
-  // V3 §79: registra o token push quando há sessão logada + empresa ativa.
   usePushRegistration();
 
-  // V3 §79: handler global de notificações (toque navega, foreground invalida).
   useEffect(() => {
     return setupNotificationHandler();
   }, []);
 
-  // Quando o refresh token falha (401), limpa a sessão e o cache.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       queryClient.clear();
@@ -46,7 +38,6 @@ export default function RootLayout() {
     });
   }, [clearSession]);
 
-  // V3 §61: quando a API retorna 403 (acesso suspenso/negado), redireciona.
   useEffect(() => {
     setAccessDeniedHandler(() => {
       setAccessStatus('COMPANY_ACCESS_SUSPENDED');
@@ -54,7 +45,6 @@ export default function RootLayout() {
     });
   }, [router, setAccessStatus]);
 
-  // Redireciona para login quando a sessão é limpa (token expirado/inválido).
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
       router.replace('/(auth)/login');
@@ -62,19 +52,24 @@ export default function RootLayout() {
   }, [sessionStatus, router]);
 
   return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {isOffline ? (
+        <SafeAreaView edges={['top']} style={{ backgroundColor: colors.warning }}>
+          <OfflineBanner visible pendingCount={pendingCount} />
+        </SafeAreaView>
+      ) : null}
+      <Stack screenOptions={{ headerShown: false }} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <View style={{ flex: 1 }}>
-            {/* V3 — seção 66: banner offline global (não bloqueia navegação). */}
-            {isOffline ? (
-              <SafeAreaView edges={['top']} style={{ backgroundColor: colors.warning }}>
-                <OfflineBanner visible pendingCount={pendingCount} />
-            </SafeAreaView>
-          ) : null}
-          <Stack screenOptions={{ headerShown: false }} />
-          </View>
-          <StatusBar style="auto" />
+          <ThemedRootApp />
         </SafeAreaProvider>
       </QueryClientProvider>
     </ThemeProvider>
