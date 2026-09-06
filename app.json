@@ -37,6 +37,14 @@
           "photosPermission": "O SmartGesso usa a galeria para anexar fotos a medições, serviços e clientes.",
           "cameraPermission": "O SmartGesso usa a câmera para fotografar ambientes, serviços e clientes."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "extra": {
