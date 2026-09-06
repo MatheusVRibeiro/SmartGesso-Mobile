@@ -51,46 +51,48 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       fontWeight: '600',
       color: colors.primary,
     },
-    quickActionsContainer: {
+    quickActionsSection: {
+      marginBottom: spacing.md,
+    },
+    quickActionsTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 10,
+      letterSpacing: -0.3,
+    },
+    quickActionsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: spacing.md,
-      backgroundColor: isDark ? '#17191E' : colors.surface,
-      paddingVertical: 14,
-      paddingHorizontal: 8,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
-      boxShadow: isDark
-        ? '0px 6px 24px rgba(0, 0, 0, 0.45)'
-        : '0px 2px 12px rgba(79, 70, 229, 0.05)',
-      elevation: 2,
+      alignItems: 'flex-start',
+      gap: 6,
     },
-    quickActionBtn: {
+    quickActionItem: {
       flex: 1,
       alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 2,
     },
-    actionIconWrapper: {
-      width: 50,
-      height: 50,
-      borderRadius: 16,
-      borderWidth: 1.5,
+    actionCard: {
+      width: '100%',
+      aspectRatio: 1,
+      maxWidth: 58,
+      maxHeight: 58,
+      borderRadius: 14,
+      backgroundColor: isDark ? '#1C1F28' : colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 6,
       boxShadow: isDark
-        ? '0px 3px 12px rgba(0, 0, 0, 0.35)'
-        : '0px 2px 8px rgba(0, 0, 0, 0.04)',
-      elevation: 1,
+        ? '0px 2px 8px rgba(0, 0, 0, 0.4)'
+        : '0px 2px 6px rgba(15, 23, 42, 0.04)',
+      elevation: 2,
     },
     actionLabel: {
       fontSize: 11,
       fontWeight: '600',
-      color: colors.text,
+      color: isDark ? '#F1F5F9' : '#334155',
       textAlign: 'center',
+      marginTop: 7,
       letterSpacing: -0.2,
       lineHeight: 14,
     },

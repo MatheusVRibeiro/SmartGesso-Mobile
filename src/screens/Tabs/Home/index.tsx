@@ -10,11 +10,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  FileSpreadsheet,
-  Hammer,
-  CircleDollarSign,
-  Calculator,
-  Receipt,
+  QuickDocumentIcon,
+  QuickWrenchIcon,
+  QuickDollarIcon,
+  QuickCalculatorIcon,
+  QuickCreditCardIcon,
   LucideIconComponent,
 } from '@/src/components/ui/LucideIcons';
 import { useQuery } from '@tanstack/react-query';
@@ -39,74 +39,38 @@ interface QuickActionItem {
   label: string;
   Icon: LucideIconComponent;
   route: string;
-  lightBg: string;
-  lightBorder: string;
-  lightIcon: string;
-  darkBg: string;
-  darkBorder: string;
-  darkIcon: string;
 }
 
 const QUICK_ACTIONS: QuickActionItem[] = [
   {
     id: 'orcamento',
     label: 'Orçamento',
-    Icon: FileSpreadsheet,
+    Icon: QuickDocumentIcon,
     route: '/(app)/orcamentos/novo',
-    lightBg: '#EEF2FF',
-    lightBorder: '#C7D2FE',
-    lightIcon: '#4F46E5',
-    darkBg: 'rgba(99, 102, 241, 0.18)',
-    darkBorder: 'rgba(129, 140, 248, 0.35)',
-    darkIcon: '#818CF8',
   },
   {
     id: 'os',
     label: 'Nova OS',
-    Icon: Hammer,
+    Icon: QuickWrenchIcon,
     route: '/(app)/servicos/novo',
-    lightBg: '#ECFDF5',
-    lightBorder: '#A7F3D0',
-    lightIcon: '#059669',
-    darkBg: 'rgba(16, 185, 129, 0.18)',
-    darkBorder: 'rgba(52, 211, 153, 0.35)',
-    darkIcon: '#34D399',
   },
   {
     id: 'receber',
     label: 'Receber',
-    Icon: CircleDollarSign,
+    Icon: QuickDollarIcon,
     route: '/(app)/pagamentos/novo',
-    lightBg: '#FFFBEB',
-    lightBorder: '#FDE68A',
-    lightIcon: '#D97706',
-    darkBg: 'rgba(245, 158, 11, 0.18)',
-    darkBorder: 'rgba(251, 191, 36, 0.35)',
-    darkIcon: '#FBBF24',
   },
   {
     id: 'calc',
     label: 'Calculadora',
-    Icon: Calculator,
+    Icon: QuickCalculatorIcon,
     route: '/(app)/ferramentas/calculadora',
-    lightBg: '#FAF5FF',
-    lightBorder: '#E9D5FF',
-    lightIcon: '#9333EA',
-    darkBg: 'rgba(168, 85, 247, 0.18)',
-    darkBorder: 'rgba(192, 132, 252, 0.35)',
-    darkIcon: '#C084FC',
   },
   {
     id: 'despesa',
     label: 'Despesa',
-    Icon: Receipt,
+    Icon: QuickCreditCardIcon,
     route: '/(app)/despesas/novo',
-    lightBg: '#FEF2F2',
-    lightBorder: '#FECACA',
-    lightIcon: '#DC2626',
-    darkBg: 'rgba(239, 68, 68, 0.18)',
-    darkBorder: 'rgba(248, 113, 113, 0.35)',
-    darkIcon: '#F87171',
   },
 ];
 
@@ -204,39 +168,34 @@ export default function HomeScreen() {
             </View>
           </FadeInView>
 
-          {/* Barra de Ações Rápidas (1 Toque) */}
-          <View style={styles.quickActionsContainer}>
-            {QUICK_ACTIONS.map(({ id, label, Icon, route, lightBg, lightBorder, lightIcon, darkBg, darkBorder, darkIcon }) => {
-              const iconColor = isDark ? darkIcon : lightIcon;
-              return (
-                <PressableScale
-                  key={id}
-                  style={styles.quickActionBtn}
-                  onPress={() => router.push(route as any)}
-                  scaleTo={0.93}
-                >
-                  <View
-                    style={[
-                      styles.actionIconWrapper,
-                      {
-                        backgroundColor: isDark ? darkBg : lightBg,
-                        borderColor: isDark ? darkBorder : lightBorder,
-                      },
-                    ]}
+          {/* Seção de Ações Rápidas */}
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.quickActionsTitle}>Ações Rápidas</Text>
+            <View style={styles.quickActionsRow}>
+              {QUICK_ACTIONS.map(({ id, label, Icon, route }) => {
+                const iconColor = isDark ? '#818CF8' : colors.primary;
+                return (
+                  <PressableScale
+                    key={id}
+                    style={styles.quickActionItem}
+                    onPress={() => router.push(route as any)}
+                    scaleTo={0.93}
                   >
-                    <Icon size={24} color={iconColor} strokeWidth={2.2} />
-                  </View>
-                  <Text
-                    style={styles.actionLabel}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.85}
-                  >
-                    {label}
-                  </Text>
-                </PressableScale>
-              );
-            })}
+                    <View style={styles.actionCard}>
+                      <Icon size={26} color={iconColor} strokeWidth={2} />
+                    </View>
+                    <Text
+                      style={styles.actionLabel}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {label}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
           </View>
 
           {/* Hero Card: Resultado Financeiro do Mês (Clicável -> Fluxo de Caixa) */}

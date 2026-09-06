@@ -10,12 +10,12 @@ export interface LucideIconProps {
 export type LucideIconComponent = React.FC<LucideIconProps>;
 
 /**
- * Lucide: FileSpreadsheet (Orçamento)
+ * Orçamento: Documento outlined com linhas internas e dobra superior
  */
-export const FileSpreadsheet: LucideIconComponent = ({
+export const QuickDocumentIcon: LucideIconComponent = ({
   size = 24,
-  color = 'currentColor',
-  strokeWidth = 2.2,
+  color = '#818CF8',
+  strokeWidth = 2,
 }) => (
   <Svg
     width={size}
@@ -27,22 +27,21 @@ export const FileSpreadsheet: LucideIconComponent = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
-    <Path d="M14 2v5a1 1 0 0 0 1 1h5" />
-    <Path d="M8 13h2" />
-    <Path d="M14 13h2" />
-    <Path d="M8 17h2" />
-    <Path d="M14 17h2" />
+    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <Path d="M14 2v6h6" />
+    <Line x1="16" y1="13" x2="8" y2="13" />
+    <Line x1="16" y1="17" x2="8" y2="17" />
+    <Line x1="10" y1="9" x2="8" y2="9" />
   </Svg>
 );
 
 /**
- * Lucide: Hammer (Nova OS)
+ * Nova OS: Chave inglesa clássica 45 graus
  */
-export const Hammer: LucideIconComponent = ({
+export const QuickWrenchIcon: LucideIconComponent = ({
   size = 24,
-  color = 'currentColor',
-  strokeWidth = 2.2,
+  color = '#818CF8',
+  strokeWidth = 2,
 }) => (
   <Svg
     width={size}
@@ -54,19 +53,17 @@ export const Hammer: LucideIconComponent = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9" />
-    <Path d="m18 15 4-4" />
-    <Path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" />
+    <Path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
   </Svg>
 );
 
 /**
- * Lucide: CircleDollarSign (Receber)
+ * Receber: Círculo com símbolo de cifrão ($)
  */
-export const CircleDollarSign: LucideIconComponent = ({
+export const QuickDollarIcon: LucideIconComponent = ({
   size = 24,
-  color = 'currentColor',
-  strokeWidth = 2.2,
+  color = '#818CF8',
+  strokeWidth = 2,
 }) => (
   <Svg
     width={size}
@@ -85,12 +82,12 @@ export const CircleDollarSign: LucideIconComponent = ({
 );
 
 /**
- * Lucide: Calculator (Calculadora)
+ * Calculadora: Display superior + botões em grade
  */
-export const Calculator: LucideIconComponent = ({
+export const QuickCalculatorIcon: LucideIconComponent = ({
   size = 24,
-  color = 'currentColor',
-  strokeWidth = 2.2,
+  color = '#818CF8',
+  strokeWidth = 2,
 }) => (
   <Svg
     width={size}
@@ -116,12 +113,12 @@ export const Calculator: LucideIconComponent = ({
 );
 
 /**
- * Lucide: Receipt (Despesa)
+ * Despesa: Cartão de crédito com tarja magnética e chip
  */
-export const Receipt: LucideIconComponent = ({
+export const QuickCreditCardIcon: LucideIconComponent = ({
   size = 24,
-  color = 'currentColor',
-  strokeWidth = 2.2,
+  color = '#818CF8',
+  strokeWidth = 2,
 }) => (
   <Svg
     width={size}
@@ -133,8 +130,17 @@ export const Receipt: LucideIconComponent = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Path d="M12 17V7" />
-    <Path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8" />
-    <Path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z" />
+    <Rect width="20" height="14" x="2" y="5" rx="2" />
+    <Line x1="2" x2="22" y1="10" y2="10" />
+    <Line x1="6" x2="10" y1="15" y2="15" />
   </Svg>
 );
+
+// Aliases para retrocompatibilidade
+export {
+  QuickDocumentIcon as FileSpreadsheet,
+  QuickWrenchIcon as Hammer,
+  QuickDollarIcon as CircleDollarSign,
+  QuickCalculatorIcon as Calculator,
+  QuickCreditCardIcon as Receipt,
+};
