@@ -17,8 +17,18 @@ function api() {
 export const quotesService = {
   /** GET /quotes */
   async list(): Promise<QuoteSummary[]> {
-    const response = await api().get<QuoteSummary[]>('/quotes');
-    return response.data;
+    const response = await api().get<QuoteSummary[] | { data: QuoteSummary[] }>('/quotes');
+    const resData: any = response.data;
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    if (resData && typeof resData === 'object' && Array.isArray(resData.data)) {
+      return resData.data;
+    }
+    if (resData && typeof resData === 'object' && Array.isArray(resData.items)) {
+      return resData.items;
+    }
+    return [];
   },
 
   /** GET /quotes/:id */

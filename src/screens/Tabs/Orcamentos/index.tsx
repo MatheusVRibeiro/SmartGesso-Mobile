@@ -17,7 +17,7 @@ import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
-import type { QuoteStatus } from '@/src/types/quote';
+import type { QuoteStatus, QuoteSummary } from '@/src/types/quote';
 import { createOrcamentosStyles } from './styles';
 
 const QUOTE_STATUS_BADGE: Record<
@@ -119,6 +119,17 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
   );
 }
 
+function toArray<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[];
+  if (result && typeof result === 'object' && 'data' in result && Array.isArray((result as any).data)) {
+    return (result as { data: T[] }).data;
+  }
+  if (result && typeof result === 'object' && 'items' in result && Array.isArray((result as any).items)) {
+    return (result as { items: T[] }).items;
+  }
+  return [];
+}
+
 export default function OrcamentosScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
@@ -138,12 +149,13 @@ export default function OrcamentosScreen() {
   } = useQuery({
     queryKey: ['company', companyId, 'quotes'],
     queryFn: () => quotesService.list(),
+    select: (result) => toArray<QuoteSummary>(result),
     enabled: Boolean(companyId),
   });
 
   const filteredQuotes = useMemo(() => {
-    if (!quotes) return [];
-    return quotes.filter((q) => {
+    const list = toArray<QuoteSummary>(quotes);
+    return list.filter((q) => {
       const matchFilter =
         selectedFilter === 'TODOS' ||
         (selectedFilter === 'RASCUNHO' && q.status === 'RASCUNHO') ||
