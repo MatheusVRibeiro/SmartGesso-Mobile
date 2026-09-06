@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radius } from '../../theme';
+import { radius } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 interface SkeletonProps {
   width?: number | `${number}%`;
@@ -28,9 +29,11 @@ export function Skeleton({
   radius: radiusProp = radius.sm,
   style,
   shimmer = true,
-  highlightColor = colors.divider,
+  highlightColor,
 }: SkeletonProps) {
+  const { colors } = useAppTheme();
   const opacity = useRef(new Animated.Value(shimmer ? 0.4 : 1)).current;
+  const effectiveHighlight = highlightColor ?? colors.divider;
 
   useEffect(() => {
     if (!shimmer) {
@@ -59,12 +62,11 @@ export function Skeleton({
     <Animated.View
       testID="skeleton"
       style={[
-        styles.base,
         {
           width,
           height,
           borderRadius: radiusProp,
-          backgroundColor: highlightColor,
+          backgroundColor: effectiveHighlight,
           opacity,
         },
         style,
@@ -72,12 +74,6 @@ export function Skeleton({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: colors.divider,
-  },
-});
 
 export function SkeletonList({
   rows = 5,

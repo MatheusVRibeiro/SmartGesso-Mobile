@@ -1,10 +1,11 @@
+import { useAppTheme } from '../../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — Etapa 4: Serviço/Materiais do wizard de orçamento.
  *
  * Extraído de app/(app)/orcamentos/novo.tsx (ETAPA 4).
  * O estado (draft) permanece no screen; este componente é apresentacional.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '../../../ui/AppButton';
@@ -15,7 +16,7 @@ import { ErrorState } from '../../../ui/ErrorState';
 import { LoadingState } from '../../../ui/LoadingState';
 import { StatusBadge } from '../../../ui/StatusBadge';
 import { colors, sizes } from '../../../../theme';
-import { styles } from '../wizard/styles';
+import { createWizardStyles } from '../wizard/styles';
 import {
   environmentHasMeasurements,
   parseNumber,
@@ -63,6 +64,8 @@ export function ItensStep({
   updateService,
   removeService,
 }: ItensStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const result: CalculateMaterialsResponse | null =
     materialsCalc?.result ?? null;
 

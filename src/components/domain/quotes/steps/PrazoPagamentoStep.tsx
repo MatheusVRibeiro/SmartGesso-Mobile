@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — Etapas 6 & 7: Prazo e Pagamento do wizard de orçamento.
  *
@@ -7,11 +8,11 @@
  * O `subStep` controla qual bloco renderiza — preservando a navegação
  * sequencial original (prazo → pagamento → revisão).
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AppDatePicker } from '../../../ui/AppDatePicker';
 import { AppInput } from '../../../ui/AppInput';
-import { styles } from '../wizard/styles';
+import { createWizardStyles } from '../wizard/styles';
 import {
   formatIsoDate,
   type PrazoCalendar,
@@ -86,6 +87,8 @@ export function PrazoPagamentoStep({
   onDeadlineObservationChange,
   onPaymentMethodChange,
 }: PrazoPagamentoStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   if (subStep === 'pagamento') {
     return (
       <View>

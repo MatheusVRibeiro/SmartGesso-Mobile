@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { borders, colors, radius, sizes, spacing, typography } from '../../theme';
+import { borders, radius, sizes, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import type { ActivePalette } from '../../theme/ThemeProvider';
 import {
   formatDateBr,
   getDaysInMonth,
@@ -50,6 +52,8 @@ export function AppDatePicker({
   style,
   testID,
 }: AppDatePickerProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [modalVisible, setModalVisible] = useState(false);
 
   // Converte o valor inicial para Date
@@ -327,7 +331,7 @@ export function AppDatePicker({
 
 export default AppDatePicker;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
@@ -345,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.inputBackground,
     borderWidth: borders.width.thin,
     borderColor: colors.inputBorder,
     borderRadius: radius.md,
@@ -399,6 +403,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
     padding: spacing.lg,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -429,7 +435,7 @@ const styles = StyleSheet.create({
   navButton: {
     padding: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: isDark ? 'rgba(94, 106, 210, 0.18)' : colors.primarySoft,
   },
   monthYearText: {
     fontSize: typography.sizes.md,
@@ -505,7 +511,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: isDark ? 'rgba(94, 106, 210, 0.18)' : colors.primarySoft,
     marginRight: 'auto',
   },
   todayButtonText: {
@@ -532,3 +538,5 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
 });
+
+const styles = createStyles({} as any, false);

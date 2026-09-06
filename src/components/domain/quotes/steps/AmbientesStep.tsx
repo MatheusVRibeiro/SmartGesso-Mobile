@@ -1,17 +1,18 @@
+import { useAppTheme } from '../../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — Etapa 3: Ambientes e medições do wizard de orçamento.
  *
  * Extraído de app/(app)/orcamentos/novo.tsx (ETAPA 4).
  * O estado (draft) permanece no screen; este componente é apresentacional.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppCard } from '../../../ui/AppCard';
 import { AppInput } from '../../../ui/AppInput';
 import { EmptyState } from '../../../ui/EmptyState';
 import { colors, sizes, spacing } from '../../../../theme';
-import { styles } from '../wizard/styles';
+import { createWizardStyles } from '../wizard/styles';
 import type {
   QuoteEnvironmentDraft,
   QuoteEnvironmentMeasurementDraft,
@@ -42,6 +43,8 @@ export function AmbientesStep({
   removeEnvironment,
   updateMeasurement,
 }: AmbientesStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   return (
     <View>
       <Text style={styles.sectionLabel}>Ambientes e medições</Text>

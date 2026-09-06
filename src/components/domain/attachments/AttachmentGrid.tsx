@@ -9,7 +9,9 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sizes, spacing, typography } from '../../../theme';
+import { sizes, spacing, typography } from '../../../theme';
+import { useAppTheme } from '../../../theme/ThemeProvider';
+import type { ActivePalette } from '../../../theme/ThemeProvider';
 import { AttachmentCard } from './AttachmentCard';
 import { AttachmentPicker } from './AttachmentPicker';
 import type { Attachment, PickedAttachment } from './types';
@@ -48,6 +50,8 @@ export function AttachmentGrid({
   style,
   testID,
 }: AttachmentGridProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const renderItem = ({ item }: { item: Attachment }) => (
     <AttachmentCard
       attachment={item}
@@ -86,7 +90,7 @@ export function AttachmentGrid({
 
 export default AttachmentGrid;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   container: {
     gap: spacing.md,
   },
@@ -106,3 +110,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 });
+
+const styles = createStyles({} as any, false);

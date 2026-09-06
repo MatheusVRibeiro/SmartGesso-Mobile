@@ -27,6 +27,7 @@ import { compositionsService } from '@/src/services/api/compositions';
 import { quotesService } from '@/src/services/api/quotes';
 import { quoteEnvironmentsService } from '@/src/services/api/quoteEnvironments';
 import { useSessionStore } from '@/src/store/useSessionStore';
+import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { PermissionGate } from '@/src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '@/src/types/permissions';
 import { colors, radius, sizes, spacing, typography } from '@/src/theme';
@@ -70,7 +71,7 @@ import {
   serviceRowSchema,
   stepValoresSchema,
 } from '@/src/components/domain/quotes/wizard/types';
-import { styles } from './styles';
+import { styles as staticStyles, createWizardStyles } from './styles';
 
 // ─── Modal de seleção de cliente ────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ interface ClientPickerModalProps {
 }
 
 function ClientPickerModal({
+
   visible,
   clients,
   isLoading,
@@ -97,6 +99,8 @@ function ClientPickerModal({
   onQuickCreate,
   onClose,
 }: ClientPickerModalProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -233,6 +237,8 @@ interface QuickClientErrors {
  * wizard — CPF/CNPJ, e-mail e endereço ficam opcionais (V3 §12).
  */
 function QuickClientModal({ visible, loading, onSave, onClose }: QuickClientModalProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -453,6 +459,8 @@ function QuickClientModal({ visible, loading, onSave, onClose }: QuickClientModa
 // ─── Indicador de progresso das etapas ──────────────────────────────────────
 
 function StepProgress({ current }: { current: number }) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   return (
     <View style={styles.progressWrap}>
       <View style={styles.progressRow}>
@@ -520,6 +528,8 @@ function StepProgress({ current }: { current: number }) {
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function NovoOrcamentoScreen() {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
@@ -1516,7 +1526,7 @@ export default function NovoOrcamentoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboard>
-        <Stack.Screen options={{ title: 'Novo orçamento', headerShown: true }} />
+        <Stack.Screen options={{ title: 'Novo orçamento', headerShown: false }} />
 
         <View style={styles.header}>
           <Pressable

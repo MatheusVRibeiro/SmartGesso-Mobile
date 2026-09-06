@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../../theme/ThemeProvider';
 import React from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ export interface QuoteFollowUpCardProps {
 }
 
 export function QuoteFollowUpCard({
+
   quote,
   company,
   daysPending,
@@ -99,7 +101,7 @@ export function QuoteFollowUpCard({
 
 export default QuoteFollowUpCard;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   card: {
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -179,3 +181,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
 });
+const styles = createStyles(colors, false);

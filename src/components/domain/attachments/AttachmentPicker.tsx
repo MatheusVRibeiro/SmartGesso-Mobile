@@ -23,7 +23,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { borders, colors, radius, sizes, spacing, typography } from '../../../theme';
+import { borders, radius, sizes, spacing, typography } from '../../../theme';
+import { useAppTheme } from '../../../theme/ThemeProvider';
+import type { ActivePalette } from '../../../theme/ThemeProvider';
 import type { PickedAttachment } from './types';
 
 /** Estados do picker (ciclo de vida interno). */
@@ -62,6 +64,8 @@ export function AttachmentPicker({
   style,
   testID,
 }: AttachmentPickerProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [state, setState] = useState<PickerState>('ready');
 
   async function pick() {
@@ -149,7 +153,7 @@ export function AttachmentPicker({
 
 export default AttachmentPicker;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: spacing.md,
   },
@@ -180,3 +184,5 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
 });
+
+const styles = createStyles({} as any, false);

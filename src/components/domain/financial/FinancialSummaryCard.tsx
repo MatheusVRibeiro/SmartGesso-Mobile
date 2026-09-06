@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { AppCard } from '../../ui/AppCard';
-import { colors, radius, spacing, typography } from '../../../theme';
+import { radius, spacing, typography } from '../../../theme';
+import { useAppTheme } from '../../../theme/ThemeProvider';
+import type { ActivePalette } from '../../../theme/ThemeProvider';
 import { formatCurrency, formatNumber } from '../../../utils/format';
 import type { FinancialSummary } from '../../../types/financialSummary';
 
@@ -18,11 +20,12 @@ export interface FinancialSummaryCardProps {
  * - Vermelho (danger) para valores negativos / custos / dívidas.
  * - Texto neutro para zeros.
  */
-function amountColor(value: number): string {
+function getAmountColor(value: number, colors: ActivePalette): string {
   if (value > 0) return colors.success;
   if (value < 0) return colors.danger;
   return colors.textSecondary;
 }
+
 
 /**
  * Linha de rótulo + valor, com alinhamento consistente.
@@ -30,7 +33,7 @@ function amountColor(value: number): string {
 function FinancialRow({
   label,
   value,
-  valueColor = colors.text,
+  valueColor,
   testID,
 }: {
   label: string;
@@ -38,13 +41,15 @@ function FinancialRow({
   valueColor?: string;
   testID?: string;
 }) {
+  const { colors } = useAppTheme();
+  const color = valueColor ?? colors.text;
   return (
     <View style={styles.row} testID={testID}>
       <Text style={styles.rowLabel} numberOfLines={1}>
         {label}
       </Text>
       <Text
-        style={[styles.rowValue, { color: valueColor }]}
+        style={[styles.rowValue, { color }]}
         numberOfLines={1}
       >
         {value}
@@ -75,6 +80,8 @@ function FinancialSummaryCard({
   style,
   testID,
 }: FinancialSummaryCardProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const {
     contractedValue,
     additionalApproved,
@@ -118,7 +125,7 @@ function FinancialSummaryCard({
       <FinancialRow
         label="Recebido"
         value={formatCurrency(received)}
-        valueColor={amountColor(received)}
+        valueColor={getAmountColor(received, colors)}
         testID="row-received"
       />
       <FinancialRow
@@ -140,19 +147,19 @@ function FinancialSummaryCard({
       <FinancialRow
         label="Resultado projetado"
         value={formatCurrency(projectedResult)}
-        valueColor={amountColor(projectedResult)}
+        valueColor={getAmountColor(projectedResult, colors)}
         testID="row-projected-result"
       />
       <FinancialRow
         label="Resultado realizado"
         value={formatCurrency(cashResult)}
-        valueColor={amountColor(cashResult)}
+        valueColor={getAmountColor(cashResult, colors)}
         testID="row-cash-result"
       />
       <FinancialRow
         label="Margem"
         value={`${formatNumber(margin)}%`}
-        valueColor={amountColor(margin)}
+        valueColor={getAmountColor(margin, colors)}
         testID="row-margin"
       />
     </AppCard>
@@ -162,7 +169,7 @@ function FinancialSummaryCard({
 export default FinancialSummaryCard;
 export { FinancialSummaryCard };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   card: {
     padding: spacing.lg,
     gap: spacing.sm,
@@ -200,3 +207,5 @@ const styles = StyleSheet.create({
     flex: 0,
   },
 });
+
+const styles = createStyles({ text: '#0F172A', textLight: '#94A3B8', textSecondary: '#64748B' } as any, false);

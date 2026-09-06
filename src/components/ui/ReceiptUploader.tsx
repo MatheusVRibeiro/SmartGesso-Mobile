@@ -22,7 +22,9 @@ import { uploadsService } from '../../services/api/uploads';
 import type { UploadEntityType } from '../../services/api/uploads';
 import type { PhotoAttachment } from '../../types/photo';
 import { safeErrorMessage } from '../../utils/secureLog';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import type { ActivePalette } from '../../theme/ThemeProvider';
 
 export interface ReceiptUploaderProps {
   /** URL atual do comprovante (se já existir). */
@@ -63,6 +65,8 @@ export function ReceiptUploader({
   disabled = false,
   style,
 }: ReceiptUploaderProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [uploading, setUploading] = useState(false);
 
   async function handlePickImage() {
@@ -170,7 +174,7 @@ export function ReceiptUploader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: spacing.md,
   },
@@ -232,3 +236,4 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
   },
 });
+const styles = createStyles({} as any, false);

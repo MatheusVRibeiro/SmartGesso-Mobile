@@ -3,12 +3,12 @@
  *
  * Integra busca automática de CEP com preenchimento instantâneo de dados.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { AppInput } from '../../../ui/AppInput';
 import { useCepLookup } from '../../../../hooks/useCepLookup';
-import { colors } from '../../../../theme';
-import { styles } from '../wizard/styles';
+import { useAppTheme } from '../../../../theme/ThemeProvider';
+import { createWizardStyles } from '../wizard/styles';
 import type { QuoteLocalDraft } from '../wizard/types';
 
 export interface LocalStepProps {
@@ -18,6 +18,8 @@ export interface LocalStepProps {
 }
 
 export function LocalStep({ local, onChangeField, onBulkChange }: LocalStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const { isLoading, error, handleCepChange } = useCepLookup();
 
   const handleApplyAddress = (address: {

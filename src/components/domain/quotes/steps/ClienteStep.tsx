@@ -1,15 +1,16 @@
+import { useAppTheme } from '../../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — Etapa 1: Cliente do wizard de orçamento.
  *
  * Extraído de app/(app)/orcamentos/novo.tsx (ETAPA 4).
  * O estado (draft) permanece no screen; este componente é apresentacional.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppCard } from '../../../ui/AppCard';
 import { colors, radius, sizes, spacing } from '../../../../theme';
-import { styles } from '../wizard/styles';
+import { createWizardStyles } from '../wizard/styles';
 import type { Client } from '../../../../types/client';
 
 export interface ClienteStepProps {
@@ -26,6 +27,8 @@ export function ClienteStep({
   selectedClient,
   onOpenClientModal,
 }: ClienteStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   return (
     <View>
       <Text style={styles.sectionLabel}>Cliente</Text>

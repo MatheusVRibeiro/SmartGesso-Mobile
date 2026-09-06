@@ -9,7 +9,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { borders, colors, radius, sizes, spacing, typography } from '../../theme';
+import { borders, radius, sizes, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 import { applyMask, maskKeyboardType, type InputMask } from '../../utils/masks';
 
 export interface AppInputProps {
@@ -73,15 +74,16 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
   },
   ref
 ) {
+  const { colors, isDark } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
 
   return (
     <View style={[styles.container, style]}>
       {label ? (
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>
           {label}
-          {required ? <Text style={styles.required}> *</Text> : null}
+          {required ? <Text style={[styles.required, { color: colors.danger }]}> *</Text> : null}
         </Text>
       ) : null}
 
@@ -94,9 +96,15 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
           testID={testID}
           style={[
             styles.input,
-            focused && !hasError && styles.inputFocused,
+            {
+              backgroundColor: editable === false ? colors.disabledBackground : colors.inputBackground,
+              borderColor: hasError ? colors.danger : focused ? colors.inputFocus : colors.inputBorder,
+              color: editable === false ? colors.disabledText : colors.text,
+            },
+            focused && !hasError && {
+              boxShadow: `0px 0px 0px 3px ${colors.focusRing}`,
+            },
             hasError && styles.inputError,
-            editable === false && styles.inputDisabled,
             leftAccessory != null && styles.inputWithLeftAccessory,
             rightAccessory != null && styles.inputWithAccessory,
             multiline && styles.inputMultiline,
@@ -104,7 +112,6 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
           ]}
           value={value}
           onChangeText={(text) => {
-            // Máscara com auto-correção: formata antes de propagar.
             onChangeText(mask ? applyMask(mask, text) : text);
           }}
           placeholder={placeholder}
@@ -129,9 +136,9 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
         ) : null}
       </View>
 
-      {hasError ? <Text style={styles.errorText}>{error}</Text> : null}
+      {hasError ? <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text> : null}
       {!hasError && helper ? (
-        <Text style={styles.helperText}>{helper}</Text>
+        <Text style={[styles.helperText, { color: colors.textSecondary }]}>{helper}</Text>
       ) : null}
     </View>
   );
@@ -147,37 +154,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
-    color: colors.textSecondary,
     marginBottom: spacing.sm,
   },
   required: {
-    color: colors.danger,
     fontWeight: typography.weights.bold,
   },
   inputWrapper: {
     position: 'relative',
   },
   input: {
-    backgroundColor: colors.surface,
     borderWidth: borders.width.thin,
-    borderColor: colors.inputBorder,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: sizes.inputHeight,
     fontSize: typography.sizes.md,
-    color: colors.text,
-  },
-  inputFocused: {
-    borderColor: colors.inputFocus,
-    boxShadow: `0px 0px 0px 3px ${colors.focusRing}`,
   },
   inputError: {
-    borderColor: colors.danger,
     borderWidth: borders.width.regular,
-  },
-  inputDisabled: {
-    backgroundColor: colors.disabledBackground,
-    color: colors.disabledText,
   },
   inputWithLeftAccessory: {
     paddingLeft: 48,
@@ -208,12 +201,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: typography.sizes.xs,
-    color: colors.danger,
     marginTop: spacing.xs,
   },
   helperText: {
     fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
 });

@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — AttachmentCard.
  *
@@ -64,6 +65,7 @@ function formatFileSize(bytes: number): string {
  * O estado visual (ícone + cor) reflete o `status` do anexo.
  */
 export function AttachmentCard({
+
   attachment,
   onRemove,
   onRetry,
@@ -146,7 +148,7 @@ export function AttachmentCard({
 
 export default AttachmentCard;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,3 +197,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+const styles = createStyles(colors, false);

@@ -1,15 +1,16 @@
+import { useAppTheme } from '../../../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — Etapa 5: Valores do wizard de orçamento.
  *
  * Extraído de app/(app)/orcamentos/novo.tsx (ETAPA 4).
  * O estado (draft) permanece no screen; este componente é apresentacional.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { AppCard } from '../../../ui/AppCard';
 import { AppInput } from '../../../ui/AppInput';
 import { formatCurrency } from '../../../../utils/format';
-import { styles } from '../wizard/styles';
+import { createWizardStyles } from '../wizard/styles';
 import { PermissionGate } from '../../PermissionGate';
 import { COST_VIEW_ROLES } from '../../../../types/permissions';
 
@@ -34,6 +35,8 @@ export function ValoresStep({
   onDiscountChange,
   onMarginPctChange,
 }: ValoresStepProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   return (
     <View>
       <AppCard shadow="light" style={styles.summaryCard}>

@@ -20,6 +20,8 @@ import {
 import type { CreateCatalogItemFormData } from '../../validation/schemas';
 import { AppButton, AppInput } from '../ui';
 import { colors, radius, shadows, sizes, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import type { ActivePalette } from '../../theme/ThemeProvider';
 
 /**
  * Valores do formulário de item de catálogo.
@@ -63,6 +65,8 @@ function CatalogItemFormModal({
   onClose,
   testID,
 }: CatalogItemFormModalProps) {
+  const { colors: themeColors, isDark } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(themeColors, isDark), [themeColors, isDark]);
   // Os schemas usam `.default()`/`z.coerce()`, então o tipo de INPUT do Zod
   // difere do OUTPUT (ex.: status/unit opcionais no input). O resolver entrega
   // os valores já parseados (output) ao handleSubmit — o cast alinha os tipos
@@ -123,7 +127,7 @@ function CatalogItemFormModal({
               hitSlop={8}
               style={styles.closeButton}
             >
-              <Ionicons name="close" size={22} color={colors.textSecondary} />
+              <Ionicons name="close" size={22} color={themeColors.textSecondary} />
             </Pressable>
           </View>
 
@@ -283,7 +287,7 @@ function CatalogItemFormModal({
 export default CatalogItemFormModal;
 export { CatalogItemFormModal };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -298,7 +302,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
     padding: spacing['2xl'],
-    ...shadows.strong,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+    ...(isDark ? {} : shadows.strong),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -337,3 +343,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+const styles = createStyles(colors, false);

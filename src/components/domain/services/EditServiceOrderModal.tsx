@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../../theme/ThemeProvider';
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
@@ -41,6 +42,7 @@ const STATUS_OPTIONS: { value: ServiceOrderStatus; label: string; icon: keyof ty
 ];
 
 export function EditServiceOrderModal({
+
   visible,
   order,
   loading,
@@ -231,7 +233,7 @@ export function EditServiceOrderModal({
 
 export default EditServiceOrderModal;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   modalSafe: {
     flex: 1,
     backgroundColor: colors.background,
@@ -321,3 +323,4 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
 });
+const styles = createStyles(colors, false);

@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radius as radiusTokens, shadows, spacing } from '../../theme';
+import { View, ViewStyle } from 'react-native';
+import { radius as radiusTokens, shadows, spacing } from '../../theme';
 import type { ShadowName } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export interface AppCardProps {
   children: React.ReactNode;
@@ -23,13 +24,19 @@ function AppCard({
   style,
   testID,
 }: AppCardProps) {
+  const { colors, isDark } = useAppTheme();
+
   return (
     <View
       testID={testID}
       style={[
-        styles.base,
+        {
+          backgroundColor: colors.surface,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+          borderWidth: 1,
+        },
         { padding, borderRadius: radiusProp },
-        shadow !== 'none' && shadows[shadow],
+        shadow !== 'none' && !isDark && shadows[shadow],
         style,
       ]}
     >
@@ -40,11 +47,3 @@ function AppCard({
 
 export default AppCard;
 export { AppCard };
-
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-});
