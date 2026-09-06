@@ -4,7 +4,8 @@
  * Integra busca automática de CEP com preenchimento instantâneo de dados.
  */
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppInput } from '../../../ui/AppInput';
 import { useCepLookup } from '../../../../hooks/useCepLookup';
 import { useAppTheme } from '../../../../theme/ThemeProvider';
@@ -20,7 +21,7 @@ export interface LocalStepProps {
 export function LocalStep({ local, onChangeField, onBulkChange }: LocalStepProps) {
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
-  const { isLoading, error, handleCepChange } = useCepLookup();
+  const { isLoading, error, handleCepChange, searchCep } = useCepLookup();
 
   const handleApplyAddress = (address: {
     street: string;
@@ -31,20 +32,26 @@ export function LocalStep({ local, onChangeField, onBulkChange }: LocalStepProps
   }) => {
     if (onBulkChange) {
       onBulkChange({
-        street: address.street,
-        neighborhood: address.neighborhood,
-        city: address.city,
-        state: address.state,
+        street: address.street || local.street,
+        neighborhood: address.neighborhood || local.neighborhood,
+        city: address.city || local.city,
+        state: address.state || local.state,
         ...(address.complement && !local.complement ? { complement: address.complement } : {}),
       });
     } else {
-      onChangeField('street', address.street);
-      onChangeField('neighborhood', address.neighborhood);
-      onChangeField('city', address.city);
-      onChangeField('state', address.state);
+      if (address.street) onChangeField('street', address.street);
+      if (address.neighborhood) onChangeField('neighborhood', address.neighborhood);
+      if (address.city) onChangeField('city', address.city);
+      if (address.state) onChangeField('state', address.state);
       if (address.complement && !local.complement) {
         onChangeField('complement', address.complement);
       }
+    }
+  };
+
+  const handleManualSearch = () => {
+    if (local.zipCode) {
+      searchCep(local.zipCode, handleApplyAddress, true);
     }
   };
 
@@ -62,8 +69,22 @@ export function LocalStep({ local, onChangeField, onBulkChange }: LocalStepProps
             }
             mask="cep"
             placeholder="00000-000"
+            keyboardType="numeric"
+            returnKeyType="search"
+            onSubmitEditing={handleManualSearch}
             rightAccessory={
-              isLoading ? <ActivityIndicator size="small" color={colors.primary} /> : null
+              isLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  onPress={handleManualSearch}
+                  accessibilityRole="button"
+                  accessibilityLabel="Buscar CEP"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="search-outline" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              )
             }
             error={error ?? undefined}
             helper={isLoading ? 'Buscando endereço...' : undefined}

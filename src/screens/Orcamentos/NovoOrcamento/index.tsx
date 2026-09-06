@@ -35,6 +35,7 @@ import { formatCurrency, formatNumber } from '@/src/utils/format';
 import { parseCurrencyInput } from '@/src/utils/masks';
 import { createQuoteSchema } from '@/src/validation/schemas';
 import { ClienteStep } from '@/src/components/domain/quotes/steps/ClienteStep';
+import { LocalStep } from '@/src/components/domain/quotes/steps/LocalStep';
 import { AmbientesStep } from '@/src/components/domain/quotes/steps/AmbientesStep';
 import { ItensStep } from '@/src/components/domain/quotes/steps/ItensStep';
 import { ValoresStep } from '@/src/components/domain/quotes/steps/ValoresStep';
@@ -770,13 +771,18 @@ export default function NovoOrcamentoScreen() {
     }
 
     if (stepKey === 'local') {
-      const hasLocal = Object.values(draft.local).some(
-        (value) => value.trim() !== '',
+      const setLocal = (field: keyof QuoteLocalDraft, value: string) =>
+        setDraft((d) => ({ ...d, local: { ...d.local, [field]: value } }));
+      const handleBulkLocal = (fields: Partial<QuoteLocalDraft>) =>
+        setDraft((d) => ({ ...d, local: { ...d.local, ...fields } }));
+
+      return (
+        <LocalStep
+          local={draft.local}
+          onChangeField={setLocal}
+          onBulkChange={handleBulkLocal}
+        />
       );
-      if (!hasLocal) {
-        setStepError('Informe o local onde o serviço será realizado');
-        return;
-      }
     }
 
     if (stepKey === 'ambientes') {

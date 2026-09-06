@@ -15,7 +15,8 @@ export interface UseCepLookupReturn {
    */
   searchCep: (
     rawCep: string,
-    onFound?: (address: CepAddress) => void
+    onFound?: (address: CepAddress) => void,
+    force?: boolean
   ) => Promise<CepAddress | null>;
   /**
    * Helper prático para ser passado diretamente no onChangeText do campo de CEP.
@@ -43,7 +44,8 @@ export function useCepLookup(): UseCepLookupReturn {
   const searchCep = useCallback(
     async (
       rawCep: string,
-      onFound?: (address: CepAddress) => void
+      onFound?: (address: CepAddress) => void,
+      force = false
     ): Promise<CepAddress | null> => {
       const clean = sanitizeCep(rawCep);
 
@@ -51,8 +53,8 @@ export function useCepLookup(): UseCepLookupReturn {
         return null;
       }
 
-      // Evita requisição duplicada para o mesmo CEP
-      if (lastSearchedCepRef.current === clean && !error) {
+      // Evita requisição duplicada para o mesmo CEP a não ser que seja forçada
+      if (!force && lastSearchedCepRef.current === clean && !error) {
         return null;
       }
 
