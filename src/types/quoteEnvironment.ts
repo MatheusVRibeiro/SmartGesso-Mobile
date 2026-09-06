@@ -36,6 +36,7 @@ export interface CreateEnvironmentInput {
   name: string;
   description?: string;
   order?: number;
+  applicationType?: string;
 }
 
 /** Payload para atualização de um ambiente de orçamento. */

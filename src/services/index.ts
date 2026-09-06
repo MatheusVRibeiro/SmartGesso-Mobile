@@ -22,6 +22,8 @@ export { productionOrdersService } from './api/productionOrders';
 export { paymentsService } from './api/payments';
 export { expensesService } from './api/expenses';
 export { dashboardService } from './api/dashboard';
+export { cepService, fetchAddressByCep } from './api/cep';
+export type { CepAddress } from './api/cep';
 
 export { SecureTokenStorage } from './auth/SecureTokenStorage';
 

@@ -9,6 +9,7 @@
  */
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { AppDatePicker } from '../../../ui/AppDatePicker';
 import { AppInput } from '../../../ui/AppInput';
 import { styles } from '../wizard/styles';
 import {
@@ -156,13 +157,12 @@ export function PrazoPagamentoStep({
 
       {prazoMode === 'A' ? (
         <View>
-          <AppInput
+          <AppDatePicker
             label="Previsão de início"
             required
             value={startDate}
-            onChangeText={onStartDateChange}
-            placeholder="AAAA-MM-DD"
-            autoCapitalize="none"
+            onChange={(iso) => onStartDateChange(iso)}
+            placeholder="Selecione a data de início"
             accessibilityLabel="Previsão de início"
           />
           <AppInput
@@ -218,35 +218,32 @@ export function PrazoPagamentoStep({
 
       {prazoMode === 'B' ? (
         <View>
-          <AppInput
+          <AppDatePicker
             label="Previsão de início"
             required
             value={startDate}
-            onChangeText={onStartDateChange}
-            placeholder="AAAA-MM-DD"
-            autoCapitalize="none"
+            onChange={(iso) => onStartDateChange(iso)}
+            placeholder="Selecione a data de início"
             accessibilityLabel="Previsão de início"
           />
-          <AppInput
+          <AppDatePicker
             label="Previsão de conclusão"
             required
             value={endDate}
-            onChangeText={onEndDateChange}
-            placeholder="AAAA-MM-DD"
-            autoCapitalize="none"
+            onChange={(iso) => onEndDateChange(iso)}
+            placeholder="Selecione a data de conclusão"
             accessibilityLabel="Previsão de conclusão"
           />
         </View>
       ) : null}
 
       {prazoMode === 'C' ? (
-        <AppInput
+        <AppDatePicker
           label="Entregar até"
           required
           value={deadlineDate}
-          onChangeText={onDeadlineDateChange}
-          placeholder="AAAA-MM-DD"
-          autoCapitalize="none"
+          onChange={(iso) => onDeadlineDateChange(iso)}
+          placeholder="Selecione a data limite"
           accessibilityLabel="Data limite de entrega"
         />
       ) : null}
