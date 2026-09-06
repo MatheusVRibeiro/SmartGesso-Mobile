@@ -56,15 +56,15 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: spacing.md,
-      backgroundColor: isDark ? '#16181D' : colors.surface,
+      backgroundColor: isDark ? '#17191E' : colors.surface,
       paddingVertical: 14,
       paddingHorizontal: 8,
-      borderRadius: radius.xl + 4,
+      borderRadius: 22,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
       boxShadow: isDark
-        ? '0px 4px 20px rgba(0, 0, 0, 0.35)'
-        : '0px 2px 10px rgba(79, 70, 229, 0.04)',
+        ? '0px 6px 24px rgba(0, 0, 0, 0.45)'
+        : '0px 2px 12px rgba(79, 70, 229, 0.05)',
       elevation: 2,
     },
     quickActionBtn: {
@@ -74,16 +74,16 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       paddingVertical: 2,
     },
     actionIconWrapper: {
-      width: 48,
-      height: 48,
-      borderRadius: 15,
-      borderWidth: 1.2,
+      width: 50,
+      height: 50,
+      borderRadius: 16,
+      borderWidth: 1.5,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 6,
       boxShadow: isDark
-        ? '0px 2px 8px rgba(0, 0, 0, 0.3)'
-        : '0px 2px 6px rgba(0, 0, 0, 0.03)',
+        ? '0px 3px 12px rgba(0, 0, 0, 0.35)'
+        : '0px 2px 8px rgba(0, 0, 0, 0.04)',
       elevation: 1,
     },
     actionLabel: {
