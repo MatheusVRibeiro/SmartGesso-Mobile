@@ -288,6 +288,22 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       marginTop: spacing.lg,
       marginBottom: spacing['3xl'],
     },
+    whatsAppButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      backgroundColor: '#10B981',
+      borderRadius: radius.md,
+      height: sizes.buttonHeight.lg,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.xs,
+    },
+    whatsAppButtonText: {
+      color: '#FFFFFF',
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+    },
     actionButton: {
       marginBottom: spacing.xs,
     },

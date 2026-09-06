@@ -46,6 +46,33 @@ export const createDespesasStyles = (colors: ActivePalette, isDark: boolean) =>
       shadowRadius: 4,
       elevation: 3,
     },
+    filterScroll: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingHorizontal: sizes.screenPadding,
+      paddingTop: spacing.xs,
+      paddingBottom: spacing.xs,
+    },
+    filterChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterChipText: {
+      fontSize: typography.sizes.xs,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    filterChipTextActive: {
+      color: colors.textOnPrimary ?? '#FFFFFF',
+    },
     searchWrapper: {
       paddingHorizontal: sizes.screenPadding,
       marginTop: spacing.xs,

@@ -74,7 +74,7 @@ export interface Quote {
   deadlineDate?: string | null;
   /** Marcado quando o orçamento aprovado vira ordem de serviço (V3). */
   convertedAt?: string | null;
-  client?: { id: string; name: string; document?: string | null };
+  client?: { id: string; name: string; document?: string | null; phone?: string | null; whatsapp?: string | null; };
   work?: { id: string; name: string };
   items: QuoteItemSummary[];
   /** Timeline de eventos (criação, versões, aprovação, rejeição...). */

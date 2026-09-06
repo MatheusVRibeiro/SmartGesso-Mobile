@@ -295,8 +295,7 @@ export const STEP_META: {
   { key: 'ambientes', title: 'Ambientes', icon: 'home-outline' },
   { key: 'itens', title: 'Serviço/Materiais', icon: 'cube-outline' },
   { key: 'valores', title: 'Valores', icon: 'calculator-outline' },
-  { key: 'prazo', title: 'Prazo', icon: 'time-outline' },
-  { key: 'pagamento', title: 'Pagamento', icon: 'card-outline' },
+  { key: 'prazo', title: 'Prazo & Pagamento', icon: 'time-outline' },
   { key: 'revisao', title: 'Revisão', icon: 'document-text-outline' },
 ];
 

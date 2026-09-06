@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Alert, Modal, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, RefreshControl, Share, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -200,6 +200,39 @@ export default function DetalheOrcamentoScreen() {
   });
 
 
+
+  const handleShareWhatsApp = async () => {
+    if (!quote) return;
+    const clientName = quote.client?.name ?? 'Cliente';
+    const quoteNum = formatQuoteCode(quote.quoteNumber);
+    const totalStr = formatCurrency(quote.total);
+    const rawPhone = ((quote.client as any)?.whatsapp || (quote.client as any)?.phone || '').replace(/\D/g, '');
+    const phone = rawPhone.length === 10 || rawPhone.length === 11 ? `55${rawPhone}` : rawPhone;
+
+    const text = `Olá, ${clientName}! Segue o orçamento *${quoteNum}* no valor total de *${totalStr}* pela SmartGesso. Ficamos à disposição para tirar qualquer dúvida e agendar a execução do serviço!`;
+
+    if (phone) {
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+      try {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+          return;
+        }
+      } catch {
+        // Fallback para Share
+      }
+    }
+
+    try {
+      await Share.share({
+        message: text,
+        title: `Orçamento ${quoteNum}`,
+      });
+    } catch {
+      Alert.alert('Erro', 'Não foi possível compartilhar via WhatsApp.');
+    }
+  };
 
   async function handleSharePdf() {
     try {
@@ -524,6 +557,15 @@ export default function DetalheOrcamentoScreen() {
                   style={styles.actionButton}
                 />
               )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Enviar orçamento por WhatsApp"
+                onPress={handleShareWhatsApp}
+                style={styles.whatsAppButton}
+              >
+                <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+                <Text style={styles.whatsAppButtonText}>Enviar por WhatsApp</Text>
+              </Pressable>
               <AppButton
                 title="Gerar PDF"
                 size="lg"

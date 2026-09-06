@@ -12,6 +12,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AppDatePicker } from '../../../ui/AppDatePicker';
 import { AppInput } from '../../../ui/AppInput';
+import { spacing } from '../../../../theme';
 import { createWizardStyles } from '../wizard/styles';
 import {
   formatIsoDate,
@@ -47,7 +48,7 @@ const PRAZO_MODES: {
 ];
 
 export interface PrazoPagamentoStepProps {
-  subStep: PrazoPagamentoSubStep;
+  subStep?: PrazoPagamentoSubStep;
   prazoMode: PrazoMode;
   prazoCalendar: PrazoCalendar;
   startDate: string;
@@ -89,44 +90,8 @@ export function PrazoPagamentoStep({
 }: PrazoPagamentoStepProps) {
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
-  if (subStep === 'pagamento') {
-    return (
-      <View>
-        <Text style={styles.sectionLabel}>Forma de pagamento</Text>
-        <View style={styles.paymentRow}>
-          {PAYMENT_METHOD_OPTIONS.map((option) => {
-            const selected = option.value === paymentMethod;
-            return (
-              <Pressable
-                key={option.value}
-                accessibilityRole="button"
-                accessibilityLabel={`Forma de pagamento ${option.label}`}
-                accessibilityState={{ selected }}
-                onPress={() => onPaymentMethodChange(option.value)}
-                style={[
-                  styles.paymentChip,
-                  selected && styles.paymentChipSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.paymentChipText,
-                    selected && styles.paymentChipTextSelected,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {option.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    );
-  }
 
-  // subStep === 'prazo'
-  return (
+  const renderPrazoSection = () => (
     <View>
       <Text style={styles.sectionLabel}>Como informar o prazo?</Text>
       <View style={styles.paymentRow}>
@@ -259,6 +224,50 @@ export function PrazoPagamentoStep({
         accessibilityLabel="Observação de prazo"
         multiline
       />
+    </View>
+  );
+
+  const renderPagamentoSection = () => (
+    <View style={{ marginTop: spacing.md }}>
+      <Text style={styles.sectionLabel}>Forma de pagamento</Text>
+      <View style={styles.paymentRow}>
+        {PAYMENT_METHOD_OPTIONS.map((option) => {
+          const selected = option.value === paymentMethod;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="button"
+              accessibilityLabel={`Forma de pagamento ${option.label}`}
+              accessibilityState={{ selected }}
+              onPress={() => onPaymentMethodChange(option.value)}
+              style={[
+                styles.paymentChip,
+                selected && styles.paymentChipSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.paymentChipText,
+                  selected && styles.paymentChipTextSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  if (subStep === 'prazo') return renderPrazoSection();
+  if (subStep === 'pagamento') return renderPagamentoSection();
+
+  return (
+    <View>
+      {renderPrazoSection()}
+      {renderPagamentoSection()}
     </View>
   );
 }

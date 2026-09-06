@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -27,6 +28,8 @@ import { radius, sizes } from '@/src/theme';
 import type { Expense, ExpenseCategory } from '@/src/types/finance';
 import { formatCurrency } from '@/src/utils/format';
 import { createDespesasStyles } from './styles';
+
+type ExpenseFilter = 'TODAS' | 'MATERIAL' | 'MAO_DE_OBRA' | 'TRANSPORTE' | 'OUTROS';
 
 const EXPENSE_CATEGORY_BADGE: Record<
   ExpenseCategory,
@@ -55,6 +58,7 @@ function toArray<T>(result: unknown): T[] {
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString('pt-BR');
 }
 
@@ -66,7 +70,10 @@ interface ExpenseCardProps {
 }
 
 function ExpenseCard({ expense, styles, colors, onPress }: ExpenseCardProps) {
-  const badge = EXPENSE_CATEGORY_BADGE[expense.category] || { variant: 'expired', label: 'Outros' };
+  const badge = EXPENSE_CATEGORY_BADGE[expense.category] ?? {
+    variant: 'expired' as const,
+    label: expense.category,
+  };
 
   return (
     <AppCard shadow="light" radius={radius.lg} style={styles.card}>
@@ -131,6 +138,7 @@ export default function DespesasScreen() {
   const styles = useMemo(() => createDespesasStyles(colors, isDark), [colors, isDark]);
 
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ExpenseFilter>('TODAS');
 
   const {
     data: expenses,
@@ -146,16 +154,40 @@ export default function DespesasScreen() {
     enabled: Boolean(companyId),
   });
 
+  const counts = useMemo(() => {
+    const list = expenses ?? [];
+    return {
+      TODAS: list.length,
+      MATERIAL: list.filter((e) => e.category === 'MATERIAL').length,
+      MAO_DE_OBRA: list.filter((e) => e.category === 'MAO_DE_OBRA').length,
+      TRANSPORTE: list.filter((e) => e.category === 'TRANSPORTE').length,
+      OUTROS: list.filter(
+        (e) => !['MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE'].includes(e.category)
+      ).length,
+    };
+  }, [expenses]);
+
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return expenses ?? [];
-    return (expenses ?? []).filter((expense) => {
+    const list = expenses ?? [];
+    return list.filter((expense) => {
+      if (selectedCategory !== 'TODAS') {
+        if (selectedCategory === 'OUTROS') {
+          if (['MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE'].includes(expense.category)) {
+            return false;
+          }
+        } else if (expense.category !== selectedCategory) {
+          return false;
+        }
+      }
+
+      const term = search.trim().toLowerCase();
+      if (!term) return true;
       const description = expense.description.toLowerCase();
       const badge = EXPENSE_CATEGORY_BADGE[expense.category];
       const categoryLabel = badge ? badge.label.toLowerCase() : '';
       return description.includes(term) || categoryLabel.includes(term);
     });
-  }, [expenses, search]);
+  }, [expenses, search, selectedCategory]);
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
@@ -198,15 +230,56 @@ export default function DespesasScreen() {
         />
       </View>
 
+      <View style={{ marginVertical: 4 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {(['TODAS', 'MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE', 'OUTROS'] as const).map((cat) => {
+            const isActive = selectedCategory === cat;
+            const labelMap: Record<ExpenseFilter, string> = {
+              TODAS: 'Todas',
+              MATERIAL: 'Materiais',
+              MAO_DE_OBRA: 'Mão de obra',
+              TRANSPORTE: 'Transporte',
+              OUTROS: 'Outros',
+            };
+            const count = counts[cat];
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.filterChip, isActive && styles.filterChipActive]}
+                onPress={() => setSelectedCategory(cat)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    isActive && styles.filterChipTextActive,
+                  ]}
+                >
+                  {labelMap[cat]} {count > 0 ? `(${count})` : ''}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {isLoading ? (
         <LoadingState text="Carregando despesas..." />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : filtered.length === 0 ? (
-        search.trim() ? (
+        search.trim() || selectedCategory !== 'TODAS' ? (
           <EmptyState
             title="Nenhuma despesa encontrada"
-            description={`Nenhum resultado para "${search.trim()}". Tente outro termo.`}
+            description={
+              search.trim()
+                ? `Nenhum resultado para "${search.trim()}". Tente outro termo.`
+                : 'Nenhuma despesa para esta categoria.'
+            }
             icon="search-outline"
           />
         ) : (

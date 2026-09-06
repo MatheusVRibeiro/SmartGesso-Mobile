@@ -36,12 +36,17 @@ export function AnimatedCounter({
     const listener = animatedValue.addListener(({ value: v }) => {
       setDisplay(v);
     });
-    Animated.timing(animatedValue, {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+    const anim = Animated.timing(animatedValue, {
       toValue: value,
       duration,
       useNativeDriver: false, // precisa do JS para atualizar texto
-    }).start();
+    });
+    anim.start();
     return () => {
+      anim.stop();
       animatedValue.removeListener(listener);
     };
   }, [animatedValue, value, duration]);

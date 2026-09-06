@@ -136,7 +136,7 @@ export default function OrcamentosScreen() {
   const styles = useMemo(() => createOrcamentosStyles(colors, isDark), [colors, isDark]);
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
 
-  const [selectedFilter, setSelectedFilter] = useState<'TODOS' | 'RASCUNHO' | 'ENVIADO' | 'APROVADO'>('TODOS');
+  const [selectedFilter, setSelectedFilter] = useState<'TODOS' | 'RASCUNHO' | 'ENVIADO' | 'APROVADO' | 'RECUSADO'>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
 
   const {
@@ -153,6 +153,17 @@ export default function OrcamentosScreen() {
     enabled: Boolean(companyId),
   });
 
+  const counts = useMemo(() => {
+    const list = toArray<QuoteSummary>(quotes);
+    return {
+      TODOS: list.length,
+      RASCUNHO: list.filter((q) => q.status === 'RASCUNHO').length,
+      ENVIADO: list.filter((q) => q.status === 'ENVIADO' || q.status === 'AGUARDANDO_APROVACAO').length,
+      APROVADO: list.filter((q) => q.status === 'APROVADO').length,
+      RECUSADO: list.filter((q) => q.status === 'REJEITADO' || q.status === 'CANCELADO' || isQuoteExpired(q)).length,
+    };
+  }, [quotes]);
+
   const filteredQuotes = useMemo(() => {
     const list = toArray<QuoteSummary>(quotes);
     return list.filter((q) => {
@@ -160,7 +171,8 @@ export default function OrcamentosScreen() {
         selectedFilter === 'TODOS' ||
         (selectedFilter === 'RASCUNHO' && q.status === 'RASCUNHO') ||
         (selectedFilter === 'ENVIADO' && (q.status === 'ENVIADO' || q.status === 'AGUARDANDO_APROVACAO')) ||
-        (selectedFilter === 'APROVADO' && q.status === 'APROVADO');
+        (selectedFilter === 'APROVADO' && q.status === 'APROVADO') ||
+        (selectedFilter === 'RECUSADO' && (q.status === 'REJEITADO' || q.status === 'CANCELADO' || isQuoteExpired(q)));
 
       const matchSearch =
         !searchQuery.trim() ||
@@ -210,14 +222,16 @@ export default function OrcamentosScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
-          {(['TODOS', 'RASCUNHO', 'ENVIADO', 'APROVADO'] as const).map((fil) => {
+          {(['TODOS', 'RASCUNHO', 'ENVIADO', 'APROVADO', 'RECUSADO'] as const).map((fil) => {
             const isActive = selectedFilter === fil;
             const labelMap = {
               TODOS: 'Todos',
               RASCUNHO: 'Rascunho',
               ENVIADO: 'Enviados',
               APROVADO: 'Aprovados',
+              RECUSADO: 'Recusados',
             };
+            const count = counts[fil];
             return (
               <TouchableOpacity
                 key={fil}
@@ -231,7 +245,7 @@ export default function OrcamentosScreen() {
                     isActive && styles.filterChipTextActive,
                   ]}
                 >
-                  {labelMap[fil]}
+                  {labelMap[fil]} {count > 0 ? `(${count})` : ''}
                 </Text>
               </TouchableOpacity>
             );

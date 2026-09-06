@@ -8,7 +8,7 @@ export const createCatalogoStyles = (colors: ActivePalette, isDark: boolean) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      marginBottom: spacing.xl,
+      marginBottom: spacing.md,
       paddingTop: spacing.xs,
     },
     headerText: {
@@ -24,6 +24,52 @@ export const createCatalogoStyles = (colors: ActivePalette, isDark: boolean) =>
       marginTop: 2,
       fontSize: typography.sizes.sm,
       color: colors.textSecondary,
+    },
+    tabsScroll: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingBottom: spacing.md,
+    },
+    tabPill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    tabPillActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    tabPillText: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.textSecondary,
+    },
+    tabPillTextActive: {
+      color: colors.textOnPrimary ?? '#FFFFFF',
+      fontWeight: typography.weights.semibold,
+    },
+    badgeCount: {
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+    },
+    badgeCountActive: {
+      backgroundColor: 'rgba(255,255,255,0.25)',
+    },
+    badgeCountText: {
+      fontSize: 11,
+      fontWeight: typography.weights.bold,
+      color: colors.textSecondary,
+    },
+    badgeCountTextActive: {
+      color: colors.textOnPrimary ?? '#FFFFFF',
     },
     cardsContainer: {
       gap: spacing.md,
@@ -84,5 +130,66 @@ export const createCatalogoStyles = (colors: ActivePalette, isDark: boolean) =>
       fontSize: typography.sizes.sm,
       fontWeight: typography.weights.semibold,
       color: colors.primary,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+      marginTop: spacing.xs,
+    },
+    sectionTitle: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+    },
+    sectionAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    sectionActionText: {
+      fontSize: typography.sizes.sm,
+      color: colors.primary,
+      fontWeight: typography.weights.semibold,
+    },
+    itemsList: {
+      gap: spacing.sm,
+      paddingBottom: spacing['4xl'],
+    },
+    itemCard: {
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    itemCardContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    itemCardMain: {
+      flex: 1,
+    },
+    itemName: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    itemMeta: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    itemPrice: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+      color: colors.primary,
+      textAlign: 'right',
+    },
+    itemRight: {
+      alignItems: 'flex-end',
+      gap: spacing.xs,
     },
   });
