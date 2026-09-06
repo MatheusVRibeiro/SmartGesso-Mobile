@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ import { PermissionGate } from '@/src/components/domain/PermissionGate';
 import { ThemeSelector } from '@/src/components/ui/ThemeSelector';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
-import { styles } from './styles';
+import { createConfiguracoesStyles } from './styles';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -24,7 +24,8 @@ interface SettingsItem {
 
 export default function ConfiguracoesScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createConfiguracoesStyles(colors, isDark), [colors, isDark]);
 
   const handleModuleNotImplemented = (moduleName: string) => {
     Alert.alert(
