@@ -10,7 +10,8 @@ export interface LucideIconProps {
 export type LucideIconComponent = React.FC<LucideIconProps>;
 
 /**
- * Orçamento: Documento outlined com linhas internas e dobra superior
+ * Orçamento: Documento outlined com linhas internas (Padrão de Referência Visual)
+ * Bounding Box: 16 x 20 em viewBox 0 0 24 24
  */
 export const QuickDocumentIcon: LucideIconComponent = ({
   size = 24,
@@ -36,7 +37,7 @@ export const QuickDocumentIcon: LucideIconComponent = ({
 );
 
 /**
- * Nova OS: Chave inglesa clássica 45 graus
+ * Nova OS: Chave inglesa calibrada para a mesma área visual
  */
 export const QuickWrenchIcon: LucideIconComponent = ({
   size = 24,
@@ -58,7 +59,7 @@ export const QuickWrenchIcon: LucideIconComponent = ({
 );
 
 /**
- * Receber: Círculo com símbolo de cifrão ($)
+ * Receber: Círculo com símbolo de cifrão ($) perfeitamente centralizado
  */
 export const QuickDollarIcon: LucideIconComponent = ({
   size = 24,
@@ -75,14 +76,14 @@ export const QuickDollarIcon: LucideIconComponent = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Circle cx="12" cy="12" r="10" />
-    <Path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-    <Path d="M12 18V6" />
+    <Circle cx="12" cy="12" r="9" />
+    <Path d="M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0" />
+    <Line x1="12" y1="6.5" x2="12" y2="17.5" />
   </Svg>
 );
 
 /**
- * Calculadora: Display superior + botões em grade
+ * Calculadora: Display superior + botões em grade com proporção 16x20 idêntica ao orçamento
  */
 export const QuickCalculatorIcon: LucideIconComponent = ({
   size = 24,
@@ -113,7 +114,7 @@ export const QuickCalculatorIcon: LucideIconComponent = ({
 );
 
 /**
- * Despesa: Cartão de crédito com tarja magnética e chip
+ * Despesa: Cartão de crédito equilibrado (20x15) para igualar o peso visual do orçamento
  */
 export const QuickCreditCardIcon: LucideIconComponent = ({
   size = 24,
@@ -130,9 +131,9 @@ export const QuickCreditCardIcon: LucideIconComponent = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <Rect width="20" height="14" x="2" y="5" rx="2" />
-    <Line x1="2" x2="22" y1="10" y2="10" />
-    <Line x1="6" x2="10" y1="15" y2="15" />
+    <Rect width="20" height="15" x="2" y="4.5" rx="2.5" />
+    <Line x1="2" x2="22" y1="9.5" y2="9.5" />
+    <Line x1="6" x2="10" y1="14.5" y2="14.5" />
   </Svg>
 );
 

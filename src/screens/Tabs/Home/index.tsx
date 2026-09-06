@@ -180,7 +180,7 @@ export default function HomeScreen() {
                     scaleTo={0.93}
                   >
                     <View style={styles.actionCard}>
-                      <Icon size={26} color={iconColor} strokeWidth={2} />
+                      <Icon size={24} color={iconColor} strokeWidth={2} />
                     </View>
                     <Text
                       style={styles.actionLabel}
