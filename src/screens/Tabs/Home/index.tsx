@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppCard } from '@/src/components/ui/AppCard';
+import { PressableScale } from '@/src/components/ui/PressableScale';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
@@ -24,6 +25,82 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, spacing } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
 import { createHomeScreenStyles } from './styles';
+
+interface QuickActionItem {
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+  lightBg: string;
+  lightBorder: string;
+  lightIcon: string;
+  darkBg: string;
+  darkBorder: string;
+  darkIcon: string;
+}
+
+const QUICK_ACTIONS: QuickActionItem[] = [
+  {
+    id: 'orcamento',
+    label: 'Orçamento',
+    icon: 'document-text',
+    route: '/(app)/orcamentos/novo',
+    lightBg: '#EEF2FF',
+    lightBorder: '#C7D2FE',
+    lightIcon: '#4F46E5',
+    darkBg: 'rgba(99, 102, 241, 0.16)',
+    darkBorder: 'rgba(129, 140, 248, 0.32)',
+    darkIcon: '#818CF8',
+  },
+  {
+    id: 'os',
+    label: 'Nova OS',
+    icon: 'hammer',
+    route: '/(app)/servicos/novo',
+    lightBg: '#ECFDF5',
+    lightBorder: '#A7F3D0',
+    lightIcon: '#059669',
+    darkBg: 'rgba(16, 185, 129, 0.16)',
+    darkBorder: 'rgba(52, 211, 153, 0.32)',
+    darkIcon: '#34D399',
+  },
+  {
+    id: 'receber',
+    label: 'Receber',
+    icon: 'cash',
+    route: '/(app)/pagamentos/novo',
+    lightBg: '#FFFBEB',
+    lightBorder: '#FDE68A',
+    lightIcon: '#D97706',
+    darkBg: 'rgba(245, 158, 11, 0.16)',
+    darkBorder: 'rgba(251, 191, 36, 0.32)',
+    darkIcon: '#FBBF24',
+  },
+  {
+    id: 'calc',
+    label: 'Calculadora',
+    icon: 'calculator',
+    route: '/(app)/ferramentas/calculadora',
+    lightBg: '#FAF5FF',
+    lightBorder: '#E9D5FF',
+    lightIcon: '#9333EA',
+    darkBg: 'rgba(168, 85, 247, 0.16)',
+    darkBorder: 'rgba(192, 132, 252, 0.32)',
+    darkIcon: '#C084FC',
+  },
+  {
+    id: 'despesa',
+    label: 'Despesa',
+    icon: 'card',
+    route: '/(app)/despesas/novo',
+    lightBg: '#FEF2F2',
+    lightBorder: '#FECACA',
+    lightIcon: '#DC2626',
+    darkBg: 'rgba(239, 68, 68, 0.16)',
+    darkBorder: 'rgba(248, 113, 113, 0.32)',
+    darkIcon: '#F87171',
+  },
+];
 
 export default function HomeScreen() {
   const activeCompany = useSessionStore((s) => s.activeCompany);
@@ -121,60 +198,38 @@ export default function HomeScreen() {
 
           {/* Barra de Ações Rápidas (1 Toque) */}
           <View style={styles.quickActionsContainer}>
-            <TouchableOpacity
-              style={styles.quickActionBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(app)/orcamentos/novo')}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: colors.primarySoft }]}>
-                <Ionicons name="document-text" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.actionLabel}>Orçamento</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(app)/servicos/novo')}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: colors.successSoft }]}>
-                <Ionicons name="hammer" size={20} color={colors.success} />
-              </View>
-              <Text style={styles.actionLabel}>Nova OS</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(app)/pagamentos/novo')}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: colors.warningSoft }]}>
-                <Ionicons name="cash" size={20} color={colors.warning} />
-              </View>
-              <Text style={styles.actionLabel}>Receber</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(app)/ferramentas/calculadora')}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: isDark ? 'rgba(168,85,247,0.18)' : '#F3E8FF' }]}>
-                <Ionicons name="calculator" size={20} color="#9333EA" />
-              </View>
-              <Text style={styles.actionLabel}>Calculadora</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionBtn}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(app)/despesas/novo')}
-            >
-              <View style={[styles.actionIconWrapper, { backgroundColor: colors.dangerSoft }]}>
-                <Ionicons name="card" size={20} color={colors.danger} />
-              </View>
-              <Text style={styles.actionLabel}>Despesa</Text>
-            </TouchableOpacity>
+            {QUICK_ACTIONS.map((action) => (
+              <PressableScale
+                key={action.id}
+                style={styles.quickActionBtn}
+                onPress={() => router.push(action.route as any)}
+                scaleTo={0.93}
+              >
+                <View
+                  style={[
+                    styles.actionIconWrapper,
+                    {
+                      backgroundColor: isDark ? action.darkBg : action.lightBg,
+                      borderColor: isDark ? action.darkBorder : action.lightBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon}
+                    size={22}
+                    color={isDark ? action.darkIcon : action.lightIcon}
+                  />
+                </View>
+                <Text
+                  style={styles.actionLabel}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {action.label}
+                </Text>
+              </PressableScale>
+            ))}
           </View>
 
           {/* Hero Card: Resultado Financeiro do Mês (Clicável -> Fluxo de Caixa) */}
