@@ -1,6 +1,11 @@
 // Mock de __DEV__ global
 global.__DEV__ = true;
 
+// Mock de @react-native-async-storage/async-storage
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 // Mock de expo-secure-store para testes
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(() => Promise.resolve(null)),

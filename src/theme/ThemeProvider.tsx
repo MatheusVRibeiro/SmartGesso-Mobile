@@ -1,13 +1,14 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { colors, Colors } from '../theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors } from './colors';
 
-type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 /** Paleta ativa (cores base + overrides dark). */
-type ActivePalette = typeof colors;
+export type ActivePalette = typeof colors;
 
-interface ThemeContextValue {
+export interface ThemeContextValue {
   mode: ThemeMode;
   isDark: boolean;
   colors: ActivePalette;
@@ -15,38 +16,57 @@ interface ThemeContextValue {
   toggle: () => void;
 }
 
+const THEME_STORAGE_KEY = '@smartgesso_theme_mode';
+
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
- * ThemeProvider — fornece o tema claro (indigo Enterprise) ou escuro
+ * ThemeProvider — fornece o tema claro (Indigo Enterprise) ou escuro
  * (Linear Dark) para toda a árvore de componentes.
  *
- * Padrão: segue o sistema do device (useColorScheme). Usuário pode
- * sobrescrever via setMode/toggle (persistido em memória).
+ * Suporta:
+ * - 'light': força tema claro
+ * - 'dark': força tema escuro
+ * - 'system': acompanha a configuração do dispositivo
  *
- * Uso:
- *   const { isDark, colors, toggle } = useAppTheme();
- *   <View style={{ backgroundColor: colors.background }} />
+ * A escolha é persistida no AsyncStorage.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>(
-    systemScheme === 'dark' ? 'dark' : 'light',
-  );
+  const [mode, setModeState] = useState<ThemeMode>('system');
+
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY)
+      .then((saved) => {
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          setModeState(saved);
+        }
+      })
+      .catch(() => {
+        // Fallback silencioso para valor padrão
+      });
+  }, []);
+
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, newMode).catch(() => {});
+  };
+
+  const isDark = mode === 'system' ? systemScheme === 'dark' : mode === 'dark';
 
   const value = useMemo<ThemeContextValue>(() => {
-    const isDark = mode === 'dark';
     const palette = (
       isDark ? { ...colors, ...colors.dark } : colors
     ) as unknown as typeof colors;
+
     return {
       mode,
       isDark,
       colors: palette,
       setMode,
-      toggle: () => setMode((m) => (m === 'dark' ? 'light' : 'dark')),
+      toggle: () => setMode(isDark ? 'light' : 'dark'),
     };
-  }, [mode]);
+  }, [mode, isDark]);
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
