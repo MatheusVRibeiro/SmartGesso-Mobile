@@ -173,63 +173,7 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       backgroundColor: colors.divider,
       marginHorizontal: spacing.md,
     },
-    goalCard: {
-      backgroundColor: colors.surface,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    goalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: spacing.xs,
-    },
-    goalTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    rowCentered: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    goalTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    goalPctBadge: {
-      fontSize: 15,
-      fontWeight: '800',
-      color: colors.primary,
-    },
-    progressBarBg: {
-      height: 8,
-      backgroundColor: colors.divider,
-      borderRadius: radius.full,
-      overflow: 'hidden',
-      marginVertical: 6,
-    },
-    progressBarFill: {
-      height: '100%',
-      borderRadius: radius.full,
-    },
-    goalFooter: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    goalFooterLabel: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-    goalFooterSub: {
-      fontSize: 11,
-      color: colors.textLight,
-    },
+    
     kpiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',

@@ -120,7 +120,6 @@ export default function HomeScreen() {
   }
 
   const summary = overview?.summary;
-  const goals = overview?.goals;
   const operationalToday = overview?.operationalToday;
   const charts = overview?.charts;
   const alerts = overview?.alerts;
@@ -130,7 +129,6 @@ export default function HomeScreen() {
   const profit = summary?.revenue.monthProfit ?? 0;
   const profitMarginPct = summary?.revenue.profitMarginPct ?? 0;
 
-  const safeRevenuePct = Math.min(100, Math.max(0, goals?.revenuePct ?? 0));
   const maxEvolutionValue = Math.max(
     ...(charts?.monthlyEvolution?.map((m) => Math.max(m.revenue, m.expenses, 1)) ?? [1]),
   );
@@ -234,47 +232,7 @@ export default function HomeScreen() {
             </AppCard>
           </TouchableOpacity>
 
-          {/* Card: Metas & Progresso do Mês */}
-          {goals ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => router.push('/(app)/metas')}
-            >
-              <AppCard shadow="light" radius={radius.lg} style={styles.goalCard}>
-                <View style={styles.goalHeader}>
-                  <View style={styles.goalTitleRow}>
-                    <Ionicons name="trophy-outline" size={16} color={colors.primary} />
-                    <Text style={styles.goalTitle}>Meta de Faturamento</Text>
-                  </View>
-                  <View style={styles.rowCentered}>
-                    <Text style={styles.goalPctBadge}>{safeRevenuePct.toFixed(0)}%</Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.textLight} />
-                  </View>
-                </View>
-                <View style={styles.progressBarBg}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${safeRevenuePct}%`,
-                        backgroundColor: safeRevenuePct >= 100 ? colors.success : colors.primary,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.goalFooter}>
-                  <Text style={styles.goalFooterLabel}>
-                    Meta: {formatCurrency(goals.targetRevenue)}
-                  </Text>
-                  {goals.targetApprovedQuotes ? (
-                    <Text style={styles.goalFooterSub}>
-                      {goals.approvedQuotesPct?.toFixed(0)}% de {goals.targetApprovedQuotes} fechados
-                    </Text>
-                  ) : null}
-                </View>
-              </AppCard>
-            </TouchableOpacity>
-          ) : null}
+
 
           {/* Grid de KPIs Clicáveis (Orçamentos, Visitas, OS Hoje, A Receber) */}
           <View style={styles.kpiGrid}>
