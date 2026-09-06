@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo } from 'react';
 import {
   FlatList,
@@ -124,9 +125,12 @@ export default function ComprasScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Compras</Text>
-          <Text style={styles.subtitle}>Pedidos de compra para fornecedores</Text>
+        <View style={styles.headerLeft}>
+          <BackButton fallback="/(app)/(tabs)/mais" />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Compras</Text>
+            <Text style={styles.subtitle}>Pedidos de compra para fornecedores</Text>
+          </View>
         </View>
         <TouchableOpacity
           accessibilityRole="button"

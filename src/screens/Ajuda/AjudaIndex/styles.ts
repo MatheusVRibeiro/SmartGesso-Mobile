@@ -5,8 +5,14 @@ import { typography, spacing, radius, sizes } from '@/src/theme';
 export const createAjudaStyles = (colors: ActivePalette, isDark: boolean) =>
   StyleSheet.create({
     header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
       marginBottom: spacing.xl,
-      paddingTop: spacing.md,
+      paddingTop: spacing.xs,
+    },
+    headerText: {
+      flex: 1,
     },
     title: {
       fontSize: typography.sizes['2xl'],

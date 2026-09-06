@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo } from 'react';
 import { FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -142,9 +143,12 @@ export default function ProducaoScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Produção</Text>
-          <Text style={styles.subtitle}>Ordens de fabricação de placas e perfis</Text>
+        <View style={styles.headerLeft}>
+          <BackButton fallback="/(app)/(tabs)/mais" />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Produção</Text>
+            <Text style={styles.subtitle}>Ordens de fabricação de placas e perfis</Text>
+          </View>
         </View>
         <TouchableOpacity
           accessibilityRole="button"

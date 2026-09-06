@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo, useState } from 'react';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
@@ -133,10 +134,13 @@ export default function AjudaIndexScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Ajuda & Suporte</Text>
-        <Text style={styles.subtitle}>
-          Tire dúvidas e entre em contato com nossa equipe
-        </Text>
+        <BackButton fallback="/(app)/(tabs)/mais" />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Ajuda & Suporte</Text>
+          <Text style={styles.subtitle}>
+            Tire dúvidas e entre em contato com nossa equipe
+          </Text>
+        </View>
       </View>
 
       <View style={styles.section}>

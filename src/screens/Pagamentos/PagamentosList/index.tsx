@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -473,9 +474,12 @@ export default function PagamentosScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Pagamentos</Text>
-          <Text style={styles.subtitle}>Recebimentos e faturamento</Text>
+        <View style={styles.headerLeft}>
+          <BackButton fallback="/(app)/(tabs)/mais" />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Pagamentos</Text>
+            <Text style={styles.subtitle}>Recebimentos e faturamento</Text>
+          </View>
         </View>
         <TouchableOpacity
           onPress={() => router.push('/pagamentos/novo')}

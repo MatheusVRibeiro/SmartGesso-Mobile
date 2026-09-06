@@ -9,8 +9,15 @@ export const createObrasStyles = (colors: ActivePalette, isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: sizes.screenPadding,
-      paddingTop: spacing.md,
+      paddingTop: spacing.xs,
       paddingBottom: spacing.sm,
+      gap: spacing.sm,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flex: 1,
     },
     headerTitleBlock: {
       flex: 1,

@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -130,9 +131,12 @@ export default function UsuariosListScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Membros</Text>
-          <Text style={styles.subtitle}>Equipe e acessos da empresa</Text>
+        <View style={styles.headerLeft}>
+          <BackButton fallback="/(app)/(tabs)/mais" />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Membros</Text>
+            <Text style={styles.subtitle}>Equipe e acessos da empresa</Text>
+          </View>
         </View>
         <PermissionGate allow={USER_MANAGE_ROLES}>
           <TouchableOpacity

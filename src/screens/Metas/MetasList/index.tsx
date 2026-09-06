@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Modal,
@@ -456,10 +457,13 @@ export default function MetasListScreen() {
           }
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Metas & Performance</Text>
-            <Text style={styles.subtitle}>
-              Acompanhamento de metas do período e produtividade da equipe
-            </Text>
+            <BackButton fallback="/(app)/(tabs)/mais" />
+            <View style={styles.headerText}>
+              <Text style={styles.title}>Metas & Performance</Text>
+              <Text style={styles.subtitle}>
+                Acompanhamento de metas do período e produtividade da equipe
+              </Text>
+            </View>
           </View>
 
           <View style={styles.periodSection}>

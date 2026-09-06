@@ -10,8 +10,14 @@ export const createMetasStyles = (colors: ActivePalette, isDark: boolean) =>
       paddingBottom: spacing['4xl'],
     },
     header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
       marginBottom: spacing.xl,
-      paddingTop: spacing.md,
+      paddingTop: spacing.xs,
+    },
+    headerText: {
+      flex: 1,
     },
     title: {
       fontSize: typography.sizes['2xl'],

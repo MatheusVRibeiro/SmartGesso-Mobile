@@ -11,10 +11,20 @@ export const createRelatoriosStyles = (colors: ActivePalette, isDark: boolean) =
     },
     header: {
       marginBottom: spacing.xl,
-      paddingTop: spacing.md,
+      paddingTop: spacing.xs,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flex: 1,
+    },
+    headerText: {
+      flex: 1,
     },
     title: {
       fontSize: typography.sizes['2xl'],

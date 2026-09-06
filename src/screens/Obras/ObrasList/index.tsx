@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
@@ -177,11 +178,14 @@ export default function ObrasListScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.title}>Obras</Text>
-          <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {clientName ? `Obras de ${clientName}` : 'Gestão de projetos e instalações'}
-          </Text>
+        <View style={styles.headerLeft}>
+          <BackButton fallback="/(app)/(tabs)" />
+          <View style={styles.headerTitleBlock}>
+            <Text style={styles.title}>Obras</Text>
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {clientName ? `Obras de ${clientName}` : 'Gestão de projetos e instalações'}
+            </Text>
+          </View>
         </View>
         <TouchableOpacity
           accessibilityRole="button"

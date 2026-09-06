@@ -1,3 +1,4 @@
+import { BackButton } from '@/src/components/navigation/BackButton';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -83,10 +84,13 @@ export default function CatalogoIndexScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Catálogo</Text>
-        <Text style={styles.subtitle}>
-          Gerencie produtos, serviços e materiais da sua empresa
-        </Text>
+        <BackButton fallback="/(app)/(tabs)/mais" />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Catálogo</Text>
+          <Text style={styles.subtitle}>
+            Gerencie produtos, serviços e materiais da sua empresa
+          </Text>
+        </View>
       </View>
 
       <View style={styles.cardsContainer}>
