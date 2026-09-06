@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,10 +12,10 @@ import { useSessionStore } from '@/src/store/useSessionStore';
 import { SecureTokenStorage } from '@/src/services/auth/SecureTokenStorage';
 import { queryClient } from '@/src/lib/queryClient';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
-import { radius, sizes, spacing, typography } from '@/src/theme';
+import { radius, sizes } from '@/src/theme';
 import { config } from '@/src/constants/config';
 import type { CompanyMemberStatus } from '@/src/types/company';
-import { styles } from './styles';
+import { createProfileStyles } from './styles';
 
 const MEMBER_STATUS_BADGE: Record<
   CompanyMemberStatus,
@@ -29,7 +29,8 @@ const MEMBER_STATUS_BADGE: Record<
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createProfileStyles(colors, isDark), [colors, isDark]);
   const { currentUser, activeCompany, clearSession } = useSessionStore();
 
   const handleLogout = async () => {
@@ -56,8 +57,8 @@ export default function ProfileScreen() {
     <ScreenContainer scroll padding>
       {/* Avatar */}
       <View style={styles.avatarContainer}>
-        <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-          <Text style={[styles.avatarText, { color: colors.primary }]}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
             {currentUser?.name ? getInitial(currentUser.name) : '?'}
           </Text>
         </View>
@@ -65,19 +66,19 @@ export default function ProfileScreen() {
 
       {/* User Info */}
       <View style={styles.userInfo}>
-        <Text style={[styles.userName, { color: colors.text }]}>
+        <Text style={styles.userName}>
           {currentUser?.name || 'Usuário'}
         </Text>
-        <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+        <Text style={styles.userEmail}>
           {currentUser?.email || 'email@exemplo.com'}
         </Text>
       </View>
 
       {/* Empresa / Papel */}
       {activeCompany && (
-        <AppCard shadow="light" style={styles.infoCard}>
+        <AppCard shadow="light" radius={radius.lg} style={styles.infoCard}>
           <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: colors.primarySoft }]}>
+            <View style={styles.cardIcon}>
               <Ionicons
                 name="business-outline"
                 size={sizes.icon.md}
@@ -86,10 +87,10 @@ export default function ProfileScreen() {
               />
             </View>
             <View style={styles.cardHeaderInfo}>
-              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
                 {activeCompany.company.tradeName}
               </Text>
-              <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={styles.cardSubtitle} numberOfLines={1}>
                 {activeCompany.company.document}
               </Text>
             </View>
@@ -102,7 +103,7 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <View style={styles.divider} />
 
           <View style={styles.infoRow}>
             <View style={styles.infoRowIcon}>
@@ -113,8 +114,8 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
               />
             </View>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Papel</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]}>
+            <Text style={styles.infoLabel}>Papel</Text>
+            <Text style={styles.infoValue}>
               {activeCompany.member.isOwner ? 'Proprietário' : 'Membro'}
             </Text>
           </View>
@@ -128,8 +129,8 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
               />
             </View>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Acesso</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]}>
+            <Text style={styles.infoLabel}>Acesso</Text>
+            <Text style={styles.infoValue}>
               {memberBadge?.label ?? activeCompany.member.status}
             </Text>
           </View>
@@ -140,8 +141,8 @@ export default function ProfileScreen() {
       <ThemeSelector />
 
       {/* App Info */}
-      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Sobre o app</Text>
-      <AppCard shadow="light" style={styles.infoCard}>
+      <Text style={styles.sectionLabel}>Sobre o app</Text>
+      <AppCard shadow="light" radius={radius.lg} style={styles.infoCard}>
         <View style={styles.infoRow}>
           <View style={styles.infoRowIcon}>
             <Ionicons
@@ -151,8 +152,8 @@ export default function ProfileScreen() {
               accessibilityElementsHidden
             />
           </View>
-          <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nome</Text>
-          <Text style={[styles.infoValue, { color: colors.text }]}>{config.appName}</Text>
+          <Text style={styles.infoLabel}>Nome</Text>
+          <Text style={styles.infoValue}>{config.appName}</Text>
         </View>
 
         <View style={styles.infoRow}>
@@ -164,8 +165,8 @@ export default function ProfileScreen() {
               accessibilityElementsHidden
             />
           </View>
-          <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Versão</Text>
-          <Text style={[styles.infoValue, { color: colors.text }]}>{config.appVersion}</Text>
+          <Text style={styles.infoLabel}>Versão</Text>
+          <Text style={styles.infoValue}>{config.appVersion}</Text>
         </View>
       </AppCard>
 
