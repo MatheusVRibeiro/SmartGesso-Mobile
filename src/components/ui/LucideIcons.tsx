@@ -137,6 +137,56 @@ export const QuickCreditCardIcon: LucideIconComponent = ({
   </Svg>
 );
 
+/**
+ * Novo Cliente: Silhueta de usuário com símbolo de adição (+) alinhado ao padrão visual
+ */
+export const QuickUserPlusIcon: LucideIconComponent = ({
+  size = 24,
+  color = '#818CF8',
+  strokeWidth = 2,
+}) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <Circle cx="9" cy="7" r="4" />
+    <Line x1="19" y1="8" x2="19" y2="14" />
+    <Line x1="22" y1="11" x2="16" y2="11" />
+  </Svg>
+);
+
+/**
+ * Nova Produção / Construção: Martelo profissional calibrado
+ */
+export const QuickHammerIcon: LucideIconComponent = ({
+  size = 24,
+  color = '#818CF8',
+  strokeWidth = 2,
+}) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <Path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9" />
+    <Path d="m18 15 4-4" />
+    <Path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.242-1.758H11" />
+    <Path d="m15 12 3 3" />
+  </Svg>
+);
+
 // Aliases para retrocompatibilidade
 export {
   QuickDocumentIcon as FileSpreadsheet,
@@ -144,4 +194,6 @@ export {
   QuickDollarIcon as CircleDollarSign,
   QuickCalculatorIcon as Calculator,
   QuickCreditCardIcon as Receipt,
+  QuickUserPlusIcon as UserPlus,
+  QuickHammerIcon as WrenchHammer,
 };

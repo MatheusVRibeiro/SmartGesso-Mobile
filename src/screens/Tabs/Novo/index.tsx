@@ -1,20 +1,25 @@
 import React, { useMemo } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { AppCard } from '@/src/components/ui/AppCard';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
-import { radius, sizes, spacing, typography } from '@/src/theme';
+import { radius } from '@/src/theme';
+import {
+  QuickCalculatorIcon,
+  QuickCreditCardIcon,
+  QuickDocumentIcon,
+  QuickDollarIcon,
+  QuickHammerIcon,
+  QuickUserPlusIcon,
+  type LucideIconComponent,
+} from '@/src/components/ui/LucideIcons';
 import { createNovoStyles } from './styles';
-
-type IconName = ComponentProps<typeof Ionicons>['name'];
 
 interface QuickAction {
   id: string;
   title: string;
-  icon: IconName;
+  Icon: LucideIconComponent;
   route?: string;
   color: string;
   bgLight: string;
@@ -25,7 +30,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'orcamento',
     title: 'Novo orçamento',
-    icon: 'document-text',
+    Icon: QuickDocumentIcon,
     route: '/orcamentos/novo',
     color: '#2563EB',
     bgLight: '#EFF6FF',
@@ -34,7 +39,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'cliente',
     title: 'Novo cliente',
-    icon: 'person-add',
+    Icon: QuickUserPlusIcon,
     route: '/clientes/novo',
     color: '#059669',
     bgLight: '#ECFDF5',
@@ -43,7 +48,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'calculadora',
     title: 'Calculadora Drywall',
-    icon: 'calculator',
+    Icon: QuickCalculatorIcon,
     route: '/ferramentas/calculadora',
     color: '#9333EA',
     bgLight: '#F3E8FF',
@@ -52,7 +57,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'pagamento',
     title: 'Registrar pagamento',
-    icon: 'cash',
+    Icon: QuickDollarIcon,
     route: '/pagamentos/novo',
     color: '#D97706',
     bgLight: '#FFFBEB',
@@ -61,7 +66,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'despesa',
     title: 'Nova despesa',
-    icon: 'card',
+    Icon: QuickCreditCardIcon,
     route: '/despesas/novo',
     color: '#DC2626',
     bgLight: '#FEF2F2',
@@ -70,7 +75,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'producao',
     title: 'Nova produção',
-    icon: 'construct',
+    Icon: QuickHammerIcon,
     route: '/producao/novo',
     color: '#475569',
     bgLight: '#F1F5F9',
@@ -119,11 +124,10 @@ export default function NovoScreen() {
                   { backgroundColor: isDark ? action.bgDark : action.bgLight },
                 ]}
               >
-                <Ionicons
-                  name={action.icon}
-                  size={sizes.icon.lg}
+                <action.Icon
+                  size={26}
                   color={action.color}
-                  accessibilityElementsHidden
+                  strokeWidth={2}
                 />
               </View>
               <Text style={styles.actionTitle}>{action.title}</Text>
