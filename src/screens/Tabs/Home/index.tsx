@@ -15,8 +15,8 @@ import {
   CircleDollarSign,
   Calculator,
   Receipt,
-  LucideIcon,
-} from 'lucide-react-native';
+  LucideIconComponent,
+} from '@/src/components/ui/LucideIcons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppCard } from '@/src/components/ui/AppCard';
@@ -37,7 +37,7 @@ import { createHomeScreenStyles } from './styles';
 interface QuickActionItem {
   id: string;
   label: string;
-  Icon: LucideIcon;
+  Icon: LucideIconComponent;
   route: string;
   lightBg: string;
   lightBorder: string;
