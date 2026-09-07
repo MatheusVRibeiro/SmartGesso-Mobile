@@ -7,11 +7,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useCepLookup } from '@/src/hooks/useCepLookup';
 import { AppButton } from '@/src/components/ui/AppButton';
 import { AppInput } from '@/src/components/ui/AppInput';
 import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
@@ -264,6 +266,20 @@ export default function NovaObraScreen() {
     },
   });
 
+  const {
+    isLoading: isLoadingCep,
+    error: cepError,
+    handleCepChange,
+    searchCep,
+  } = useCepLookup();
+
+  const handleApplyAddress = (addr: any) => {
+    if (addr.street) setValue('street', addr.street);
+    if (addr.neighborhood) setValue('district', addr.neighborhood);
+    if (addr.city) setValue('city', addr.city);
+    if (addr.state) setValue('state', addr.state);
+  };
+
   const clientsQuery = useQuery({
     queryKey: ['company', companyId, 'clients'],
     queryFn: () => clientsService.list(),
@@ -401,10 +417,23 @@ export default function NovaObraScreen() {
             <AppInput
               label="CEP"
               value={field.value ?? ''}
-              onChangeText={field.onChange}
+              onChangeText={(text) => handleCepChange(text, handleApplyAddress, field.onChange)}
               mask="cep"
               placeholder="00000-000"
-              error={fieldState.error?.message}
+              rightAccessory={
+                isLoadingCep ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => field.value && searchCep(field.value, handleApplyAddress, true)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="search-outline" size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                )
+              }
+              helper={isLoadingCep ? 'Buscando endereço...' : undefined}
+              error={fieldState.error?.message || cepError || undefined}
               accessibilityLabel="CEP"
             />
           )}

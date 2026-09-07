@@ -18,6 +18,8 @@ import { ErrorState } from '@/src/components/ui/ErrorState';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
+import { PressableScale } from '@/src/components/ui/PressableScale';
+import { haptics } from '@/src/utils/haptics';
 import type { StatusBadgeVariant } from '@/src/components/ui/StatusBadge';
 import { toApiError } from '@/src/services/api/client';
 import { paymentsService } from '@/src/services/api/payments';
@@ -36,6 +38,7 @@ import { createPagamentosStyles } from './styles';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 export type PaymentFilter = 'TODOS' | 'PENDENTE' | 'CONFIRMADO' | 'VENCIDO';
+type PeriodFilter = 'TODOS' | 'ESTE_MES' | 'MES_PASSADO' | 'ULTIMOS_7_DIAS';
 
 const PAYMENT_FILTERS: { id: PaymentFilter; label: string }[] = [
   { id: 'TODOS', label: 'Todos' },
@@ -75,6 +78,28 @@ function toArray<T>(result: unknown): T[] {
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString('pt-BR');
+}
+
+
+function isWithinPeriod(dateStr: string, period: PeriodFilter): boolean {
+  if (period === 'TODOS') return true;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+  const now = new Date();
+  
+  if (period === 'ULTIMOS_7_DIAS') {
+    const past7 = new Date();
+    past7.setDate(now.getDate() - 7);
+    return d >= past7 && d <= now;
+  }
+  if (period === 'ESTE_MES') {
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }
+  if (period === 'MES_PASSADO') {
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+  }
+  return true;
 }
 
 function isOverdue(payment: Payment): boolean {
@@ -139,16 +164,13 @@ function PaymentCard({ payment, styles, colors, onPress }: PaymentCardProps) {
   const badge = PAYMENT_STATUS_BADGE[payment.status];
 
   return (
-    <AppCard shadow="light" radius={radius.lg} style={styles.card}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Ver pagamento de ${payment.client?.name ?? 'cliente'}`}
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.cardPressable,
-          pressed && styles.cardPressed,
-        ]}
-      >
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={`Ver pagamento de ${payment.client?.name ?? 'cliente'}`}
+      onPress={onPress}
+      scaleTo={0.98}
+    >
+      <AppCard shadow="light" radius={radius.lg} style={styles.card}>
         <View style={styles.cardContent}>
           <View style={[styles.cardIcon, overdue && { backgroundColor: colors.dangerSoft }]}>
             <Ionicons
@@ -215,8 +237,8 @@ function PaymentCard({ payment, styles, colors, onPress }: PaymentCardProps) {
             accessibilityElementsHidden
           />
         </View>
-      </Pressable>
-    </AppCard>
+      </AppCard>
+    </PressableScale>
   );
 }
 

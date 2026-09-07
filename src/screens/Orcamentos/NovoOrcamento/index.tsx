@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton } from '@/src/components/ui/AppButton';
 import { AppCard } from '@/src/components/ui/AppCard';
@@ -572,6 +572,49 @@ export default function NovoOrcamentoScreen() {
     paymentMethod: 'AVISTA',
     observations: '',
   });
+
+  const params = useLocalSearchParams<{
+    clientId?: string;
+    calcType?: string;
+    calcName?: string;
+    calcLength?: string;
+    calcWidth?: string;
+    calcHeight?: string;
+    calcArea?: string;
+    calcPerimeter?: string;
+    calcLaborPrice?: string;
+  }>();
+
+  // Pré-preenchimento vindo da Calculadora ou de percurso com cliente
+  useEffect(() => {
+    if (params.calcType && params.calcArea) {
+      setDraft((d) => {
+        if (d.environments.length > 0) return d;
+        const initialEnv: QuoteEnvironmentDraft = {
+          id: nextEnvironmentId(),
+          name: params.calcName || 'Ambiente Calculado',
+          description: `Calculado: ${params.calcName || params.calcType}`,
+          order: 0,
+          applicationType: (params.calcType as MeasurementApplicationType) || 'DRYWALL',
+          measurement: {
+            length: params.calcLength || '',
+            width: params.calcWidth || '',
+            height: params.calcHeight || '',
+            area: params.calcArea || '',
+            perimeter: params.calcPerimeter || '',
+            observations: '',
+          },
+        };
+        return {
+          ...d,
+          clientId: params.clientId || d.clientId,
+          environments: [initialEnv],
+        };
+      });
+    } else if (params.clientId) {
+      setDraft((d) => ({ ...d, clientId: params.clientId || d.clientId }));
+    }
+  }, [params.calcType, params.calcArea, params.calcName, params.calcLength, params.calcWidth, params.calcHeight, params.calcPerimeter, params.clientId]);
 
   const [materialsCalc, setMaterialsCalc] = useState<MaterialsCalcState | null>(
     null,

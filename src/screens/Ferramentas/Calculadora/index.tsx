@@ -13,6 +13,7 @@ import type { MeasurementApplicationType } from '@/src/types/measurement';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { sizes } from '@/src/theme';
 import { formatCurrency, formatNumber } from '@/src/utils/format';
+import { haptics } from '@/src/utils/haptics';
 import { createCalculadoraStyles } from './styles';
 
 interface ApplicationOption {

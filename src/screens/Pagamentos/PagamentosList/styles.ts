@@ -161,6 +161,32 @@ export const createPagamentosStyles = (colors: ActivePalette, isDark: boolean) =
     listItemValueOverdue: {
       color: colors.danger,
     },
+    periodRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    periodChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    periodChipActive: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.primary,
+    },
+    periodChipText: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    periodChipTextActive: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
     filters: {
       flexDirection: 'row',
       flexWrap: 'wrap',

@@ -5,6 +5,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useCepLookup } from '@/src/hooks/useCepLookup';
+import { useCnpjLookup } from '@/src/hooks/useCnpjLookup';
 import { AppButton } from '@/src/components/ui/AppButton';
 import { AppInput } from '@/src/components/ui/AppInput';
 import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
@@ -81,6 +85,7 @@ export default function NovoClienteScreen() {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<z.input<typeof createClientSchema>, any, CreateClientFormData>({
     resolver: zodResolver(createClientSchema),
@@ -95,6 +100,41 @@ export default function NovoClienteScreen() {
       observations: '',
     },
   });
+
+  const {
+    isLoading: isLoadingCep,
+    error: cepError,
+    handleCepChange,
+    searchCep,
+  } = useCepLookup();
+
+  const {
+    isLoading: isLoadingCnpj,
+    error: cnpjError,
+    handleCnpjChange,
+    searchCnpj,
+  } = useCnpjLookup();
+
+  const handleApplyAddress = (addr: any) => {
+    if (addr.street) setValue('address.street', addr.street);
+    if (addr.neighborhood) setValue('address.neighborhood', addr.neighborhood);
+    if (addr.city) setValue('address.city', addr.city);
+    if (addr.state) setValue('address.state', addr.state);
+  };
+
+  const handleApplyCompany = (company: any) => {
+    if (company.nomeFantasia || company.razaoSocial) {
+      setValue('name', company.nomeFantasia || company.razaoSocial);
+    }
+    if (company.telefone) setValue('phone', company.telefone);
+    if (company.email) setValue('email', company.email);
+    if (company.cep) setValue('address.zipCode', company.cep);
+    if (company.logradouro) setValue('address.street', company.logradouro);
+    if (company.numero) setValue('address.number', company.numero);
+    if (company.bairro) setValue('address.neighborhood', company.bairro);
+    if (company.municipio) setValue('address.city', company.municipio);
+    if (company.uf) setValue('address.state', company.uf);
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: CreateClientInput) => clientsService.create(data),
@@ -185,10 +225,16 @@ export default function NovoClienteScreen() {
           <AppInput
             label="CPF / CNPJ"
             value={value ?? ''}
-            onChangeText={onChange}
+            onChangeText={(text) => handleCnpjChange(text, handleApplyCompany, onChange)}
             mask="cpfCnpj"
             placeholder="000.000.000-00 ou 00.000.000/0000-00"
-            error={errors.document?.message}
+            rightAccessory={
+              isLoadingCnpj ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : null
+            }
+            helper={isLoadingCnpj ? 'Buscando dados na Receita Federal...' : undefined}
+            error={errors.document?.message || cnpjError || undefined}
             accessibilityLabel="CPF ou CNPJ do cliente"
           />
         )}
@@ -255,9 +301,23 @@ export default function NovoClienteScreen() {
           <AppInput
             label="CEP"
             value={value ?? ''}
-            onChangeText={onChange}
+            onChangeText={(text) => handleCepChange(text, handleApplyAddress, onChange)}
             mask="cep"
             placeholder="00000-000"
+            rightAccessory={
+              isLoadingCep ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  onPress={() => value && searchCep(value, handleApplyAddress, true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="search-outline" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              )
+            }
+            helper={isLoadingCep ? 'Buscando endereço...' : undefined}
+            error={errors.address?.zipCode?.message || cepError || undefined}
             accessibilityLabel="CEP do cliente"
           />
         )}

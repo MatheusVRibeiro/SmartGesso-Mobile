@@ -1,3 +1,4 @@
+import { haptics } from '@/src/utils/haptics';
 import React, { useState, useMemo } from 'react';
 import { Alert, Linking, Modal, Pressable, RefreshControl, Share, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
@@ -200,6 +201,27 @@ export default function DetalheOrcamentoScreen() {
   });
 
 
+
+  const handleFollowUpWhatsApp = async () => {
+    if (!quote) return;
+    const clientName = quote.client?.name ?? 'Cliente';
+    const quoteNum = formatQuoteCode(quote.quoteNumber);
+    const rawPhone = ((quote.client as any)?.whatsapp || (quote.client as any)?.phone || '').replace(/\D/g, '');
+    const phone = rawPhone.length === 10 || rawPhone.length === 11 ? `55${rawPhone}` : rawPhone;
+
+    const message = `Olá ${clientName}, tudo bem? Passando para saber se conseguiu dar uma olhada na proposta ${quoteNum} do seu serviço de gesso. Se tiver qualquer dúvida ou quiser ajustar prazos e condições, fico à disposição!`;
+
+    haptics.selection();
+    if (phone) {
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      const supported = await Linking.canOpenURL(url).catch(() => false);
+      if (supported) {
+        await Linking.openURL(url);
+        return;
+      }
+    }
+    await Share.share({ message });
+  };
 
   const handleShareWhatsApp = async () => {
     if (!quote) return;
@@ -554,6 +576,16 @@ export default function DetalheOrcamentoScreen() {
                   onPress={() => duplicateMutation.mutate()}
                   loading={duplicateMutation.isPending}
                   disabled={duplicateMutation.isPending}
+                  style={styles.actionButton}
+                />
+              )}
+              {(quote.status === 'ENVIADO' || quote.status === 'AGUARDANDO_APROVACAO') && (
+                <AppButton
+                  title="Lembrar cliente (WhatsApp)"
+                  variant="outline"
+                  size="lg"
+                  accessibilityLabel="Enviar mensagem de lembrete por WhatsApp"
+                  onPress={handleFollowUpWhatsApp}
                   style={styles.actionButton}
                 />
               )}

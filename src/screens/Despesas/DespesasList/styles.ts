@@ -77,6 +77,33 @@ export const createDespesasStyles = (colors: ActivePalette, isDark: boolean) =>
       paddingHorizontal: sizes.screenPadding,
       marginTop: spacing.xs,
     },
+    periodScroll: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingHorizontal: sizes.screenPadding,
+      paddingBottom: spacing.xs,
+    },
+    periodChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    periodChipActive: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.primary,
+    },
+    periodChipText: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    periodChipTextActive: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
     listContent: {
       padding: sizes.screenPadding,
       paddingTop: spacing.xs,

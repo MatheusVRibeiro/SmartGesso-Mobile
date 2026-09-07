@@ -116,7 +116,12 @@ const defaultQueryResult = {
 describe('HomeScreen (Dashboard)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseQuery.mockReturnValue(defaultQueryResult);
+    mockUseQuery.mockImplementation((opts?: { queryKey?: string[] }) => {
+      if (opts?.queryKey?.[0] === 'quotes-expiring') {
+        return { data: [], isLoading: false, isError: false, error: null, refetch: jest.fn(), isRefetching: false };
+      }
+      return defaultQueryResult;
+    });
   });
 
   it('renderiza a saudação com o nome do usuário', async () => {
@@ -204,5 +209,33 @@ describe('HomeScreen (Dashboard)', () => {
 
     await render(<HomeScreen />);
     expect(screen.getByText(/Orçamento #1001/)).toBeTruthy();
+  });
+  it('renderiza banner de alerta quando há orçamentos a vencer', async () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 3);
+
+    mockUseQuery.mockImplementation((opts?: { queryKey?: string[] }) => {
+      if (opts?.queryKey?.[0] === 'quotes-expiring') {
+        return {
+          data: [
+            {
+              id: 'quote-expiring-1',
+              quoteNumber: 101,
+              status: 'ENVIADO',
+              validUntil: futureDate.toISOString(),
+            },
+          ],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+          isRefetching: false,
+        };
+      }
+      return defaultQueryResult;
+    });
+
+    await render(<HomeScreen />);
+    expect(screen.getByText(/1 orçamento vence em breve/)).toBeTruthy();
   });
 });

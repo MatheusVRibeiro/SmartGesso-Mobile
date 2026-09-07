@@ -18,6 +18,8 @@ import { ErrorState } from '@/src/components/ui/ErrorState';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
+import { PressableScale } from '@/src/components/ui/PressableScale';
+import { haptics } from '@/src/utils/haptics';
 import type { StatusBadgeVariant } from '@/src/components/ui/StatusBadge';
 import { toApiError } from '@/src/services/api/client';
 import { expensesService } from '@/src/services/api/expenses';
@@ -30,6 +32,7 @@ import { formatCurrency } from '@/src/utils/format';
 import { createDespesasStyles } from './styles';
 
 type ExpenseFilter = 'TODAS' | 'MATERIAL' | 'MAO_DE_OBRA' | 'TRANSPORTE' | 'OUTROS';
+type PeriodFilter = 'TODOS' | 'ESTE_MES' | 'MES_PASSADO' | 'ULTIMOS_7_DIAS';
 
 const EXPENSE_CATEGORY_BADGE: Record<
   ExpenseCategory,
@@ -56,6 +59,28 @@ function toArray<T>(result: unknown): T[] {
   return [];
 }
 
+
+function isWithinPeriod(dateStr: string, period: PeriodFilter): boolean {
+  if (period === 'TODOS') return true;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+  const now = new Date();
+  
+  if (period === 'ULTIMOS_7_DIAS') {
+    const past7 = new Date();
+    past7.setDate(now.getDate() - 7);
+    return d >= past7 && d <= now;
+  }
+  if (period === 'ESTE_MES') {
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }
+  if (period === 'MES_PASSADO') {
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+  }
+  return true;
+}
+
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
@@ -76,16 +101,8 @@ function ExpenseCard({ expense, styles, colors, onPress }: ExpenseCardProps) {
   };
 
   return (
-    <AppCard shadow="light" radius={radius.lg} style={styles.card}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Ver despesa ${expense.description}`}
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.cardPressable,
-          pressed && styles.cardPressed,
-        ]}
-      >
+    <PressableScale onPress={onPress} scaleTo={0.98}>
+      <AppCard shadow="light" radius={radius.lg} style={styles.card}>
         <View style={styles.cardContent}>
           <View style={styles.cardIcon}>
             <Ionicons
@@ -126,8 +143,8 @@ function ExpenseCard({ expense, styles, colors, onPress }: ExpenseCardProps) {
             accessibilityElementsHidden
           />
         </View>
-      </Pressable>
-    </AppCard>
+      </AppCard>
+    </PressableScale>
   );
 }
 
@@ -139,6 +156,7 @@ export default function DespesasScreen() {
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExpenseFilter>('TODAS');
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('TODOS');
 
   const {
     data: expenses,
@@ -170,6 +188,12 @@ export default function DespesasScreen() {
   const filtered = useMemo(() => {
     const list = expenses ?? [];
     return list.filter((expense) => {
+      // Period filter
+      if (!isWithinPeriod(expense.expenseDate, selectedPeriod)) {
+        return false;
+      }
+
+      // Category filter
       if (selectedCategory !== 'TODAS') {
         if (selectedCategory === 'OUTROS') {
           if (['MATERIAL', 'MAO_DE_OBRA', 'TRANSPORTE'].includes(expense.category)) {
@@ -187,7 +211,7 @@ export default function DespesasScreen() {
       const categoryLabel = badge ? badge.label.toLowerCase() : '';
       return description.includes(term) || categoryLabel.includes(term);
     });
-  }, [expenses, search, selectedCategory]);
+  }, [expenses, search, selectedCategory, selectedPeriod]);
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
@@ -267,6 +291,43 @@ export default function DespesasScreen() {
         </ScrollView>
       </View>
 
+      {/* Filtro de Período Rápido */}
+      <View style={{ marginBottom: 4 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.periodScroll}
+        >
+          {([
+            { id: 'TODOS', label: 'Todas datas' },
+            { id: 'ESTE_MES', label: 'Este mês' },
+            { id: 'MES_PASSADO', label: 'Mês passado' },
+            { id: 'ULTIMOS_7_DIAS', label: 'Últimos 7 dias' },
+          ] as const).map((p) => {
+            const isActive = selectedPeriod === p.id;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.periodChip, isActive && styles.periodChipActive]}
+                onPress={() => {
+                  haptics.selection();
+                  setSelectedPeriod(p.id);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.periodChipText,
+                    isActive && styles.periodChipTextActive,
+                  ]}
+                >
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
       {isLoading ? (
         <LoadingState text="Carregando despesas..." />
       ) : isError ? (

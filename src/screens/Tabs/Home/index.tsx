@@ -28,6 +28,7 @@ import { FadeInView } from '@/src/components/ui/FadeInView';
 import { AnimatedCounter } from '@/src/components/ui/AnimatedCounter';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { dashboardService } from '@/src/services/api/dashboard';
+import { quotesService } from '@/src/services/api/quotes';
 import { toApiError } from '@/src/services/api/client';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, spacing } from '@/src/theme';
@@ -99,9 +100,30 @@ export default function HomeScreen() {
     enabled: Boolean(companyId),
   });
 
+  const { data: quotes = [], refetch: refetchQuotes } = useQuery({
+    queryKey: ['quotes-expiring', companyId],
+    queryFn: () => quotesService.list(),
+    enabled: Boolean(companyId),
+  });
+
+  const expiringQuotes = useMemo(() => {
+    if (!Array.isArray(quotes)) return [];
+    const now = new Date();
+    const in7Days = new Date();
+    in7Days.setDate(now.getDate() + 7);
+
+    return quotes.filter((q) => {
+      if (!q || !q.validUntil) return false;
+      if (q.status === 'APROVADO' || q.status === 'REJEITADO' || q.status === 'CANCELADO') return false;
+      const validDate = new Date(q.validUntil);
+      return !isNaN(validDate.getTime()) && validDate >= now && validDate <= in7Days;
+    });
+  }, [quotes]);
+
   const onRefresh = useCallback(() => {
     refetch();
-  }, [refetch]);
+    refetchQuotes();
+  }, [refetch, refetchQuotes]);
 
   if (isLoading && !overview) {
     return (
@@ -165,6 +187,34 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </FadeInView>
+
+
+          {/* Banner de Propostas a Vencer */}
+          {expiringQuotes.length > 0 && (
+            <FadeInView delay={80}>
+              <PressableScale
+                onPress={() => router.push('/(app)/(tabs)/orcamentos')}
+                style={styles.alertBanner}
+                scaleTo={0.98}
+                accessibilityLabel="Ver orçamentos a vencer"
+              >
+                <View style={styles.alertIconWrapper}>
+                  <Ionicons name="alert-circle" size={22} color="#D97706" />
+                </View>
+                <View style={styles.alertContent}>
+                  <Text style={styles.alertTitle}>
+                    {expiringQuotes.length === 1
+                      ? '1 orçamento vence em breve'
+                      : `${expiringQuotes.length} orçamentos vencem em breve`}
+                  </Text>
+                  <Text style={styles.alertSubtitle}>
+                    Toque para fazer follow-up e garantir o fechamento
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#D97706" />
+              </PressableScale>
+            </FadeInView>
+          )}
 
           {/* Seção de Ações Rápidas */}
           <View style={styles.quickActionsSection}>
