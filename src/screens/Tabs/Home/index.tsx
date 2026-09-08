@@ -11,7 +11,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   QuickDocumentIcon,
-  QuickWrenchIcon,
   QuickDollarIcon,
   QuickCalculatorIcon,
   QuickCreditCardIcon,
@@ -49,12 +48,6 @@ const QUICK_ACTIONS: QuickActionItem[] = [
     label: 'Orçamento',
     Icon: QuickDocumentIcon,
     route: '/(app)/orcamentos/novo',
-  },
-  {
-    id: 'os',
-    label: 'Nova OS',
-    Icon: QuickWrenchIcon,
-    route: '/(app)/servicos/novo',
   },
   {
     id: 'receber',

@@ -137,7 +137,8 @@ describe('HomeScreen (Dashboard)', () => {
   it('renderiza as ações rápidas', async () => {
     await render(<HomeScreen />);
     expect(screen.getByText('Orçamento')).toBeTruthy();
-    expect(screen.getByText('Nova OS')).toBeTruthy();
+    // 'Nova OS' removida do fluxo principal (V5 ETAPA 6): Serviço nasce do orçamento aprovado.
+    expect(screen.queryByText('Nova OS')).toBeNull();
   });
 
   it('renderiza seção de follow-ups quando há follow-ups', async () => {
