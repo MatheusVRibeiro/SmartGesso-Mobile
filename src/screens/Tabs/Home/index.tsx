@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -33,6 +33,7 @@ import { toApiError } from '@/src/services/api/client';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, spacing } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
+import { haptics } from '@/src/utils/haptics';
 import { createHomeScreenStyles } from './styles';
 
 interface QuickActionItem {
@@ -105,6 +106,17 @@ export default function HomeScreen() {
     queryFn: () => quotesService.list(),
     enabled: Boolean(companyId),
   });
+
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState<number | null>(null);
+
+  const activeMonth = useMemo(() => {
+    const evolution = overview?.charts?.monthlyEvolution;
+    if (!evolution || evolution.length === 0) return null;
+    if (selectedMonthIdx !== null && evolution[selectedMonthIdx]) {
+      return evolution[selectedMonthIdx];
+    }
+    return evolution[evolution.length - 1];
+  }, [overview?.charts?.monthlyEvolution, selectedMonthIdx]);
 
   const expiringQuotes = useMemo(() => {
     if (!Array.isArray(quotes)) return [];
@@ -387,47 +399,262 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Gráfico de Evolução Mensal */}
+          {/* Gráfico de Evolução Mensal Interativo & Moderno */}
           {charts?.monthlyEvolution && charts.monthlyEvolution.length > 0 ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => router.push('/(app)/relatorios')}
-            >
-              <AppCard shadow="light" radius={radius.lg} style={styles.chartCard}>
-                <View style={styles.sectionHeaderRow}>
+            <AppCard shadow="light" radius={radius.lg} style={styles.chartCard}>
+              {/* Header com Affordance de Relatórios */}
+              <View style={styles.chartHeader}>
+                <View style={styles.chartHeaderLeft}>
+                  <View style={styles.chartHeaderIconWrapper}>
+                    <Ionicons
+                      name="stats-chart"
+                      size={18}
+                      color={isDark ? '#818CF8' : colors.primary}
+                    />
+                  </View>
                   <View>
                     <Text style={styles.sectionTitle}>Evolução Financeira</Text>
-                    <Text style={styles.sectionSubtitle}>Faturamento vs Despesas (últimos 6 meses)</Text>
+                    <Text style={styles.sectionSubtitle}>
+                      Faturamento vs Despesas (últimos 6 meses)
+                    </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={14} color={colors.textLight} />
                 </View>
-                <View style={styles.chartRow}>
+                <TouchableOpacity
+                  style={styles.chartReportLink}
+                  activeOpacity={0.7}
+                  onPress={() => router.push('/(app)/relatorios')}
+                  accessibilityLabel="Ver relatório financeiro completo"
+                >
+                  <Text style={styles.chartReportLinkText}>Relatórios</Text>
+                  <Ionicons name="chevron-forward" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Inspector Dinâmico do Mês Selecionado */}
+              {activeMonth && (
+                <View style={styles.chartInspector}>
+                  <View style={styles.chartInspectorTop}>
+                    <View style={styles.chartInspectorMonthTag}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={13}
+                        color={isDark ? '#818CF8' : colors.primary}
+                      />
+                      <Text style={styles.chartInspectorMonthText}>
+                        {activeMonth.monthLabel}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.chartInspectorBadge,
+                        {
+                          backgroundColor:
+                            activeMonth.profit > 0
+                              ? isDark
+                                ? 'rgba(52, 211, 153, 0.15)'
+                                : '#ECFDF5'
+                              : activeMonth.profit < 0
+                              ? isDark
+                                ? 'rgba(248, 113, 113, 0.15)'
+                                : '#FEF2F2'
+                              : isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : '#F1F5F9',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.chartInspectorBadgeText,
+                          {
+                            color:
+                              activeMonth.profit > 0
+                                ? isDark
+                                  ? '#34D399'
+                                  : '#059669'
+                                : activeMonth.profit < 0
+                                ? isDark
+                                  ? '#F87171'
+                                  : '#DC2626'
+                                : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {activeMonth.profit > 0
+                          ? `+Lucro: ${formatCurrency(activeMonth.profit)}`
+                          : activeMonth.profit < 0
+                          ? `Déficit: ${formatCurrency(activeMonth.profit)}`
+                          : 'Equilibrado: R$ 0,00'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.chartInspectorMetrics}>
+                    <View style={styles.chartInspectorMetricItem}>
+                      <View
+                        style={[
+                          styles.chartInspectorMetricDot,
+                          { backgroundColor: isDark ? '#60A5FA' : '#2563EB' },
+                        ]}
+                      />
+                      <Text style={styles.chartInspectorMetricLabel}>Faturamento:</Text>
+                      <Text style={styles.chartInspectorMetricVal}>
+                        {formatCurrency(activeMonth.revenue)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.chartInspectorMetricItem}>
+                      <View
+                        style={[
+                          styles.chartInspectorMetricDot,
+                          { backgroundColor: isDark ? '#F87171' : '#E11D48' },
+                        ]}
+                      />
+                      <Text style={styles.chartInspectorMetricLabel}>Despesas:</Text>
+                      <Text style={styles.chartInspectorMetricVal}>
+                        {formatCurrency(activeMonth.expenses)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Viewport do Gráfico com Linhas Guia e Barras Arredondadas */}
+              <View style={styles.chartViewport}>
+                {/* Linhas Guia de Fundo */}
+                <View style={styles.chartGridLines}>
+                  <View style={styles.chartGridLine} />
+                  <View style={styles.chartGridLine} />
+                  <View
+                    style={[
+                      styles.chartGridLine,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Colunas Interativas com Barras */}
+                <View style={styles.chartColumnsRow}>
                   {charts.monthlyEvolution.map((item, idx) => {
-                    const revH = Math.max(8, (item.revenue / maxEvolutionValue) * 100);
-                    const expH = Math.max(8, (item.expenses / maxEvolutionValue) * 100);
+                    const isSelected =
+                      selectedMonthIdx !== null
+                        ? selectedMonthIdx === idx
+                        : idx === charts.monthlyEvolution.length - 1;
+
+                    const revH =
+                      item.revenue > 0
+                        ? Math.max(8, Math.round((item.revenue / maxEvolutionValue) * 100))
+                        : 0;
+
+                    const expH =
+                      item.expenses > 0
+                        ? Math.max(8, Math.round((item.expenses / maxEvolutionValue) * 100))
+                        : 0;
+
+                    const revColor = isDark ? '#60A5FA' : '#2563EB';
+                    const expColor = isDark ? '#F87171' : '#E11D48';
+
                     return (
-                      <View key={idx} style={styles.barCol}>
-                        <View style={styles.barsWrapper}>
-                          <View style={[styles.barItem, { height: `${revH}%`, backgroundColor: colors.primary }]} />
-                          <View style={[styles.barItem, { height: `${expH}%`, backgroundColor: colors.danger }]} />
+                      <TouchableOpacity
+                        key={idx}
+                        style={[
+                          styles.chartColBtn,
+                          isSelected && styles.chartColBtnActive,
+                        ]}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          setSelectedMonthIdx(idx);
+                          haptics.selection();
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Mês ${item.monthLabel}: Faturamento ${formatCurrency(item.revenue)}, Despesas ${formatCurrency(item.expenses)}`}
+                      >
+                        <View style={styles.chartBarsArea}>
+                          {/* Barra Faturamento */}
+                          {item.revenue > 0 ? (
+                            <View
+                              style={[
+                                styles.chartBar,
+                                {
+                                  height: `${revH}%`,
+                                  backgroundColor: revColor,
+                                  opacity: isSelected ? 1 : 0.82,
+                                },
+                              ]}
+                            />
+                          ) : (
+                            <View style={styles.chartZeroBar} />
+                          )}
+
+                          {/* Barra Despesas */}
+                          {item.expenses > 0 ? (
+                            <View
+                              style={[
+                                styles.chartBar,
+                                {
+                                  height: `${expH}%`,
+                                  backgroundColor: expColor,
+                                  opacity: isSelected ? 1 : 0.82,
+                                },
+                              ]}
+                            />
+                          ) : (
+                            <View style={styles.chartZeroBar} />
+                          )}
                         </View>
-                        <Text style={styles.barMonthLabel}>{item.monthLabel}</Text>
-                      </View>
+
+                        {/* Rótulo do Mês */}
+                        <Text
+                          style={[
+                            styles.chartMonthLabel,
+                            isSelected && styles.chartMonthLabelActive,
+                          ]}
+                        >
+                          {item.monthLabel}
+                        </Text>
+
+                        {/* Indicador Ativo */}
+                        {isSelected ? (
+                          <View style={styles.chartActiveIndicatorDot} />
+                        ) : (
+                          <View style={{ height: 6 }} />
+                        )}
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
+              </View>
+
+              {/* Legenda e Dica de Interatividade */}
+              <View style={styles.chartFooter}>
                 <View style={styles.chartLegend}>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: isDark ? '#60A5FA' : '#2563EB' },
+                      ]}
+                    />
                     <Text style={styles.legendLabel}>Faturamento</Text>
                   </View>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: isDark ? '#F87171' : '#E11D48' },
+                      ]}
+                    />
                     <Text style={styles.legendLabel}>Despesas</Text>
                   </View>
                 </View>
-              </AppCard>
-            </TouchableOpacity>
+
+                <Text style={styles.chartHint}>Toque na barra p/ detalhes</Text>
+              </View>
+            </AppCard>
           ) : null}
 
           {/* Follow-ups Comerciais de Hoje com WhatsApp 1-Clique */}
