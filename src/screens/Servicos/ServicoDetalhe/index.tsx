@@ -25,6 +25,7 @@ import { StatusBadge } from '@/src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '@/src/components/ui/StatusBadge';
 import { toApiError } from '@/src/services/api/client';
 import { clientsService } from '@/src/services/api/clients';
+import { useCompanyFeatures } from '@/src/services/api/companyFeatures';
 import { financialSummaryService } from '@/src/services/api/financialSummary';
 import { productionOrdersService } from '@/src/services/api/productionOrders';
 import { quotesService } from '@/src/services/api/quotes';
@@ -456,6 +457,23 @@ export default function DetalheOrdemServicoScreen() {
     queryFn: () => serviceOrdersService.getById(orderId as string),
     enabled: Boolean(companyId && orderId),
   });
+
+  // Features da empresa (V5 ETAPA 7): a seção "Produção" (toggle needsProduction)
+  // só aparece quando a feature 'production' está ativa. Enquanto carrega ou em
+  // erro da query, mantemos a seção visível (fail-open, sem flicker) — o backend
+  // continua sendo a autoridade.
+  const {
+    data: companyFeatures,
+    isLoading: featuresLoading,
+    isError: featuresError,
+  } = useCompanyFeatures();
+
+  const productionFeatureEnabled = (() => {
+    if (featuresLoading || featuresError) return true; // fail-open enquanto carrega/erro
+    return Array.isArray(companyFeatures)
+      ? companyFeatures.includes('production')
+      : true; // payload inesperado → fail-open
+  })();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -1502,115 +1520,119 @@ export default function DetalheOrdemServicoScreen() {
               </Text>
             </AppCard>
 
-            {/* ── Produção opcional (V3 §44) ─────────────────────────────── */}
-            <Text style={styles.sectionLabel}>Produção</Text>
-            <AppCard shadow="light" style={styles.producaoCard}>
-              <Text style={styles.producaoQuestion}>Produção necessária?</Text>
-              <View style={styles.producaoToggleRow}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Produção necessária: Sim"
-                  accessibilityState={{ selected: order.needsProduction === true }}
-                  onPress={() => needsProductionMutation.mutate(true)}
-                  disabled={needsProductionMutation.isPending}
-                  style={[
-                    styles.producaoToggleButton,
-                    order.needsProduction === true &&
-                      styles.producaoToggleButtonActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.producaoToggleButtonText,
-                      order.needsProduction === true &&
-                        styles.producaoToggleButtonTextActive,
-                    ]}
-                  >
-                    Sim
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Produção necessária: Não"
-                  accessibilityState={{ selected: order.needsProduction === false }}
-                  onPress={() => needsProductionMutation.mutate(false)}
-                  disabled={needsProductionMutation.isPending}
-                  style={[
-                    styles.producaoToggleButton,
-                    order.needsProduction === false &&
-                      styles.producaoToggleButtonActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.producaoToggleButtonText,
-                      order.needsProduction === false &&
-                        styles.producaoToggleButtonTextActive,
-                    ]}
-                  >
-                    Não
-                  </Text>
-                </Pressable>
-              </View>
-
-              {order.needsProduction === true && (
-                <>
-                  <View style={styles.divider} />
-                  {clientProductionOrders.length > 0 ? (
-                    <>
-                      <Text style={styles.producaoHint}>
-                        Ordens de produção do cliente
+            {/* ── Produção opcional (V3 §44 / V5 ETAPA 7) ──────────────────── */}
+            {productionFeatureEnabled && (
+              <>
+                <Text style={styles.sectionLabel}>Produção</Text>
+                <AppCard shadow="light" style={styles.producaoCard}>
+                  <Text style={styles.producaoQuestion}>Produção necessária?</Text>
+                  <View style={styles.producaoToggleRow}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Produção necessária: Sim"
+                      accessibilityState={{ selected: order.needsProduction === true }}
+                      onPress={() => needsProductionMutation.mutate(true)}
+                      disabled={needsProductionMutation.isPending}
+                      style={[
+                        styles.producaoToggleButton,
+                        order.needsProduction === true &&
+                          styles.producaoToggleButtonActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.producaoToggleButtonText,
+                          order.needsProduction === true &&
+                            styles.producaoToggleButtonTextActive,
+                        ]}
+                      >
+                        Sim
                       </Text>
-                      {clientProductionOrders.slice(0, 3).map((po) => (
-                        <Pressable
-                          key={po.id}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Abrir ordem de produção ${po.code}`}
-                          onPress={() => router.push(`/producao/${po.id}`)}
-                          style={({ pressed }) => [
-                            styles.producaoLinkRow,
-                            pressed && styles.producaoLinkRowPressed,
-                          ]}
-                        >
-                          <Ionicons
-                            name="construct-outline"
-                            size={sizes.icon.md}
-                            color={colors.primary}
-                            accessibilityElementsHidden
-                          />
-                          <Text style={styles.producaoLinkLabel}>
-                            Ordem de produção #{po.code}
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Produção necessária: Não"
+                      accessibilityState={{ selected: order.needsProduction === false }}
+                      onPress={() => needsProductionMutation.mutate(false)}
+                      disabled={needsProductionMutation.isPending}
+                      style={[
+                        styles.producaoToggleButton,
+                        order.needsProduction === false &&
+                          styles.producaoToggleButtonActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.producaoToggleButtonText,
+                          order.needsProduction === false &&
+                            styles.producaoToggleButtonTextActive,
+                        ]}
+                      >
+                        Não
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {order.needsProduction === true && (
+                    <>
+                      <View style={styles.divider} />
+                      {clientProductionOrders.length > 0 ? (
+                        <>
+                          <Text style={styles.producaoHint}>
+                            Ordens de produção do cliente
                           </Text>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={sizes.icon.sm}
-                            color={colors.textLight}
-                            accessibilityElementsHidden
-                          />
-                        </Pressable>
-                      ))}
+                          {clientProductionOrders.slice(0, 3).map((po) => (
+                            <Pressable
+                              key={po.id}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Abrir ordem de produção ${po.code}`}
+                              onPress={() => router.push(`/producao/${po.id}`)}
+                              style={({ pressed }) => [
+                                styles.producaoLinkRow,
+                                pressed && styles.producaoLinkRowPressed,
+                              ]}
+                            >
+                              <Ionicons
+                                name="construct-outline"
+                                size={sizes.icon.md}
+                                color={colors.primary}
+                                accessibilityElementsHidden
+                              />
+                              <Text style={styles.producaoLinkLabel}>
+                                Ordem de produção #{po.code}
+                              </Text>
+                              <Ionicons
+                                name="chevron-forward"
+                                size={sizes.icon.sm}
+                                color={colors.textLight}
+                                accessibilityElementsHidden
+                              />
+                            </Pressable>
+                          ))}
+                        </>
+                      ) : (
+                        <Text style={styles.producaoHint}>
+                          Nenhuma ordem de produção vinculada a este cliente
+                        </Text>
+                      )}
+                      <AppButton
+                        title="Criar ordem de produção"
+                        variant="outline"
+                        size="md"
+                        accessibilityLabel="Criar ordem de produção para este serviço"
+                        onPress={() =>
+                          router.push({
+                            pathname: '/producao/novo',
+                            params: { serviceOrderId: order.id },
+                          })
+                        }
+                        style={styles.producaoCtaButton}
+                      />
                     </>
-                  ) : (
-                    <Text style={styles.producaoHint}>
-                      Nenhuma ordem de produção vinculada a este cliente
-                    </Text>
                   )}
-                  <AppButton
-                    title="Criar ordem de produção"
-                    variant="outline"
-                    size="md"
-                    accessibilityLabel="Criar ordem de produção para este serviço"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/producao/novo',
-                        params: { serviceOrderId: order.id },
-                      })
-                    }
-                    style={styles.producaoCtaButton}
-                  />
-                </>
-              )}
-            </AppCard>
+                </AppCard>
+              </>
+            )}
 
             <Text
               style={styles.sectionLabel}

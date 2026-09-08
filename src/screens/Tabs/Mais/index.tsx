@@ -7,10 +7,10 @@ import type { ComponentProps } from 'react';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { AppCard } from '@/src/components/ui/AppCard';
 import { ConfirmDialog } from '@/src/components/ui/ConfirmDialog';
-import { FeatureGate } from '@/src/components/ui/FeatureGate';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { SecureTokenStorage } from '@/src/services/auth/SecureTokenStorage';
 import { countNotifications } from '@/src/services/notifications';
+import { useCompanyFeatures } from '@/src/services/api/companyFeatures';
 import { queryClient } from '@/src/lib/queryClient';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
@@ -45,6 +45,24 @@ export default function MaisScreen() {
     enabled: Boolean(companyId),
   });
 
+  // Features da empresa (V5 ETAPA 7): 'production' e 'inventory' são módulos
+  // OPCIONAIS. Itens com `feature` definida só aparecem com a feature ativa.
+  // Enquanto carrega (isLoading) OU em erro da query, mantemos os itens
+  // visíveis (fail-open no menu, sem flicker) — o backend continua sendo a
+  // autoridade; as rotas seguem protegidas por permissão.
+  const {
+    data: companyFeatures,
+    isLoading: featuresLoading,
+    isError: featuresError,
+  } = useCompanyFeatures();
+
+  const featureEnabled = (feature: string): boolean => {
+    if (featuresLoading || featuresError) return true; // fail-open enquanto carrega/erro
+    return Array.isArray(companyFeatures)
+      ? companyFeatures.includes(feature)
+      : true; // payload inesperado → fail-open
+  };
+
   const handleLogout = async () => {
     try {
       await SecureTokenStorage.clearTokens();
@@ -73,12 +91,12 @@ export default function MaisScreen() {
       action: () => router.push('/agenda'),
     },
     {
-      id: 'notificacoes',
-      title: 'Notificações',
-      icon: 'notifications-outline',
+      id: 'estoque',
+      title: 'Estoque',
+      icon: 'cube-outline',
       section: 'Operação',
-      action: () => router.push('/notificacoes'),
-      badge: notificationCount,
+      action: () => router.push('/catalogo/materiais'),
+      feature: 'inventory',
     },
     {
       id: 'producao',
@@ -96,28 +114,19 @@ export default function MaisScreen() {
       action: () => router.push('/compras'),
       feature: 'purchases',
     },
-
-    // Catálogo
     {
-      id: 'catalogo',
-      title: 'Catálogo de Serviços',
-      icon: 'grid-outline',
-      section: 'Catálogo',
-      action: () => router.push('/catalogo'),
-    },
-    {
-      id: 'materiais',
-      title: 'Estoque de Materiais',
-      icon: 'cube-outline',
-      section: 'Catálogo',
-      action: () => router.push('/catalogo/materiais'),
-      feature: 'inventory',
+      id: 'notificacoes',
+      title: 'Notificações',
+      icon: 'notifications-outline',
+      section: 'Operação',
+      action: () => router.push('/notificacoes'),
+      badge: notificationCount,
     },
 
     // Financeiro
     {
-      id: 'pagamentos',
-      title: 'Pagamentos / Recebíveis',
+      id: 'financeiro',
+      title: 'Financeiro',
       icon: 'cash-outline',
       section: 'Financeiro',
       action: () => router.push('/pagamentos'),
@@ -131,11 +140,18 @@ export default function MaisScreen() {
     },
     {
       id: 'relatorios',
-      title: 'Relatórios Gerenciais',
+      title: 'Relatórios',
       icon: 'bar-chart-outline',
-      section: 'Financeiro',
+      section: 'Gestão',
       action: () => router.push('/relatorios'),
       feature: 'advancedFinance',
+    },
+    {
+      id: 'equipe',
+      title: 'Equipe',
+      icon: 'people-circle-outline',
+      section: 'Gestão',
+      action: () => router.push('/usuarios'),
     },
     {
       id: 'metas',
@@ -146,16 +162,14 @@ export default function MaisScreen() {
       feature: 'team',
     },
 
-    // Ferramentas
-    {
-      id: 'calculadora',
-      title: 'Calculadora de Insumos',
-      icon: 'calculator-outline',
-      section: 'Ferramentas',
-      action: () => router.push('/ferramentas/calculadora'),
-    },
-
     // Conta
+    {
+      id: 'empresa',
+      title: 'Empresa',
+      icon: 'business-outline',
+      section: 'Conta',
+      action: () => router.push('/configuracoes/empresa'),
+    },
     {
       id: 'configuracoes',
       title: 'Configurações',
@@ -170,16 +184,38 @@ export default function MaisScreen() {
       section: 'Conta',
       action: () => router.push('/profile'),
     },
+
+    // Suporte
+    {
+      id: 'calculadora',
+      title: 'Calculadora de Insumos',
+      icon: 'calculator-outline',
+      section: 'Suporte',
+      action: () => router.push('/ferramentas/calculadora'),
+    },
     {
       id: 'ajuda',
       title: 'Ajuda & Suporte',
       icon: 'help-circle-outline',
-      section: 'Conta',
+      section: 'Suporte',
       action: () => router.push('/ajuda'),
+    },
+    {
+      id: 'trocar-empresa',
+      title: 'Trocar empresa',
+      icon: 'swap-horizontal-outline',
+      section: 'Suporte',
+      action: () => router.replace('/(company)/select-company'),
     },
   ];
 
   const sections = Array.from(new Set(menuItems.map((item) => item.section)));
+
+  // Menu itens filtrados (V5 ETAPA 7): módulos opcionais só aparecem quando a
+  // feature está ativa. Calculado a partir de menuItems ANTES do render.
+  const visibleItems = menuItems.filter((item) => !item.feature || featureEnabled(item.feature));
+  const visibleSections = Array.from(new Set(visibleItems.map((item) => item.section)));
+
 
   return (
     <ScreenContainer scroll padding keyboard={false}>
@@ -188,49 +224,48 @@ export default function MaisScreen() {
         <Text style={styles.subtitle}>Gestão completa da empresa</Text>
       </View>
 
-      {sections.map((section) => (
+      {visibleSections.map((section) => (
         <View key={section} style={styles.section}>
           <Text style={styles.sectionTitle}>{section}</Text>
           <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {menuItems
+            {visibleItems
               .filter((item) => item.section === section)
               .map((item, index, array) => (
-                <FeatureGate key={item.id} feature={item.feature} fallback={null}>
-                  <TouchableOpacity
-                    onPress={item.action}
-                    style={[
-                      styles.menuItem,
-                      index < array.length - 1 && styles.menuItemBorder,
-                    ]}
-                    accessibilityLabel={item.title}
-                    accessibilityRole="button"
-                  >
-                    <View style={styles.menuItemContent}>
-                      <View style={styles.menuItemIcon}>
-                        <Ionicons
-                          name={item.icon}
-                          size={sizes.icon.md}
-                          color={colors.primary}
-                          accessibilityElementsHidden
-                        />
-                      </View>
-                      <Text style={styles.menuItemTitle}>{item.title}</Text>
-                      {item.badge != null && item.badge > 0 ? (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>
-                            {item.badge > 99 ? '99+' : item.badge}
-                          </Text>
-                        </View>
-                      ) : null}
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={item.action}
+                  style={[
+                    styles.menuItem,
+                    index < array.length - 1 && styles.menuItemBorder,
+                  ]}
+                  accessibilityLabel={item.title}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.menuItemContent}>
+                    <View style={styles.menuItemIcon}>
+                      <Ionicons
+                        name={item.icon}
+                        size={sizes.icon.md}
+                        color={colors.primary}
+                        accessibilityElementsHidden
+                      />
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={sizes.icon.md}
-                      color={colors.textLight}
-                      accessibilityElementsHidden
-                    />
-                  </TouchableOpacity>
-                </FeatureGate>
+                    <Text style={styles.menuItemTitle}>{item.title}</Text>
+                    {item.badge != null && item.badge > 0 ? (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={sizes.icon.md}
+                    color={colors.textLight}
+                    accessibilityElementsHidden
+                  />
+                </TouchableOpacity>
               ))}
           </AppCard>
         </View>

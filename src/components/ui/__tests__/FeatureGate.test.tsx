@@ -76,36 +76,12 @@ describe('FeatureGate', () => {
     expect(screen.queryByTestId('content')).toBeNull();
   });
 
-  it('renderiza fallback durante carregamento', async () => {
+  it('renderiza children durante carregamento (fail-open, V5 ETAPA 7)', async () => {
+    // Fail-open: enquanto a query carrega, mantemos o conteúdo visível para
+    // evitar flicker de menu — o backend continua sendo a autoridade.
     mockedUseCompanyFeatures.mockReturnValue({
       data: undefined,
       isLoading: true,
-      error: null,
-    } as any);
-
-    await render(
-      <FeatureGate feature="production" fallback={
-        <View testID="fallback">
-          <Text>Carregando...</Text>
-        </View>
-      }>
-        <View testID="content">
-          <Text>Conteúdo protegido</Text>
-        </View>
-      </FeatureGate>
-    );
-
-    expect(screen.getByTestId('fallback')).toBeTruthy();
-    expect(screen.getByText('Carregando...')).toBeTruthy();
-    expect(screen.queryByTestId('content')).toBeNull();
-  });
-
-  it('não renderiza children quando features estão undefined (ex.: erro) — comportamento defensivo', async () => {
-    // Com features indefinidas (erro/sem dados) e sem loading, o gate
-    // NÃO libera o conteúdo: `features?.includes(...) ?? false` → false.
-    mockedUseCompanyFeatures.mockReturnValue({
-      data: undefined,
-      isLoading: false,
       error: null,
     } as any);
 
@@ -117,7 +93,29 @@ describe('FeatureGate', () => {
       </FeatureGate>
     );
 
-    expect(screen.queryByTestId('content')).toBeNull();
+    expect(screen.getByTestId('content')).toBeTruthy();
+    expect(screen.getByText('Conteúdo protegido')).toBeTruthy();
+  });
+
+  it('renderiza children em erro da query (fail-open, V5 ETAPA 7)', async () => {
+    // Fail-open: em erro da query mantemos o conteúdo visível — o backend
+    // continua sendo a autoridade das features.
+    mockedUseCompanyFeatures.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: new Error('network'),
+    } as any);
+
+    await render(
+      <FeatureGate feature="production">
+        <View testID="content">
+          <Text>Conteúdo protegido</Text>
+        </View>
+      </FeatureGate>
+    );
+
+    expect(screen.getByTestId('content')).toBeTruthy();
   });
 
   it('repassa accessibilityLabel ao filho renderizado', async () => {

@@ -8,6 +8,9 @@ import { useCompanyFeatures } from '../../services/api/companyFeatures';
  * - Caso contrário, renderiza `fallback` (ou null se não fornecido).
  * - Se `feature` for vazio/undefined, SEMPRE renderiza children
  *   (feature não é obrigatória — itens comuns não são gated).
+ * - V5 ETAPA 7: enquanto carrega, em erro da query ou payload inesperado,
+ *   renderiza children (fail-open — evita flicker de menu; o backend
+ *   continua sendo a autoridade das features).
  *
  * Uso:
  * <FeatureGate feature="production">
@@ -33,16 +36,18 @@ function FeatureGate({
   fallback = null,
   accessibilityLabel,
 }: FeatureGateProps) {
+  // Hooks sempre executados (regra dos Hooks) — a decisão de gate é feita abaixo.
+  const { data: features, isLoading, isError } = useCompanyFeatures();
+
   // Sem feature definida → sempre visível (não é um item feature-gated)
   if (!feature) {
     return <>{children}</>;
   }
 
-  const { data: features, isLoading } = useCompanyFeatures();
-
-  // Enquanto carrega, não renderiza nada (ou fallback)
-  if (isLoading) {
-    return <>{fallback}</>;
+  // V5 ETAPA 7 — fail-open: enquanto carrega OU em erro da query, mantém o
+  // conteúdo visível (evita flicker; o backend segue sendo a autoridade).
+  if (isLoading || isError) {
+    return <>{children}</>;
   }
 
   const featureList = Array.isArray(features)
