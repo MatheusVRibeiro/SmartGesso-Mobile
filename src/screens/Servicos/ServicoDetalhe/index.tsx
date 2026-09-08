@@ -25,8 +25,7 @@ import { StatusBadge } from '@/src/components/ui/StatusBadge';
 import type { StatusBadgeVariant } from '@/src/components/ui/StatusBadge';
 import { toApiError } from '@/src/services/api/client';
 import { clientsService } from '@/src/services/api/clients';
-import { expensesService } from '@/src/services/api/expenses';
-import { paymentsService } from '@/src/services/api/payments';
+import { financialSummaryService } from '@/src/services/api/financialSummary';
 import { productionOrdersService } from '@/src/services/api/productionOrders';
 import { quotesService } from '@/src/services/api/quotes';
 import { serviceOrdersService } from '@/src/services/api/serviceOrders';
@@ -460,7 +459,7 @@ export default function DetalheOrdemServicoScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await orderQuery.refetch();
+    await Promise.all([orderQuery.refetch(), financialSummaryQuery.refetch()]);
     setRefreshing(false);
   };
 
@@ -627,18 +626,12 @@ export default function DetalheOrdemServicoScreen() {
     enabled: Boolean(companyId && orderQuery.data?.clientId),
   });
 
-  // Financeiro (V3) — pagamentos da empresa; recebido = soma CONFIRMADO do cliente.
-  const paymentsQuery = useQuery({
-    queryKey: ['company', companyId, 'payments'],
-    queryFn: () => paymentsService.list(),
-    enabled: Boolean(companyId),
-  });
-
-  // Custos (V3) — despesas da empresa; vinculadas = serviceOrderId === ordem.
-  const expensesQuery = useQuery({
-    queryKey: ['company', companyId, 'expenses'],
-    queryFn: () => expensesService.list(),
-    enabled: Boolean(companyId),
+  // Financeiro (ETAPA 1.6) — resumo calculado pela API por OS
+  // (GET /service-orders/:id/financial-summary), substituindo o cálculo local.
+  const financialSummaryQuery = useQuery({
+    queryKey: ['service-order', companyId, orderQuery.data?.id, 'financial-summary'],
+    queryFn: () => financialSummaryService.getFinancialSummary(orderQuery.data!.id),
+    enabled: Boolean(companyId && orderQuery.data?.id),
   });
 
   // Produção (V3 §44) — ordens de produção do cliente para vincular à OS.
@@ -707,36 +700,16 @@ export default function DetalheOrdemServicoScreen() {
   const prazoReferenceDate = deliveryDate ?? order?.scheduledDate ?? null;
   const prazoBadge = order ? getPrazoBadge(order, prazoReferenceDate) : null;
 
-  // Financeiro — recebido = soma de pagamentos CONFIRMADO do cliente
-  // (parcelas confirmadas quando o pagamento é parcelado).
-  const clientPayments = order
-    ? (paymentsQuery.data?.data ?? []).filter(
-        (payment) => payment.clientId === order.clientId,
-      )
-    : [];
-  const receivedTotal = clientPayments.reduce((sum, payment) => {
-    if (payment.installments && payment.installments.length > 0) {
-      return (
-        sum +
-        payment.installments
-          .filter((installment) => installment.status === 'CONFIRMADO')
-          .reduce((s, installment) => s + installment.amount, 0)
-      );
-    }
-    return payment.status === 'CONFIRMADO' ? sum + payment.amount : sum;
-  }, 0);
+  // Financeiro (ETAPA 1.6) — totais calculados pela API via financial-summary.
+  // Fallback: enquanto o summary carrega/está indisponível, mantém o contratado
+  // da OS para preservar os pontos de UI (valores viram 0/— sem quebrar layout).
+  const financialSummary = financialSummaryQuery.data ?? null;
+  const receivedTotal = financialSummary?.received ?? 0;
+  const expensesTotal = financialSummary?.realizedCost ?? 0;
   const contractedValue = order?.saleValue ?? null;
   const toReceiveValue =
-    contractedValue != null ? contractedValue - receivedTotal : null;
-
-  // Custos — despesas vinculadas ao serviço (serviceOrderId enviado pelo
-  // mobile V3; filtro forward-compatible caso a API ainda não o retorne).
-  const linkedExpenses = order
-    ? (expensesQuery.data?.data ?? []).filter(
-        (expense) => expense.serviceOrderId === order.id,
-      )
-    : [];
-  const expensesTotal = linkedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    financialSummary?.toReceive ??
+    (contractedValue != null ? contractedValue - receivedTotal : null);
 
   function scrollToSection(y: number) {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - spacing.md), animated: true });
@@ -1191,8 +1164,8 @@ export default function DetalheOrdemServicoScreen() {
                   </Text>
                 </View>
               </View>
-              {paymentsQuery.isLoading && (
-                <Text style={styles.financeiroHint}>Carregando pagamentos...</Text>
+              {financialSummaryQuery.isLoading && (
+                <Text style={styles.financeiroHint}>Carregando resumo financeiro...</Text>
               )}
             </AppCard>
 
