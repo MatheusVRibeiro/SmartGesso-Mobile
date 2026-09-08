@@ -3,12 +3,16 @@
  *
  * Exibe um botão para adicionar comprovante via ImagePicker.
  * Se já existir um receiptUrl, mostra preview clicável.
+ *
+ * V5 ETAPA 10: a URL de /uploads não é mais pública (backend commit 59ee7e7) —
+ * o preview usa <AuthImage /> (baixa com JWT Bearer) e o "Ver comprovante"
+ * compartilha o arquivo autenticado via expo-sharing (Linking.openURL abriria
+ * a rota autenticada sem token e falharia com 401).
  */
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Linking,
   Pressable,
   StyleSheet,
@@ -18,13 +22,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadsService } from '../../services/api/uploads';
+import * as Sharing from 'expo-sharing';
+import { uploadsService, authenticatedImageUri } from '../../services/api/uploads';
 import type { UploadEntityType } from '../../services/api/uploads';
 import type { PhotoAttachment } from '../../types/photo';
 import { safeErrorMessage } from '../../utils/secureLog';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../theme/ThemeProvider';
 import type { ActivePalette } from '../../theme/ThemeProvider';
+import { AuthImage } from './AuthImage';
 
 export interface ReceiptUploaderProps {
   /** URL atual do comprovante (se já existir). */
@@ -113,12 +119,22 @@ export function ReceiptUploader({
     }
   }
 
-  function handlePreview() {
+  async function handlePreview() {
     if (!receiptUrl) return;
-    // Abrir URL no navegador
-    Linking.openURL(receiptUrl).catch(() => {
+    try {
+      // A URL é autenticada (sem token o backend responde 401): baixa o
+      // arquivo localmente e compartilha via expo-sharing. Fallback web:
+      // abre em nova aba (blob: não navega via Linking).
+      const localUri = await authenticatedImageUri(receiptUrl);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(localUri, { mimeType: 'image/jpeg' });
+        return;
+      }
+      await Linking.openURL(localUri);
+    } catch (error) {
+      console.error('Erro ao abrir comprovante:', safeErrorMessage(error));
       Alert.alert('Erro', 'Não foi possível abrir o comprovante.');
-    });
+    }
   }
 
   // Se já existe comprovante, mostra preview clicável
@@ -132,10 +148,11 @@ export function ReceiptUploader({
           onPress={handlePreview}
           style={styles.previewContainer}
         >
-          <Image
-            source={{ uri: receiptUrl }}
+          <AuthImage
+            uri={receiptUrl}
             style={styles.previewImage}
             resizeMode="cover"
+            accessibilityLabel="Comprovante"
           />
           <View style={styles.previewOverlay}>
             <Ionicons name="eye-outline" size={24} color={colors.textOnPrimary} />

@@ -46,3 +46,6 @@ export type { ScreenContainerProps } from './ScreenContainer';
 
 export { default as StatusBadge } from './StatusBadge';
 export type { StatusBadgeProps, StatusBadgeSize, StatusBadgeVariant } from './StatusBadge';
+
+export { AuthImage } from './AuthImage';
+export type { AuthImageProps } from './AuthImage';

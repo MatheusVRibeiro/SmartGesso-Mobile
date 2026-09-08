@@ -57,3 +57,13 @@ jest.mock('lucide-react-native', () => {
     get: () => MockLucideIcon,
   });
 });
+
+// Mock de expo-file-system (V5 ETAPA 10 — AuthImage/uploads usam download autenticado)
+jest.mock('expo-file-system', () => ({
+  Directory: jest.fn(),
+  File: jest.fn(),
+  Paths: {
+    cache: '/cache',
+    document: '/documents',
+  },
+}));
