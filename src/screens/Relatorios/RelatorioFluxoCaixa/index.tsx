@@ -20,22 +20,11 @@ import type { Expense, Payment, PaymentStatus } from '@/src/types/finance';
 import { formatCurrency } from '@/src/utils/format';
 import { createRelatorioFluxoCaixaStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * A API real retorna array puro em GET /payments e GET /expenses (Prisma
- * findMany), enquanto os tipos declarados são { data, total }. Normaliza ambos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 // ─── Filtros ────────────────────────────────────────────────────────────────
 

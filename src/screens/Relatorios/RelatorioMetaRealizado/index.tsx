@@ -18,6 +18,7 @@ import type { Quote, QuoteItemType } from '@/src/types/quote';
 import { formatCurrency } from '@/src/utils/format';
 import { createRelatorioMetaRealizadoStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -51,18 +52,6 @@ interface CategoryData {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * A API real retorna array puro em GET /quotes (Prisma
- * findMany), enquanto os tipos declarados são { data, total }. Normaliza ambos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 /**
  * Filtra itens por período

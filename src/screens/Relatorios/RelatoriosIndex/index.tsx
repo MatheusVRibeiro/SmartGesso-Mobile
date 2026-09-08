@@ -29,17 +29,10 @@ import type { ServiceOrder, ServiceOrderStatus } from '@/src/types/serviceOrder'
 import type { MaterialItem } from '@/src/types/catalog';
 import { formatCurrency } from '@/src/utils/format';
 import { AppButton } from '@/src/components/ui/AppButton';
+import { toArray } from '@/src/utils/toArray';
 import { createRelatoriosStyles } from './styles';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const PAYMENT_STATUS_BADGE: Record<
   PaymentStatus,
