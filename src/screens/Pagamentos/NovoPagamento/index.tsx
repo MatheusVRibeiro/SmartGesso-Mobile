@@ -26,7 +26,6 @@ import { paymentsService } from '@/src/services/api/payments';
 import { serviceOrdersService } from '@/src/services/api/serviceOrders';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
-import { addMutation } from '@/src/services/offline/syncQueue';
 import { colors, radius, sizes, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
 import { parseCurrencyInput } from '@/src/utils/masks';
@@ -440,18 +439,12 @@ export default function NovoPagamentoScreen() {
 
   function onSubmit(data: CreatePaymentFormData) {
     if (isOffline) {
-      // Salvar na fila de sincronização offline
-      addMutation({
-        type: 'payment',
-        endpoint: '/payments',
-        method: 'POST',
-        body: cleanPayload(data, installmentCount, serviceOrderIdParam),
-      });
+      // V5 §17 — financeiro BLOQUEADO offline: pagamentos não entram na fila,
+      // o usuário precisa de conexão para registrar.
       setSnackbar({
-        type: 'success',
-        message: 'Salvo offline — sincronizará quando conectar',
+        type: 'error',
+        message: 'Pagamentos não podem ser registrados offline. Conecte-se à internet para registrar.',
       });
-      setTimeout(() => router.back(), 600);
       return;
     }
     createMutation.mutate(data);

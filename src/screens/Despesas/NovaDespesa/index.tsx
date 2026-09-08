@@ -15,7 +15,6 @@ import { expensesService } from '@/src/services/api/expenses';
 import { serviceOrdersService } from '@/src/services/api/serviceOrders';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
-import { addMutation } from '@/src/services/offline/syncQueue';
 import { colors, radius, sizes, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
 import { parseCurrencyInput } from '@/src/utils/masks';
@@ -117,25 +116,12 @@ export default function NovaDespesaScreen() {
 
   function onSubmit(data: ExpenseFormValues) {
     if (isOffline) {
-      // Salvar na fila de sincronização offline
-      addMutation({
-        type: 'expense',
-        endpoint: '/expenses',
-        method: 'POST',
-        body: {
-          category: data.category ?? 'OUTROS',
-          description: data.description,
-          amount: parseFloat(String(data.amount)),
-          expenseDate: data.expenseDate?.trim() || undefined,
-          observations: data.observations?.trim() || undefined,
-          serviceOrderId: data.serviceOrderId?.trim() || undefined,
-        },
-      });
+      // V5 §17 — financeiro BLOQUEADO offline: despesas não entram na fila,
+      // o usuário precisa de conexão para registrar.
       setSnackbar({
-        type: 'success',
-        message: 'Salvo offline — sincronizará quando conectar',
+        type: 'error',
+        message: 'Despesas não podem ser registradas offline. Conecte-se à internet para registrar.',
       });
-      setTimeout(() => router.back(), 600);
       return;
     }
     createMutation.mutate(data);
