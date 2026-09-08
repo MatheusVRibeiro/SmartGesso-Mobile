@@ -25,15 +25,8 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
 import type { ActivePalette } from '@/src/theme/ThemeProvider';
 import { radius, sizes } from '@/src/theme';
 import type { Work, WorkStatus } from '@/src/types/work';
+import { toArray } from '@/src/utils/toArray';
 import { createObrasStyles } from './styles';
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const WORK_STATUS_BADGE: Record<
   WorkStatus,

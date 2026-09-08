@@ -33,6 +33,7 @@ import { z } from 'zod';
 import { createWorkSchema } from '@/src/validation/schemas';
 import { createNovaObraStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -42,18 +43,6 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
  * (CreateWorkFormData) causa incompatibilidade de tipos no useForm.
  */
 type WorkFormValues = z.input<typeof createWorkSchema>;
-
-/**
- * A API real retorna array puro em GET /clients (Prisma findMany), enquanto o
- * tipo declarado é { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const WORK_STATUS_OPTIONS: { value: WorkStatus; label: string }[] = [
   { value: 'PLANEJADA', label: 'Planejada' },

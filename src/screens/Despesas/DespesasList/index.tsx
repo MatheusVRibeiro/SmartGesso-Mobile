@@ -29,6 +29,7 @@ import type { ActivePalette } from '@/src/theme/ThemeProvider';
 import { radius, sizes } from '@/src/theme';
 import type { Expense, ExpenseCategory } from '@/src/types/finance';
 import { formatCurrency } from '@/src/utils/format';
+import { toArray } from '@/src/utils/toArray';
 import { createDespesasStyles } from './styles';
 
 type ExpenseFilter = 'TODAS' | 'MATERIAL' | 'MAO_DE_OBRA' | 'TRANSPORTE' | 'OUTROS';
@@ -50,15 +51,6 @@ const EXPENSE_CATEGORY_BADGE: Record<
   IMPOSTOS: { variant: 'cancelled', label: 'Impostos' },
   OUTROS: { variant: 'expired', label: 'Outros' },
 };
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
-
 
 function isWithinPeriod(dateStr: string, period: PeriodFilter): boolean {
   if (period === 'TODOS') return true;

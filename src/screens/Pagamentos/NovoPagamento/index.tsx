@@ -38,6 +38,7 @@ import {
 } from '@/src/validation/schemas';
 import { createNovoPagamentoStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -46,18 +47,6 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
  * O zodResolver tipa o formulário pelo input do schema.
  */
 type PaymentFormValues = z.input<typeof createPaymentSchema>;
-
-/**
- * A API real retorna array puro em GET /clients (Prisma findMany), enquanto o
- * tipo declarado é { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
   { value: 'PIX', label: 'Pix' },

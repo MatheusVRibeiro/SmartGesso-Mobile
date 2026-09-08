@@ -33,6 +33,7 @@ import type {
   PaymentStatus,
 } from '@/src/types/finance';
 import { formatCurrency } from '@/src/utils/format';
+import { toArray } from '@/src/utils/toArray';
 import { createPagamentosStyles } from './styles';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -66,14 +67,6 @@ const PAYMENT_STATUS_BADGE: Record<
   CONFIRMADO: { variant: 'active', label: 'Confirmado' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
 };
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);

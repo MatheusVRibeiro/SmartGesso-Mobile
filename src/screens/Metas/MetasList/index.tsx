@@ -35,6 +35,7 @@ import type { SetGoalInput } from '@/src/types/goal';
 import { COMPANY_MEMBER_ROLE_LABELS } from '@/src/types/companyMember';
 import { formatCurrency } from '@/src/utils/format';
 import { onlyDigits, parseCurrencyInput } from '@/src/utils/masks';
+import { toArray } from '@/src/utils/toArray';
 import { createMetasStyles } from './styles';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -53,14 +54,6 @@ const MONTH_LABELS = [
   'Nov',
   'Dez',
 ];
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 function isSameLocalMonth(iso: string, year: number, month: number): boolean {
   const date = new Date(iso);

@@ -24,15 +24,8 @@ import {
   COMPANY_MEMBER_STATUS_LABELS,
 } from '@/src/types/companyMember';
 import type { CompanyMember, CompanyMemberStatus } from '@/src/types/companyMember';
+import { toArray } from '@/src/utils/toArray';
 import { createUsuariosStyles } from './styles';
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const STATUS_BADGE: Record<CompanyMemberStatus, StatusBadgeVariant> = {
   ATIVO: 'active',

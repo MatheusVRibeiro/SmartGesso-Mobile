@@ -21,20 +21,9 @@ import type { Measurement } from '@/src/types/measurement';
 import { formatCurrency, formatNumber } from '@/src/utils/format';
 import { createObraMateriaisStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * A API real pode retornar array puro (Prisma findMany) ou { data, total }.
- * Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 /** Monta o payload de cálculo a partir das medições da obra. */
 function buildCalculateInput(measurements: Measurement[]): CalculateMaterialsInput {

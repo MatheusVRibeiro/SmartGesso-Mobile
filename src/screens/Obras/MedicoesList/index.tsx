@@ -27,20 +27,9 @@ import type {
 } from '@/src/types/measurement';
 import { createMedicoesListStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * A API real retorna array puro em GET /works/:workId/measurements (Prisma
- * findMany), enquanto o tipo declarado é { data, total }. Normaliza ambos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 /** Formata número com vírgula decimal (pt-BR). Ex.: 12.5 → "12,5". */
 function formatNumber(value: number | null | undefined): string {

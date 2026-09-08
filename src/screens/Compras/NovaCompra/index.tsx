@@ -29,6 +29,7 @@ import { colors, radius, sizes, spacing, typography } from '@/src/theme';
 import type { Supplier } from '@/src/types/supplier';
 import { formatCurrency } from '@/src/utils/format';
 import { parseCurrencyInput } from '@/src/utils/masks';
+import { toArray } from '@/src/utils/toArray';
 import { z } from 'zod';
 import { createNovaCompraStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
@@ -51,17 +52,8 @@ type PurchaseOrderFormValues = z.input<typeof createPurchaseOrderSchema>;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * A API real pode retornar array puro em GET /suppliers (Prisma findMany),
- * enquanto o tipo declarado é { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
+// toArray: importado de '@/src/utils/toArray' — normaliza array puro (Prisma
+// findMany) ou envelope { data, total } de GET /suppliers.
 
 // ─── Modal de seleção de fornecedor ─────────────────────────────────────────
 

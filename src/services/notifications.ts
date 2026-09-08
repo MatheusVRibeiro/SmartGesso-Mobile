@@ -29,6 +29,7 @@ import type { Notificacao, NotificationType } from '../types/notification';
 import type { QuoteSummary } from '../types/quote';
 import type { ServiceOrder } from '../types/serviceOrder';
 import { formatCurrency } from '../utils/format';
+import { toArray } from '../utils/toArray';
 
 // ─── Helpers de data (fuso local) ──────────────────────────────────────────
 
@@ -67,15 +68,6 @@ function formatShortDate(value: string): string {
   const date = new Date(`${value}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('pt-BR');
-}
-
-/** Normaliza array puro (Prisma findMany) ou { data, total }. */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
 }
 
 /**

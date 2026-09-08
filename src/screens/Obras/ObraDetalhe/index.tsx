@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { createWorkSchema } from '@/src/validation/schemas';
 import { createObraDetalheStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import { toArray } from '@/src/utils/toArray';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -47,18 +48,6 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
 type WorkFormValues = z.input<typeof createWorkSchema>;
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
-/**
- * A API real retorna array puro em GET /clients (Prisma findMany), enquanto o
- * tipo declarado é { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const WORK_STATUS_BADGE: Record<
   WorkStatus,

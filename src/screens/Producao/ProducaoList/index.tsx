@@ -18,15 +18,8 @@ import { useAppTheme } from '@/src/theme/ThemeProvider';
 import type { ActivePalette } from '@/src/theme/ThemeProvider';
 import { radius, sizes } from '@/src/theme';
 import type { ProductionOrder, ProductionOrderStatus } from '@/src/types/serviceOrder';
+import { toArray } from '@/src/utils/toArray';
 import { createProducaoStyles } from './styles';
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const PRODUCTION_STATUS_BADGE: Record<
   ProductionOrderStatus,

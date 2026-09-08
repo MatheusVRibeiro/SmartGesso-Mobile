@@ -25,15 +25,8 @@ import type { ActivePalette } from '@/src/theme/ThemeProvider';
 import { radius, sizes } from '@/src/theme';
 import type { PurchaseOrder, PurchaseOrderStatus } from '@/src/types/purchaseOrder';
 import { formatCurrency } from '@/src/utils/format';
+import { toArray } from '@/src/utils/toArray';
 import { createComprasStyles } from './styles';
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 const PURCHASE_STATUS_BADGE: Record<
   PurchaseOrderStatus,
