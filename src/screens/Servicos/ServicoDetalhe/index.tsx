@@ -18,6 +18,7 @@ import { AppInput } from '@/src/components/ui/AppInput';
 import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '@/src/components/ui/AppSnackbar';
 import { ConfirmDialog } from '@/src/components/ui/ConfirmDialog';
+import { toArray } from '@/src/utils/toArray';
 import { ErrorState } from '@/src/components/ui/ErrorState';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
@@ -202,18 +203,6 @@ function getPrazoBadge(
 }
 
 // ─── Modal de registro de resultado ─────────────────────────────────────────
-
-/**
- * A API real retorna array puro em GET /production-orders (Prisma findMany),
- * enquanto o tipo declarado é { data, total }. Normaliza ambos os formatos.
- */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 interface RegisterResultModalProps {
   visible: boolean;

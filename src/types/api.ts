@@ -34,19 +34,13 @@ export interface ApiResponse<T> {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
+ * Re-export do utilitário canônico (src/utils/toArray) para não quebrar os
+ * consumidores existentes (services/api/agenda, dashboard, goals).
  * Normalizes API responses that may return either:
  * 1. A raw array (Prisma findMany style)
  * 2. A wrapped { data, total } envelope
- *
- * Returns a consistent array format.
  */
-export function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
+export { toArray } from '../utils/toArray';
 
 /**
  * Normalizes paginated responses.

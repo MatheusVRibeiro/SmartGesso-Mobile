@@ -17,6 +17,7 @@ import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
+import { toArray } from '@/src/utils/toArray';
 import type { QuoteStatus, QuoteSummary } from '@/src/types/quote';
 import { createOrcamentosStyles } from './styles';
 
@@ -117,17 +118,6 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
       </Pressable>
     </AppCard>
   );
-}
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result && Array.isArray((result as any).data)) {
-    return (result as { data: T[] }).data;
-  }
-  if (result && typeof result === 'object' && 'items' in result && Array.isArray((result as any).items)) {
-    return (result as { items: T[] }).items;
-  }
-  return [];
 }
 
 export default function OrcamentosScreen() {

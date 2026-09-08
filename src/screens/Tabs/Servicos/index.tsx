@@ -15,6 +15,7 @@ import { serviceOrdersService } from '@/src/services/api/serviceOrders';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
+import { toArray } from '@/src/utils/toArray';
 import type { ServiceOrder, ServiceOrderStatus } from '@/src/types/serviceOrder';
 import { createServicosStyles } from './styles';
 
@@ -29,14 +30,6 @@ const SERVICE_ORDER_STATUS_BADGE: Record<
   CONCLUIDA: { variant: 'active', label: 'Concluída' },
   CANCELADA: { variant: 'cancelled', label: 'Cancelada' },
 };
-
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);

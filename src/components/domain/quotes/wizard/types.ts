@@ -118,17 +118,12 @@ export interface MaterialsCalcState {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * A API real retorna array puro em GET /clients, /works e
- * /works/:workId/measurements (Prisma findMany), enquanto os tipos
- * declarados são { data, total }. Normaliza ambos os formatos.
+ * Re-export do utilitário canônico (src/utils/toArray) para não quebrar os
+ * consumidores existentes deste módulo (features/quotes/create/types.ts,
+ * screens/Orcamentos/NovoOrcamento). Normaliza array puro (Prisma findMany)
+ * e envelope { data, total }.
  */
-export function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
+export { toArray } from '../../../../utils/toArray';
 
 /** Converte texto digitado (pt-BR) em número. Aceita vírgula decimal. */
 export function parseNumber(value: string): number {
