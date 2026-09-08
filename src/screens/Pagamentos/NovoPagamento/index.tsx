@@ -74,13 +74,17 @@ const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
 /**
  * DTOs NestJS usam @IsOptional() que NÃO ignora string vazia — strip
  * '' → undefined antes do mutate (padrão cleanPayload do projeto).
+ * `serviceOrderId` vem da rota (?serviceOrderId=) e NÃO do formulário —
+ * o backend valida tenant + clientId ↔ OS.
  */
 function cleanPayload(
   data: CreatePaymentFormData,
   installmentCount: number,
+  serviceOrderId?: string,
 ): CreatePaymentInput {
   return {
     clientId: data.clientId,
+    serviceOrderId: serviceOrderId?.trim() || undefined,
     amount: data.amount,
     paymentMethod: data.paymentMethod,
     paymentDate: data.paymentDate?.trim() || undefined,
@@ -417,7 +421,7 @@ export default function NovoPagamentoScreen() {
 
   const createMutation = useMutation({
     mutationFn: (data: CreatePaymentFormData) =>
-      paymentsService.create(cleanPayload(data, installmentCount)),
+      paymentsService.create(cleanPayload(data, installmentCount, serviceOrderIdParam)),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'payments'],
@@ -441,7 +445,7 @@ export default function NovoPagamentoScreen() {
         type: 'payment',
         endpoint: '/payments',
         method: 'POST',
-        body: cleanPayload(data, installmentCount),
+        body: cleanPayload(data, installmentCount, serviceOrderIdParam),
       });
       setSnackbar({
         type: 'success',
