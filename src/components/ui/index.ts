@@ -35,9 +35,6 @@ export type { OfflineBannerProps } from './OfflineBanner';
 export { default as PasswordInput } from './PasswordInput';
 export type { PasswordInputProps } from './PasswordInput';
 
-export { default as PermissionGate } from './PermissionGate';
-export type { PermissionGateProps } from './PermissionGate';
-
 export { default as PressableScale } from './PressableScale';
 export type { PressableScaleProps } from './PressableScale';
 

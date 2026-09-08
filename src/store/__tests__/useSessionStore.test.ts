@@ -7,6 +7,7 @@ describe('useSessionStore', () => {
       currentUser: null,
       activeCompany: null,
       permissions: [],
+      role: null,
       accessStatus: null,
     });
   });
@@ -15,6 +16,8 @@ describe('useSessionStore', () => {
     const state = useSessionStore.getState();
     expect(state.sessionStatus).toBe('initializing');
     expect(state.currentUser).toBeNull();
+    expect(state.permissions).toEqual([]);
+    expect(state.role).toBeNull();
   });
 
   it('setSession atualiza user, company e sessionStatus', () => {
@@ -32,12 +35,30 @@ describe('useSessionStore', () => {
     expect(state.activeCompany).toEqual(mockCompany);
   });
 
+  it('setPermissions e setRole atualizam permissões e perfil', () => {
+    useSessionStore.getState().setPermissions(['users:manage', 'finance:view']);
+    useSessionStore.getState().setRole('MANAGER');
+
+    const state = useSessionStore.getState();
+    expect(state.permissions).toEqual(['users:manage', 'finance:view']);
+    expect(state.role).toBe('MANAGER');
+  });
+
+  it('setRole(null) representa estado unknown (nunca owner)', () => {
+    useSessionStore.getState().setRole('COMPANY_OWNER');
+    useSessionStore.getState().setRole(null);
+    expect(useSessionStore.getState().role).toBeNull();
+  });
+
   it('clearSession limpa tudo', () => {
+    useSessionStore.getState().setPermissions(['users:manage']);
+    useSessionStore.getState().setRole('MANAGER');
     useSessionStore.getState().clearSession();
     const state = useSessionStore.getState();
     expect(state.sessionStatus).toBe('unauthenticated');
     expect(state.currentUser).toBeNull();
     expect(state.activeCompany).toBeNull();
     expect(state.permissions).toEqual([]);
+    expect(state.role).toBeNull();
   });
 });
