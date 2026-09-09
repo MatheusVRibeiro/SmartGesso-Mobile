@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -223,7 +223,8 @@ export default function ComparativoScreen() {
   }, [granularity]);
 
   // Selecionar períodos padrão
-  useMemo(() => {
+  // V5: seleção padrão de períodos em useEffect (setState em useMemo é anti-pattern)
+  useEffect(() => {
     if (periodOptions.length >= 2 && !selectedPeriodA && !selectedPeriodB) {
       setSelectedPeriodA(periodOptions[1].value); // Período anterior
       setSelectedPeriodB(periodOptions[0].value); // Período atual

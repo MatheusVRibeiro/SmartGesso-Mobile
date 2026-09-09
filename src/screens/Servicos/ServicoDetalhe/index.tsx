@@ -447,6 +447,16 @@ export default function DetalheOrdemServicoScreen() {
     enabled: Boolean(companyId && orderId),
   });
 
+  // Orçamento de origem (planejado × realizado — V3 §48)
+  // V5: hook movido para antes de qualquer early return (rules-of-hooks) —
+  // desabilitado enquanto orderId/quoteId não existem.
+  const originQuoteId = orderQuery.data?.quoteId ?? null;
+  const { data: originQuote } = useQuery({
+    queryKey: ['company', companyId, 'quotes', originQuoteId],
+    queryFn: () => quotesService.getById(originQuoteId as string),
+    enabled: Boolean(companyId && originQuoteId),
+  });
+
   // Features da empresa (V5 ETAPA 7): a seção "Produção" (toggle needsProduction)
   // só aparece quando a feature 'production' está ativa. Enquanto carrega ou em
   // erro da query, mantemos a seção visível (fail-open, sem flicker) — o backend
@@ -932,12 +942,6 @@ export default function DetalheOrdemServicoScreen() {
   const profitColor =
     profit > 0 ? colors.success : profit < 0 ? colors.danger : colors.text;
 
-  // Orçamento de origem (planejado × realizado — V3 §48)
-  const { data: originQuote } = useQuery({
-    queryKey: ['company', companyId, 'quotes', order?.quoteId],
-    queryFn: () => quotesService.getById(order!.quoteId!),
-    enabled: Boolean(companyId && order?.quoteId),
-  });
   const quoteTotal = originQuote?.total != null ? Number(originQuote.total) : null;
 
   // Índice do status atual no timeline expandido (para o stepper)
