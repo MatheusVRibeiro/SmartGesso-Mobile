@@ -34,9 +34,9 @@ export function formatNumber(value?: number | null): string {
 }
 
 /**
- * Formata o número do orçamento como código comercial (ORC + 5 dígitos).
- * Ex.: 125 → "ORC-00125" · 3 → "ORC-00003"
+ * Formata o número do orçamento como código comercial (#NNN).
+ * Ex.: 7 → "#007" · 125 → "#125" · 1234 → "#1234"
  */
 export function formatQuoteCode(quoteNumber: number): string {
-  return `ORC-${String(quoteNumber).padStart(5, '0')}`;
+  return `#${String(quoteNumber).padStart(3, '0')}`;
 }

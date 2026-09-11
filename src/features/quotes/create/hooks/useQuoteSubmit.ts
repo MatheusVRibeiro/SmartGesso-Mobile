@@ -1,9 +1,6 @@
 /**
- * SmartGesso Mobile — V5 ETAPA 9: submissão do orçamento (Etapa 8) e
- * persistência de ambientes. Extraído verbatim do monólito
- * src/screens/Orcamentos/NovoOrcamento/index.tsx — mesmas mutations, mesmas
- * mensagens de snackbar, mesmo fluxo de invalidação de queries, zero mudança
- * de comportamento.
+ * SmartGesso Mobile — V5 ETAPA 9: submissão do orçamento (criação e edição)
+ * e persistência de ambientes.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toApiError } from '@/src/services/api/client';
@@ -57,6 +54,8 @@ async function persistEnvironments(
 
 export interface UseQuoteSubmitParams {
   companyId?: string | null;
+  /** Se informado, executa atualização (PATCH /quotes/:id) em vez de criação */
+  editQuoteId?: string | null;
   /** Navegação — no monólito, `router.back()` após sucesso. */
   onBack: () => void;
   setSnackbar: (value: QuoteSnackbarState | null) => void;
@@ -69,11 +68,12 @@ export interface UseQuoteSubmitParams {
 }
 
 /**
- * Mutations de criação (orçamento + cadastro rápido de cliente) e handler
- * de submissão com validação por schema — equivalente direto do monólito.
+ * Mutations de criação / edição (orçamento + cadastro rápido de cliente) e handler
+ * de submissão com validação por schema.
  */
 export function useQuoteSubmit({
   companyId,
+  editQuoteId,
   onBack,
   setSnackbar,
   onClientCreated,
@@ -110,6 +110,40 @@ export function useQuoteSubmit({
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+      draft,
+    }: {
+      id: string;
+      data: CreateQuoteInput;
+      draft: QuoteDraft;
+    }) => quotesService.update(id, data),
+    onSuccess: async (quote, { draft }) => {
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['company', companyId, 'quotes', editQuoteId],
+      });
+      try {
+        await persistEnvironments(quote.id, draft);
+      } catch (error) {
+        setSnackbar({
+          type: 'error',
+          message: `Orçamento atualizado, mas falha ao salvar ambientes: ${toApiError(error).message}`,
+        });
+        return;
+      }
+      setSnackbar({ type: 'success', message: 'Orçamento atualizado com sucesso' });
+      setTimeout(() => onBack(), 600);
+    },
+    onError: (error: unknown) => {
+      setSnackbar({ type: 'error', message: toApiError(error).message });
+    },
+  });
+
   // Cadastro rápido de cliente (V3 §12) — cria e já seleciona no wizard.
   const createClientMutation = useMutation({
     mutationFn: (data: CreateClientInput) => clientsService.create(data),
@@ -126,7 +160,7 @@ export function useQuoteSubmit({
     },
   });
 
-  /** Monólito: handleSubmit — valida com createQuoteSchema antes de mutar. */
+  /** Valida com createQuoteSchema antes de mutar (criação ou atualização). */
   function handleSubmit(draft: QuoteDraft) {
     const payload = buildQuotePayload(draft);
     const parsed = createQuoteSchema.safeParse(payload);
@@ -139,11 +173,16 @@ export function useQuoteSubmit({
       });
       return;
     }
-    createMutation.mutate({ data: payload, draft });
+    if (editQuoteId) {
+      updateMutation.mutate({ id: editQuoteId, data: payload, draft });
+    } else {
+      createMutation.mutate({ data: payload, draft });
+    }
   }
 
   return {
     createMutation,
+    updateMutation,
     createClientMutation,
     handleSubmit,
   };

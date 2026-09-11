@@ -16,7 +16,7 @@ export default function OrcamentosLayout() {
       }}
     >
       <Stack.Screen name="novo" options={{ headerShown: false }} />
-      <Stack.Screen name="[id]" options={{ title: 'Detalhes do Orçamento' }} />
+      <Stack.Screen name="[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

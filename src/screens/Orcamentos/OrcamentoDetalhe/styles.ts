@@ -6,238 +6,493 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
   StyleSheet.create({
     screen: {
       flex: 1,
+      backgroundColor: colors.background,
     },
+    scrollContent: {
+      paddingHorizontal: sizes.screenPadding,
+      paddingTop: spacing.xs,
+      paddingBottom: spacing['4xl'],
+      maxWidth: 680,
+      width: '100%',
+      alignSelf: 'center',
+    },
+
+    // ── Cabeçalho Integrado e Limpo ──────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
-      marginBottom: spacing.xl,
-      paddingTop: spacing.md,
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      marginBottom: 10,
+      gap: 10,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
     },
     backButton: {
-      minWidth: sizes.touchTarget,
-      minHeight: sizes.touchTarget,
-      justifyContent: 'center',
+      width: 38,
+      height: 38,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
       alignItems: 'center',
+      justifyContent: 'center',
+    },
+    titleGroup: {
+      flex: 1,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
     },
     title: {
-      flex: 1,
-      fontSize: typography.sizes['2xl'],
-      fontWeight: typography.weights.bold,
+      fontSize: 19,
+      fontWeight: '800',
       color: colors.text,
-      letterSpacing: -0.5,
+      letterSpacing: -0.4,
     },
-    pdfButton: {
-      width: 40,
-      height: 40,
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    headerIconBtn: {
+      width: 38,
+      height: 38,
       borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.28)' : '#DBEAFE',
       alignItems: 'center',
       justifyContent: 'center',
     },
-    pdfButtonPressed: {
-      opacity: 0.8,
+    headerIconBtnPressed: {
+      opacity: 0.75,
     },
-    pdfButtonDisabled: {
-      opacity: 0.5,
-    },
+
+    // ── Card de Contexto (Cliente & Obra) ────────────────────────
     clientCard: {
-      padding: spacing.md,
-      marginBottom: spacing.lg,
+      padding: 14,
+      marginBottom: 12,
       backgroundColor: colors.surface,
-      borderColor: colors.border,
+      borderRadius: radius.xl,
       borderWidth: 1,
+      borderColor: colors.border,
+      gap: 10,
     },
-    clientContent: {
+    clientTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      gap: 12,
     },
-    clientIcon: {
+    clientAvatar: {
       width: 44,
       height: 44,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
+      borderRadius: 22,
+      backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+      borderWidth: 1,
+      borderColor: isDark ? '#334155' : '#DBEAFE',
       alignItems: 'center',
       justifyContent: 'center',
     },
-    clientInfo: {
+    clientAvatarText: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    clientMainInfo: {
       flex: 1,
-      gap: spacing.xs,
     },
     clientName: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semibold,
+      fontSize: 15,
+      fontWeight: '700',
       color: colors.text,
+      letterSpacing: -0.2,
     },
-    clientContact: {
-      fontSize: typography.sizes.sm,
+    clientDocument: {
+      fontSize: 12,
       color: colors.textSecondary,
+      marginTop: 2,
     },
-    clientRow: {
+    clientMetaGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    },
+    metaChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.xs,
+      gap: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
     },
-    clientRowText: {
-      flex: 1,
-      fontSize: typography.sizes.sm,
+    metaChipText: {
+      fontSize: 11,
       color: colors.textSecondary,
+      fontWeight: '500',
+    },
+
+    // ── Seção de Itens Unificada ──────────────────────────────────
+    sectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 10,
+      marginBottom: 6,
     },
     sectionLabel: {
-      fontSize: typography.sizes.sm,
-      fontWeight: typography.weights.bold,
-      color: colors.text,
-      marginTop: spacing.lg,
-      marginBottom: spacing.sm,
+      fontSize: 11,
+      fontWeight: '800',
+      color: colors.textSecondary,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: 0.6,
     },
-    emptyText: {
-      fontSize: typography.sizes.sm,
-      color: colors.textLight,
-      fontStyle: 'italic',
-      textAlign: 'center',
-      paddingVertical: spacing.md,
+    sectionCountBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 1.5,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
     },
-    itemCard: {
-      padding: spacing.md,
-      marginBottom: spacing.sm,
+    sectionCountText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    itemsCard: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
+      borderRadius: radius.xl,
       borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      marginBottom: 12,
     },
-    itemHeader: {
+    itemRow: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+      gap: 4,
+    },
+    itemRowLast: {
+      borderBottomWidth: 0,
+    },
+    itemMainRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       justifyContent: 'space-between',
-      gap: spacing.md,
-      marginBottom: spacing.xs,
+      gap: 10,
     },
     itemName: {
       flex: 1,
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.medium,
+      fontSize: 13.5,
+      fontWeight: '600',
       color: colors.text,
+      lineHeight: 18,
     },
     itemTotal: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.bold,
-      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
     },
-    itemMeta: {
+    itemSubRow: {
       flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: spacing.md,
+      alignItems: 'center',
+      gap: 6,
     },
-    itemQuantity: {
-      fontSize: typography.sizes.sm,
+    itemUnitTag: {
+      fontSize: 11.5,
       color: colors.textSecondary,
     },
-    itemUnitPrice: {
-      fontSize: typography.sizes.xs,
-      color: colors.textLight,
+    emptyItemsBox: {
+      padding: spacing.xl,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
+    emptyText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+
+    // ── Resumo Financeiro Consolidado ─────────────────────────────
     summaryCard: {
-      padding: spacing.md,
-      marginTop: spacing.md,
-      marginBottom: spacing.lg,
+      padding: 14,
+      marginBottom: 12,
       backgroundColor: colors.surface,
-      borderColor: colors.border,
+      borderRadius: radius.xl,
       borderWidth: 1,
+      borderColor: colors.border,
+      gap: 7,
     },
     summaryRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: spacing.xs,
     },
     summaryLabel: {
-      fontSize: typography.sizes.sm,
+      fontSize: 12.5,
       color: colors.textSecondary,
     },
     summaryValue: {
-      fontSize: typography.sizes.sm,
-      fontWeight: typography.weights.medium,
+      fontSize: 12.5,
+      fontWeight: '600',
       color: colors.text,
     },
     discountValue: {
       color: colors.danger,
+      fontWeight: '700',
     },
-    totalRow: {
-      marginTop: spacing.sm,
-      paddingTop: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    totalLabel: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semibold,
-      color: colors.text,
-    },
-    totalValue: {
-      fontSize: typography.sizes.xl,
-      fontWeight: typography.weights.bold,
-      color: colors.primary,
-    },
-    obsCard: {
-      padding: spacing.md,
-      marginBottom: spacing.lg,
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderWidth: 1,
-    },
-    obsText: {
-      fontSize: typography.sizes.sm,
-      color: colors.textSecondary,
-      lineHeight: typography.sizes.sm * 1.5,
-    },
-    historyCard: {
-      padding: spacing.md,
-      marginBottom: spacing.lg,
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderWidth: 1,
-    },
-    historyItem: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-      paddingVertical: spacing.xs,
-    },
-    historyItemBorder: {
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    historyDot: {
-      width: 8,
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: colors.primary,
-      marginTop: 6,
-    },
-    historyContent: {
-      flex: 1,
-      gap: 2,
-    },
-    historyHeader: {
+    totalBanner: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: spacing.sm,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginTop: 4,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : '#EFF6FF',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
     },
-    historyStatus: {
-      fontSize: typography.sizes.sm,
-      fontWeight: typography.weights.semibold,
-      color: colors.text,
+    totalLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
-    historyDate: {
-      fontSize: typography.sizes.xs,
-      color: colors.textLight,
+    totalValue: {
+      fontSize: 19,
+      fontWeight: '800',
+      color: colors.primary,
+      letterSpacing: -0.4,
     },
-    historyNote: {
-      fontSize: typography.sizes.sm,
+    paymentMethodRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 5,
+    },
+    paymentMethodChip: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+    },
+    paymentMethodText: {
+      fontSize: 11,
+      fontWeight: '600',
       color: colors.textSecondary,
     },
+
+    // ── Observações & Histórico ───────────────────────────────────
+    obsCard: {
+      padding: 14,
+      marginBottom: 12,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    obsText: {
+      fontSize: 12.5,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    historyCard: {
+      padding: 14,
+      marginBottom: 12,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    historyItem: {
+      flexDirection: 'row',
+      gap: 10,
+      paddingVertical: 5,
+    },
+    historyItemBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    },
+    historyDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: colors.primary,
+      marginTop: 5,
+    },
+    historyContent: {
+      flex: 1,
+    },
+    historyStatus: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    historyNote: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+
+    // ── PAINEL DE AÇÕES REDESENHADO (SEM A PILHA DE 9 BOTÕES) ────
+    actionsSection: {
+      marginTop: 10,
+      gap: 10,
+      marginBottom: spacing['2xl'],
+    },
+
+    // 1. Ações Comerciais Primárias (Aprovar / WhatsApp)
+    primaryActionsGroup: {
+      gap: 8,
+    },
+    approveButton: {
+      height: 48,
+      borderRadius: radius.lg,
+      backgroundColor: colors.primary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      // Shadow cross-platform
+      ...({
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
+      } as any),
+    },
+    approveButtonText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    whatsAppButton: {
+      height: 46,
+      borderRadius: radius.lg,
+      backgroundColor: '#25D366',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      // Shadow cross-platform
+      ...({
+        shadowColor: '#25D366',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 2,
+      } as any),
+    },
+    whatsAppButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    followUpWhatsAppBtn: {
+      height: 42,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#ECFDF5',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(37, 211, 102, 0.3)' : '#A7F3D0',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+    },
+    followUpWhatsAppText: {
+      color: isDark ? '#34D399' : '#059669',
+      fontSize: 13,
+      fontWeight: '700',
+    },
+
+    // 2. Grade de Ações Rápidas (2x2)
+    quickActionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    quickActionCard: {
+      flex: 1,
+      minWidth: '47%',
+      height: 46,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      paddingHorizontal: 10,
+    },
+    quickActionCardPressed: {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+    },
+    quickActionText: {
+      fontSize: 12.5,
+      fontWeight: '600',
+      color: colors.text,
+    },
+
+    // 3. Ações Secundárias / Gestão no Rodapé
+    secondaryActionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 2,
+    },
+    secondaryOutlineBtn: {
+      flex: 1,
+      height: 38,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+    },
+    secondaryOutlineText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    deleteButton: {
+      height: 38,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : '#FCA5A5',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 4,
+    },
+    deleteButtonText: {
+      fontSize: 12.5,
+      fontWeight: '600',
+      color: colors.danger,
+    },
+
+    // ── Modais ────────────────────────────────────────────────────
     modalBackdrop: {
       flex: 1,
       backgroundColor: colors.overlay,
@@ -247,30 +502,27 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
     },
     modalCard: {
       width: '100%',
-      maxWidth: 340,
+      maxWidth: 360,
       backgroundColor: colors.surface,
       borderRadius: radius.xl,
-      padding: spacing['2xl'],
+      padding: spacing.xl,
       borderColor: colors.border,
       borderWidth: 1,
       ...shadows.medium,
-    },
-    modalIcon: {
-      alignSelf: 'center',
-      marginBottom: spacing.md,
     },
     modalTitle: {
       fontSize: typography.sizes.lg,
       fontWeight: typography.weights.bold,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     modalMessage: {
-      fontSize: typography.sizes.md,
+      fontSize: 13,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md,
+      lineHeight: 18,
     },
     modalActions: {
       flexDirection: 'row',
@@ -281,30 +533,14 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       flex: 1,
     },
     rejectInput: {
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md,
     },
-    actions: {
-      gap: spacing.sm,
-      marginTop: spacing.lg,
-      marginBottom: spacing['3xl'],
-    },
-    whatsAppButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.sm,
-      backgroundColor: '#10B981',
-      borderRadius: radius.md,
-      height: sizes.buttonHeight.lg,
-      paddingHorizontal: spacing.lg,
-      marginBottom: spacing.xs,
-    },
-    whatsAppButtonText: {
-      color: '#FFFFFF',
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.bold,
-    },
+
+    // Mantido para compatibilidade retroativa
     actionButton: {
       marginBottom: spacing.xs,
     },
+    pdfButton: {},
+    pdfButtonPressed: {},
+    pdfButtonDisabled: {},
   });

@@ -39,14 +39,16 @@ describe('format (formatação pt-BR)', () => {
   });
 
   describe('formatQuoteCode', () => {
-    it('formata como ORC + 5 dígitos', () => {
-      expect(formatQuoteCode(125)).toBe('ORC-00125');
-      expect(formatQuoteCode(3)).toBe('ORC-00003');
-      expect(formatQuoteCode(0)).toBe('ORC-00000');
+    it('formata como #NNN com 3 dígitos mínimos', () => {
+      expect(formatQuoteCode(7)).toBe('#007');
+      expect(formatQuoteCode(3)).toBe('#003');
+      expect(formatQuoteCode(125)).toBe('#125');
+      expect(formatQuoteCode(0)).toBe('#000');
     });
 
-    it('preserva dígitos além de 5', () => {
-      expect(formatQuoteCode(123456)).toBe('ORC-123456');
+    it('preserva dígitos além de 3', () => {
+      expect(formatQuoteCode(1234)).toBe('#1234');
+      expect(formatQuoteCode(123456)).toBe('#123456');
     });
   });
 });

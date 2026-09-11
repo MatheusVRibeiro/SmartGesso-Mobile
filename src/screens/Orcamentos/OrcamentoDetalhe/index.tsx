@@ -1,6 +1,16 @@
 import { haptics } from '@/src/utils/haptics';
 import React, { useState, useMemo } from 'react';
-import { Alert, Linking, Modal, Pressable, RefreshControl, Share, Text, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  RefreshControl,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,9 +30,9 @@ import type { StatusBadgeVariant } from '@/src/components/ui/StatusBadge';
 import { toApiError } from '@/src/services/api/client';
 import { quotesService } from '@/src/services/api/quotes';
 import { useSessionStore } from '@/src/store/useSessionStore';
-import { colors, radius, shadows, sizes, spacing, typography } from '@/src/theme';
+import { colors, radius, sizes, spacing } from '@/src/theme';
 import { formatCurrency, formatNumber, formatQuoteCode } from '@/src/utils/format';
-import type { QuoteStatus } from '@/src/types/quote';
+import type { Quote, QuotePaymentMethod, QuoteStatus } from '@/src/types/quote';
 import type { ApproveQuoteResponse } from '@/src/types/quote';
 import { createOrcamentoDetalheStyles } from './styles';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
@@ -34,13 +44,23 @@ const QUOTE_STATUS_BADGE: Record<
   { variant: StatusBadgeVariant; label: string }
 > = {
   RASCUNHO: { variant: 'expired', label: 'Rascunho' },
-  PRONTO_PARA_ENVIAR: { variant: 'info', label: 'Pronto para enviar' },
+  PRONTO_PARA_ENVIAR: { variant: 'info', label: 'Pronto p/ enviar' },
   ENVIADO: { variant: 'warning', label: 'Enviado' },
-  AGUARDANDO_APROVACAO: { variant: 'warning', label: 'Aguardando aprovação' },
+  AGUARDANDO_APROVACAO: { variant: 'warning', label: 'Aguardando' },
   APROVADO: { variant: 'active', label: 'Aprovado' },
   REJEITADO: { variant: 'cancelled', label: 'Rejeitado' },
   VENCIDO: { variant: 'expired', label: 'Vencido' },
   CANCELADO: { variant: 'cancelled', label: 'Cancelado' },
+};
+
+const PAYMENT_METHOD_LABEL: Record<QuotePaymentMethod, string> = {
+  AVISTA: 'À vista',
+  AVISTA_DESCONTO: 'À vista c/ desconto',
+  ENTRADA_SALDO: 'Entrada + Saldo',
+  QUINZENAL_2X: 'Quinzenal 2x',
+  MENSAL: 'Mensal',
+  PARCELADO: 'Parcelado',
+  PERSONALIZADO: 'Personalizado',
 };
 
 function formatDate(dateStr: string): string {
@@ -62,35 +82,28 @@ const CLOSED_QUOTE_STATUSES: ReadonlySet<QuoteStatus> = new Set([
   'CANCELADO',
 ]);
 
-/**
- * Orçamento vencido (V3 §39): status VENCIDO pela API ou validade ultrapassada
- * com ciclo comercial ainda aberto (não aprovado nem cancelado).
- */
 function isQuoteExpired(quote: {
-  status: QuoteStatus;
   validUntil?: string | null;
+  status: QuoteStatus;
 }): boolean {
-  if (quote.status === 'VENCIDO') return true;
   if (!quote.validUntil) return false;
   if (CLOSED_QUOTE_STATUSES.has(quote.status)) return false;
   const validUntil = new Date(quote.validUntil);
-  if (Number.isNaN(validUntil.getTime())) return false;
-  validUntil.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return validUntil.getTime() < today.getTime();
+  const now = new Date();
+  validUntil.setHours(23, 59, 59, 999);
+  return now.getTime() > validUntil.getTime();
 }
 
-// ─── Screen ─────────────────────────────────────────────────────────────────
+// ─── Componente Principal ───────────────────────────────────────────────────
 
-export default function DetalheOrcamentoScreen() {
+export default function OrcamentoDetalheScreen() {
   const router = useRouter();
+  const { id: quoteId } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
-  const params = useLocalSearchParams<{ id: string }>();
-  const quoteId = Array.isArray(params.id) ? params.id[0] : params.id;
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createOrcamentoDetalheStyles(colors, isDark), [colors, isDark]);
+
+  const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
 
   const [refreshing, setRefreshing] = useState(false);
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
@@ -117,11 +130,20 @@ export default function DetalheOrcamentoScreen() {
 
   const generateVersionMutation = useMutation({
     mutationFn: () => quotesService.generateVersion(quoteId as string),
-    onSuccess: () => {
+    onSuccess: (newQuote: Quote) => {
       queryClient.invalidateQueries({
         queryKey: ['company', companyId, 'quotes'],
       });
-      setSnackbar({ type: 'success', message: 'Nova versão gerada com sucesso' });
+      setSnackbar({
+        type: 'success',
+        message: `Nova versão (v${newQuote.version}) criada! Abrindo edição...`,
+      });
+      setTimeout(() => {
+        router.push({
+          pathname: '/(app)/orcamentos/novo',
+          params: { editQuoteId: newQuote.id },
+        });
+      }, 350);
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
@@ -200,7 +222,23 @@ export default function DetalheOrcamentoScreen() {
     },
   });
 
+  const quote = quoteQuery.data;
+  const statusBadge = quote ? QUOTE_STATUS_BADGE[quote.status] : null;
+  const history = quote?.history ?? [];
+  const expired = quote ? isQuoteExpired(quote) : false;
+  const canApprove =
+    quote?.status === 'RASCUNHO' ||
+    quote?.status === 'ENVIADO' ||
+    quote?.status === 'AGUARDANDO_APROVACAO';
 
+  // Iniciais do cliente
+  const clientInitials = useMemo(() => {
+    const name = quote?.client?.name?.trim();
+    if (!name) return 'OR';
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }, [quote?.client?.name]);
 
   const handleFollowUpWhatsApp = async () => {
     if (!quote) return;
@@ -268,7 +306,6 @@ export default function DetalheOrcamentoScreen() {
           const base64Data = (reader.result as string).split(',')[1];
           const fileName = `orcamento_${quoteQuery.data?.quoteNumber}_v${quoteQuery.data?.version}.pdf`;
 
-          // Use new expo-file-system API
           const cacheDir = Paths.cache;
           const file = new File(cacheDir, fileName);
           file.write(base64Data, { encoding: 'base64' });
@@ -296,7 +333,6 @@ export default function DetalheOrcamentoScreen() {
     }
   }
 
-  /** Compartilha o link público de aprovação do orçamento (deep link). */
   async function handleShareLink() {
     try {
       setSnackbar({ type: 'info', message: 'Gerando link...' });
@@ -317,325 +353,443 @@ export default function DetalheOrcamentoScreen() {
   if (!quoteId) {
     return (
       <ScreenContainer padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Orçamento', headerShown: true }} />
+        <Stack.Screen options={{ headerShown: false }} />
         <ErrorState message="Orçamento não encontrado" />
       </ScreenContainer>
     );
   }
 
-  const quote = quoteQuery.data;
-  const statusBadge = quote ? QUOTE_STATUS_BADGE[quote.status] : null;
-  const history = quote?.history ?? [];
-  const expired = quote ? isQuoteExpired(quote) : false;
-  const canApprove =
-    quote?.status === 'RASCUNHO' ||
-    quote?.status === 'ENVIADO' ||
-    quote?.status === 'AGUARDANDO_APROVACAO';
-
   return (
     <View style={styles.screen}>
-      <ScreenContainer scroll padding keyboard={false}>
-        <Stack.Screen options={{ title: 'Detalhe do orçamento', headerShown: true }} />
-        
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
-        />
+      {/* Oculta o header nativo duplicado do Stack Navigation */}
+      <Stack.Screen options={{ headerShown: false }} />
 
-        <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Voltar"
-            onPress={() => router.back()}
-            hitSlop={8}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={sizes.icon.lg} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title} numberOfLines={1}>
-            {quote ? `#${quote.quoteNumber} v${quote.version}` : 'Detalhe do orçamento'}
-          </Text>
-          {statusBadge && (
-            <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
-          )}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Gerar e compartilhar PDF"
-            onPress={handleSharePdf}
-            disabled={!quote}
-            style={({ pressed }) => [
-              styles.pdfButton,
-              pressed && styles.pdfButtonPressed,
-              !quote && styles.pdfButtonDisabled,
-            ]}
-          >
-            <Ionicons
-              name="download-outline"
-              size={sizes.icon.md}
-              color={colors.primary}
-              accessibilityElementsHidden
-            />
-          </Pressable>
-        </View>
-
-        {quoteQuery.isLoading ? (
-          <LoadingState text="Carregando orçamento..." />
-        ) : quoteQuery.isError ? (
-          <ErrorState
-            message={toApiError(quoteQuery.error).message}
-            onRetry={quoteQuery.refetch}
+      <ScreenContainer scroll padding={false} keyboard={false}>
+        <View style={styles.scrollContent}>
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
-        ) : quote ? (
-          <>
-            <AppCard shadow="light" radius={radius.lg} style={styles.clientCard}>
-              <View style={styles.clientContent}>
-                <View style={styles.clientIcon}>
-                  <Ionicons
-                    name="person-outline"
-                    size={sizes.icon.md}
-                    color={colors.primary}
-                    accessibilityElementsHidden
-                  />
-                </View>
-                <View style={styles.clientInfo}>
-                  <Text style={styles.clientName} numberOfLines={1}>
-                    {quote.client?.name ?? 'Cliente não informado'}
-                  </Text>
-                  {quote.client?.document ? (
-                    <Text style={styles.clientContact} numberOfLines={1}>
-                      {quote.client.document}
-                    </Text>
-                  ) : null}
 
-                  {quote.work && (
-                    <View style={styles.clientRow}>
+          {/* ── CABEÇALHO UNIFICADO E ELEGANTE ─────────────────────────── */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
+                onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/orcamentos')}
+                activeOpacity={0.7}
+                style={styles.backButton}
+              >
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              </TouchableOpacity>
+
+              <View style={styles.titleGroup}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.title}>
+                    {quote ? `Orçamento ${formatQuoteCode(quote.quoteNumber)}` : 'Detalhe do orçamento'}
+                  </Text>
+                  {quote && (
+                    <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '600' }}>
+                      v{quote.version}
+                    </Text>
+                  )}
+                  {statusBadge && (
+                    <StatusBadge status={statusBadge.variant} label={statusBadge.label} size="sm" />
+                  )}
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Gerar e compartilhar PDF"
+                onPress={handleSharePdf}
+                disabled={!quote}
+                activeOpacity={0.7}
+                style={styles.headerIconBtn}
+              >
+                <Ionicons name="download-outline" size={19} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {quoteQuery.isLoading ? (
+            <LoadingState text="Carregando orçamento..." />
+          ) : quoteQuery.isError ? (
+            <ErrorState
+              message={toApiError(quoteQuery.error).message}
+              onRetry={quoteQuery.refetch}
+            />
+          ) : quote ? (
+            <>
+              {/* ── CARD DE CONTEXTO DO CLIENTE & OBRA ────────────────── */}
+              <View style={styles.clientCard}>
+                <View style={styles.clientTopRow}>
+                  <View style={styles.clientAvatar}>
+                    <Text style={styles.clientAvatarText}>{clientInitials}</Text>
+                  </View>
+                  <View style={styles.clientMainInfo}>
+                    <Text style={styles.clientName} numberOfLines={1}>
+                      {quote.client?.name ?? 'Cliente não informado'}
+                    </Text>
+                    {quote.client?.document ? (
+                      <Text style={styles.clientDocument} numberOfLines={1}>
+                        {quote.client.document}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                {/* Chips de Metadados Organizados */}
+                <View style={styles.clientMetaGrid}>
+                  <View style={styles.metaChip}>
+                    <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                    <Text style={styles.metaChipText}>Criado {formatDate(quote.createdAt)}</Text>
+                  </View>
+
+                  {quote.validUntil && (
+                    <View style={styles.metaChip}>
                       <Ionicons
-                        name="construct-outline"
-                        size={sizes.icon.sm}
-                        color={colors.textSecondary}
-                        accessibilityElementsHidden
+                        name="time-outline"
+                        size={12}
+                        color={expired ? colors.danger : colors.textSecondary}
                       />
-                      <Text style={styles.clientRowText} numberOfLines={1}>
-                        {quote.work.name}
+                      <Text
+                        style={[
+                          styles.metaChipText,
+                          expired && { color: colors.danger, fontWeight: '700' },
+                        ]}
+                      >
+                        {expired ? 'Vencido em ' : 'Válido até '}
+                        {formatDayMonth(quote.validUntil)}
                       </Text>
                     </View>
                   )}
 
-                  <View style={styles.clientRow}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={sizes.icon.sm}
-                      color={colors.textSecondary}
-                      accessibilityElementsHidden
-                    />
-                    <Text style={styles.clientRowText}>{formatDate(quote.createdAt)}</Text>
-                  </View>
+                  {quote.work && (
+                    <View style={styles.metaChip}>
+                      <Ionicons name="business-outline" size={12} color={colors.textSecondary} />
+                      <Text style={styles.metaChipText} numberOfLines={1}>
+                        {quote.work.name}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
-            </AppCard>
 
-            <Text style={styles.sectionLabel}>Itens</Text>
-            {quote.items.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum item adicionado</Text>
-            ) : (
-              quote.items.map((item: { id: string; name: string; quantity: number; unit: string; unitPrice: number; total: number }) => (
-                <AppCard key={item.id} shadow="light" style={styles.itemCard}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemName} numberOfLines={2}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.itemTotal}>{formatCurrency(item.total)}</Text>
-                  </View>
-                  <View style={styles.itemMeta}>
-                    <Text style={styles.itemQuantity}>
-                      {formatNumber(item.quantity)} × {formatCurrency(item.unitPrice)}
-                    </Text>
-                    <Text style={styles.itemUnitPrice}>{item.unit}</Text>
-                  </View>
-                </AppCard>
-              ))
-            )}
-
-            <AppCard shadow="light" style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>{formatCurrency(quote.subtotal)}</Text>
-              </View>
-              {quote.discount > 0 && (
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Desconto</Text>
-                  <Text style={[styles.summaryValue, styles.discountValue]}>
-                    -{formatCurrency(quote.discount)}
+              {/* ── SEÇÃO DE ITENS UNIFICADA (ALTA DENSIDADE) ────────── */}
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionLabel}>Itens da proposta</Text>
+                <View style={styles.sectionCountBadge}>
+                  <Text style={styles.sectionCountText}>
+                    {quote.items.length === 1 ? '1 item' : `${quote.items.length} itens`}
                   </Text>
                 </View>
-              )}
-              {quote.marginPct > 0 && (
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Margem ({quote.marginPct}%)</Text>
-                  <Text style={styles.summaryValue}>
-                    +{formatCurrency(quote.subtotal * (quote.marginPct / 100))}
-                  </Text>
-                </View>
-              )}
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>TOTAL</Text>
-                <Text style={styles.totalValue}>{formatCurrency(quote.total)}</Text>
               </View>
-            </AppCard>
 
-            {quote.observations && (
-              <>
-                <Text style={styles.sectionLabel}>Observações</Text>
-                <AppCard shadow="light" style={styles.obsCard}>
-                  <Text style={styles.obsText}>{quote.observations}</Text>
-                </AppCard>
-              </>
-            )}
+              <View style={styles.itemsCard}>
+                {quote.items.length === 0 ? (
+                  <View style={styles.emptyItemsBox}>
+                    <Text style={styles.emptyText}>Nenhum item adicionado à proposta</Text>
+                  </View>
+                ) : (
+                  quote.items.map((item: any, idx: number) => {
+                    const isLast = idx === quote.items.length - 1;
+                    return (
+                      <View key={item.id || idx} style={[styles.itemRow, isLast && styles.itemRowLast]}>
+                        <View style={styles.itemMainRow}>
+                          <Text style={styles.itemName} numberOfLines={2}>
+                            {item.name}
+                          </Text>
+                          <Text style={styles.itemTotal}>{formatCurrency(item.total)}</Text>
+                        </View>
+                        <View style={styles.itemSubRow}>
+                          <Text style={styles.itemUnitTag}>
+                            {formatNumber(item.quantity)} × {formatCurrency(item.unitPrice)} / {item.unit}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
 
-            <Text style={styles.sectionLabel}>Histórico</Text>
-            <AppCard shadow="light" style={styles.historyCard}>
-              {history.length > 0 ? (
-                history.map((event, index) => (
-                  <View
-                    key={event.id}
-                    style={[
-                      styles.historyItem,
-                      index < history.length - 1 && styles.historyItemBorder,
-                    ]}
-                  >
+              {/* ── RESUMO FINANCEIRO INTEGRADO ───────────────────────── */}
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Subtotal</Text>
+                  <Text style={styles.summaryValue}>{formatCurrency(quote.subtotal)}</Text>
+                </View>
+
+                {quote.discount > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Desconto aplicado</Text>
+                    <Text style={[styles.summaryValue, styles.discountValue]}>
+                      -{formatCurrency(quote.discount)}
+                    </Text>
+                  </View>
+                )}
+
+                {quote.marginPct > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Margem ({quote.marginPct}%)</Text>
+                    <Text style={styles.summaryValue}>
+                      +{formatCurrency(quote.subtotal * (quote.marginPct / 100))}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Banner de Total em Destaque */}
+                <View style={styles.totalBanner}>
+                  <Text style={styles.totalLabel}>Total da proposta</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(quote.total)}</Text>
+                </View>
+
+                {quote.paymentMethod && (
+                  <View style={styles.paymentMethodRow}>
+                    <Text style={styles.summaryLabel}>Condição de pagamento</Text>
+                    <View style={styles.paymentMethodChip}>
+                      <Text style={styles.paymentMethodText}>
+                        {PAYMENT_METHOD_LABEL[quote.paymentMethod] ?? quote.paymentMethod}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* ── OBSERVAÇÕES ───────────────────────────────────────── */}
+              {quote.observations && (
+                <>
+                  <Text style={styles.sectionLabel}>Observações</Text>
+                  <View style={styles.obsCard}>
+                    <Text style={styles.obsText}>{quote.observations}</Text>
+                  </View>
+                </>
+              )}
+
+              {/* ── HISTÓRICO / TIMELINE ──────────────────────────────── */}
+              <Text style={styles.sectionLabel}>Histórico</Text>
+              <View style={styles.historyCard}>
+                {history.length > 0 ? (
+                  history.map((event: any, index: number) => (
+                    <View
+                      key={event.id || index}
+                      style={[
+                        styles.historyItem,
+                        index < history.length - 1 && styles.historyItemBorder,
+                      ]}
+                    >
+                      <View style={styles.historyDot} />
+                      <View style={styles.historyContent}>
+                        <Text style={styles.historyStatus}>
+                          {formatDayMonth(event.changedAt)} —{' '}
+                          {QUOTE_STATUS_BADGE[event.status as QuoteStatus]?.label ?? event.status}
+                        </Text>
+                        {event.note ? (
+                          <Text style={styles.historyNote}>{event.note}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.historyItem}>
                     <View style={styles.historyDot} />
                     <View style={styles.historyContent}>
                       <Text style={styles.historyStatus}>
-                        {formatDayMonth(event.changedAt)} —{' '}
-                        {QUOTE_STATUS_BADGE[event.status]?.label ?? event.status}
+                        Criado em {formatDayMonth(quote.createdAt)}
                       </Text>
-                      {event.note ? (
-                        <Text style={styles.historyNote}>{event.note}</Text>
-                      ) : null}
                     </View>
                   </View>
-                ))
-              ) : (
-                <View style={styles.historyItem}>
-                  <View style={styles.historyDot} />
-                  <View style={styles.historyContent}>
-                    <Text style={styles.historyStatus}>
-                      Criado em {formatDayMonth(quote.createdAt)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </AppCard>
+                )}
+              </View>
 
-            <View style={styles.actions}>
-              <AppButton
-                title="Follow-ups"
-                variant="secondary"
-                size="lg"
-                accessibilityLabel="Gerenciar follow-ups do orçamento"
-                onPress={() => router.push(`/orcamentos/${quoteId}/follow-ups`)}
-                style={styles.actionButton}
-              />
-              {canApprove && (
-                <>
-                  <AppButton
-                    title="Aprovar orçamento"
-                    size="lg"
-                    accessibilityLabel="Aprovar orçamento"
-                    onPress={() => setConfirmApproveVisible(true)}
-                    style={styles.actionButton}
-                  />
-                  <AppButton
-                    title="Não aprovado"
-                    variant="secondary"
-                    size="lg"
-                    accessibilityLabel="Marcar orçamento como não aprovado"
-                    onPress={() => setRejectVisible(true)}
-                    style={styles.actionButton}
-                  />
-                </>
-              )}
-              {expired ? (
-                <AppButton
-                  title="Duplicar e atualizar"
-                  size="lg"
-                  accessibilityLabel="Duplicar orçamento vencido e atualizar"
-                  onPress={() => duplicateMutation.mutate()}
-                  loading={duplicateMutation.isPending}
-                  disabled={duplicateMutation.isPending}
-                  style={styles.actionButton}
-                />
-              ) : (
-                <AppButton
-                  title="Duplicar"
-                  variant="secondary"
-                  size="lg"
-                  accessibilityLabel="Duplicar orçamento"
-                  onPress={() => duplicateMutation.mutate()}
-                  loading={duplicateMutation.isPending}
-                  disabled={duplicateMutation.isPending}
-                  style={styles.actionButton}
-                />
-              )}
-              {(quote.status === 'ENVIADO' || quote.status === 'AGUARDANDO_APROVACAO') && (
-                <AppButton
-                  title="Lembrar cliente (WhatsApp)"
-                  variant="outline"
-                  size="lg"
-                  accessibilityLabel="Enviar mensagem de lembrete por WhatsApp"
-                  onPress={handleFollowUpWhatsApp}
-                  style={styles.actionButton}
-                />
-              )}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Enviar orçamento por WhatsApp"
-                onPress={handleShareWhatsApp}
-                style={styles.whatsAppButton}
-              >
-                <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
-                <Text style={styles.whatsAppButtonText}>Enviar por WhatsApp</Text>
-              </Pressable>
-              <AppButton
-                title="Gerar PDF"
-                size="lg"
-                accessibilityLabel="Gerar e compartilhar PDF"
-                onPress={handleSharePdf}
-                style={styles.actionButton}
-              />
-              <AppButton
-                title="Compartilhar link"
-                variant="secondary"
-                size="lg"
-                accessibilityLabel="Compartilhar link público do orçamento"
-                onPress={handleShareLink}
-                style={styles.actionButton}
-              />
-              <AppButton
-                title="Nova versão"
-                variant="secondary"
-                size="lg"
-                accessibilityLabel="Gerar nova versão do orçamento"
-                onPress={() => generateVersionMutation.mutate()}
-                loading={generateVersionMutation.isPending}
-                disabled={generateVersionMutation.isPending}
-                style={styles.actionButton}
-              />
-              <AppButton
-                title="Excluir"
-                variant="danger"
-                size="lg"
-                accessibilityLabel="Excluir orçamento"
-                onPress={() => setConfirmDeleteVisible(true)}
-                style={styles.actionButton}
-              />
-            </View>
-          </>
-        ) : null}
+              {/* ── PAINEL DE AÇÕES REDESENHADO ───────────────────────── */}
+              <View style={styles.actionsSection}>
+                {/* 1. Ações Comerciais Decisivas */}
+                <View style={styles.primaryActionsGroup}>
+                  {canApprove && (
+                    <TouchableOpacity
+                      style={styles.approveButton}
+                      onPress={() => setConfirmApproveVisible(true)}
+                      activeOpacity={0.85}
+                      accessibilityRole="button"
+                      accessibilityLabel="Aprovar orçamento"
+                    >
+                      <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                      <Text style={styles.approveButtonText}>Aprovar proposta</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {canApprove && (
+                    <TouchableOpacity
+                      style={[
+                        styles.approveButton,
+                        {
+                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                          borderWidth: 1,
+                          borderColor: isDark ? '#3B82F6' : '#2563EB',
+                        },
+                      ]}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(app)/orcamentos/novo',
+                          params: { editQuoteId: quote.id },
+                        })
+                      }
+                      activeOpacity={0.85}
+                      accessibilityRole="button"
+                      accessibilityLabel="Editar orçamento"
+                    >
+                      <Ionicons name="create-outline" size={20} color={isDark ? '#60A5FA' : '#1D4ED8'} />
+                      <Text
+                        style={[
+                          styles.approveButtonText,
+                          { color: isDark ? '#60A5FA' : '#1D4ED8' },
+                        ]}
+                      >
+                        Editar proposta
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.whatsAppButton}
+                    onPress={handleShareWhatsApp}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Enviar orçamento por WhatsApp"
+                  >
+                    <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+                    <Text style={styles.whatsAppButtonText}>Enviar por WhatsApp</Text>
+                  </TouchableOpacity>
+
+                  {(quote.status === 'ENVIADO' || quote.status === 'AGUARDANDO_APROVACAO') && (
+                    <TouchableOpacity
+                      style={styles.followUpWhatsAppBtn}
+                      onPress={handleFollowUpWhatsApp}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Enviar mensagem de lembrete por WhatsApp"
+                    >
+                      <Ionicons name="chatbubble-ellipses-outline" size={17} color={isDark ? '#34D399' : '#059669'} />
+                      <Text style={styles.followUpWhatsAppText}>Lembrar cliente no WhatsApp</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {expired && (
+                    <TouchableOpacity
+                      style={[styles.approveButton, { backgroundColor: colors.warning }]}
+                      onPress={() => duplicateMutation.mutate()}
+                      activeOpacity={0.85}
+                      accessibilityRole="button"
+                      accessibilityLabel="Duplicar orçamento vencido e atualizar"
+                      disabled={duplicateMutation.isPending}
+                    >
+                      <Ionicons name="refresh-outline" size={19} color="#FFFFFF" />
+                      <Text style={styles.approveButtonText}>Duplicar e atualizar</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* 2. Grade de Ações Rápidas (2x2) */}
+                <View style={styles.quickActionsGrid}>
+                  <TouchableOpacity
+                    style={styles.quickActionCard}
+                    onPress={handleSharePdf}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Gerar e compartilhar PDF"
+                  >
+                    <Ionicons name="document-text-outline" size={17} color={colors.primary} />
+                    <Text style={styles.quickActionText}>Gerar PDF</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.quickActionCard}
+                    onPress={handleShareLink}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Compartilhar link público do orçamento"
+                  >
+                    <Ionicons name="share-social-outline" size={17} color={colors.primary} />
+                    <Text style={styles.quickActionText}>Link público</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.quickActionCard}
+                    onPress={() => router.push(`/orcamentos/${quoteId}/follow-ups`)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Gerenciar follow-ups do orçamento"
+                  >
+                    <Ionicons name="chatbubbles-outline" size={17} color={colors.primary} />
+                    <Text style={styles.quickActionText}>Follow-ups</Text>
+                  </TouchableOpacity>
+
+                  {!expired && (
+                    <TouchableOpacity
+                      style={styles.quickActionCard}
+                      onPress={() => duplicateMutation.mutate()}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Duplicar orçamento"
+                      disabled={duplicateMutation.isPending}
+                    >
+                      <Ionicons name="copy-outline" size={17} color={colors.primary} />
+                      <Text style={styles.quickActionText}>Duplicar</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* 3. Ações Secundárias / Gestão no Rodapé */}
+                <View style={styles.secondaryActionsRow}>
+                  {canApprove && (
+                    <TouchableOpacity
+                      style={styles.secondaryOutlineBtn}
+                      onPress={() => setRejectVisible(true)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Marcar orçamento como não aprovado"
+                    >
+                      <Ionicons name="close-circle-outline" size={16} color={colors.textSecondary} />
+                      <Text style={styles.secondaryOutlineText}>Não aprovado</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.secondaryOutlineBtn}
+                    onPress={() => generateVersionMutation.mutate()}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Gerar nova versão do orçamento"
+                    disabled={generateVersionMutation.isPending}
+                  >
+                    <Ionicons name="git-branch-outline" size={16} color={colors.textSecondary} />
+                    <Text style={styles.secondaryOutlineText}>Nova versão</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => setConfirmDeleteVisible(true)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Excluir orçamento"
+                >
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                  <Text style={styles.deleteButtonText}>Excluir orçamento</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : null}
+        </View>
       </ScreenContainer>
 
+      {/* ── DIÁLOGOS DE CONFIRMAÇÃO E MODAIS ───────────────────────── */}
       <ConfirmDialog
         visible={confirmDeleteVisible}
         title="Excluir orçamento"
@@ -666,8 +820,6 @@ export default function DetalheOrcamentoScreen() {
         onConfirm={() => approveMutation.mutate()}
         onCancel={() => setConfirmApproveVisible(false)}
       />
-
-
 
       <Modal
         visible={rejectVisible}
