@@ -15,7 +15,7 @@
  * Expo e o registra no backend (POST /notifications/tokens) — chamado após
  * o login quando há empresa ativa.
  */
-import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './notifications/pushRegistration';
 import { agendaService } from './api/agenda';
 import { catalogService } from './api/catalog';
 import { notificationsApi } from './api/notifications';
@@ -286,23 +286,7 @@ export async function countNotifications(): Promise<number> {
  * @returns Token Expo push ou null quando indisponível/negado.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  try {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') return null;
-
-    const token = await Notifications.getExpoPushTokenAsync();
-    return token.data;
-  } catch {
-    // Sem suporte a push no ambiente (ex.: web) ou erro de permissão.
-    return null;
-  }
+  return registerForPushNotificationsAsync();
 }
 
 /** Mapa de rótulos/tipos para exibição (fallback de UI). */
