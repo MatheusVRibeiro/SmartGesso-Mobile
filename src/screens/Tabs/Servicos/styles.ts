@@ -10,21 +10,99 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
     },
     headerWrapper: {
       paddingHorizontal: sizes.screenPadding,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.xs,
+      paddingTop: spacing.sm,
+      paddingBottom: 4,
       backgroundColor: colors.background,
     },
-    header: {
+    topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: spacing.sm,
+      paddingBottom: 8,
+    },
+    titleSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+    },
+    titleIconBadge: {
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     title: {
-      fontSize: typography.sizes['2xl'],
-      fontWeight: typography.weights.bold,
+      fontSize: 22,
+      fontWeight: '800',
       color: colors.text,
+      letterSpacing: -0.5,
     },
+    titleCountBadge: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 12,
+    },
+    titleCountText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: 10,
+    },
+    headerDivider: {
+      height: 1,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 10,
+    },
+
+    // KPIs Slim Strip
+    kpiStrip: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 10,
+    },
+    kpiItem: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    kpiDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+    },
+    kpiContent: {
+      flex: 1,
+    },
+    kpiCount: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.text,
+      lineHeight: 18,
+    },
+    kpiLabel: {
+      fontSize: 10,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+
+    // Busca
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -32,25 +110,31 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.border,
-      paddingHorizontal: spacing.md,
-      height: 44,
-      marginBottom: spacing.sm,
-      gap: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      height: 38,
+      marginBottom: 8,
+      gap: 6,
     },
     searchInput: {
       flex: 1,
-      fontSize: typography.sizes.sm,
+      fontSize: 13,
       color: colors.text,
+      paddingVertical: 0,
       height: '100%',
     },
+
+    // Filtros em Pílulas
     filterScroll: {
       flexDirection: 'row',
-      gap: spacing.xs,
-      paddingBottom: spacing.xs,
+      gap: 6,
+      paddingBottom: 4,
     },
     filterChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 11,
+      paddingVertical: 5,
       borderRadius: radius.full,
       backgroundColor: colors.surface,
       borderWidth: 1,
@@ -61,86 +145,216 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       borderColor: colors.primary,
     },
     filterChipText: {
-      fontSize: typography.sizes.xs,
+      fontSize: 11,
       fontWeight: '600',
       color: colors.textSecondary,
     },
     filterChipTextActive: {
       color: '#FFFFFF',
+      fontWeight: '700',
     },
+    filterBadge: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: 8,
+    },
+    filterBadgeActive: {
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    },
+    filterBadgeText: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    filterBadgeTextActive: {
+      color: '#FFFFFF',
+    },
+
+    // Lista de OS
     listContent: {
-      padding: sizes.screenPadding,
-      paddingTop: spacing.sm,
+      paddingHorizontal: sizes.screenPadding,
+      paddingTop: 6,
       paddingBottom: spacing['3xl'],
       maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },
+
+    // Card de OS Compacto
     card: {
-      marginBottom: spacing.md,
+      marginBottom: 8,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
     },
-    cardPressable: {
-      gap: spacing.sm,
+    cardInner: {
+      padding: 12,
+      gap: 8,
     },
-    cardPressed: {
-      opacity: 0.7,
-    },
-    cardContent: {
+    cardTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      justifyContent: 'space-between',
+      gap: 8,
     },
-    cardIcon: {
-      width: 42,
-      height: 42,
+    cardClientGroup: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    avatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+      borderWidth: 1,
+      borderColor: isDark ? '#334155' : '#DBEAFE',
+    },
+    avatarText: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    clientInfo: {
+      flex: 1,
+    },
+    clientName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
+      lineHeight: 18,
+    },
+    codeAndMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 4,
+      marginTop: 2,
+    },
+    codeBadge: {
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: radius.sm,
+    },
+    codeText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    metaDot: {
+      fontSize: 10,
+      color: colors.textLight,
+    },
+    quoteTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: radius.sm,
+    },
+    quoteTagText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    workText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      maxWidth: 130,
+    },
+    dateText: {
+      fontSize: 11,
+      color: colors.textLight,
+    },
+
+    // Badge de Status
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
       borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    statusPillText: {
+      fontSize: 11,
+      fontWeight: '700',
+    },
+
+    // Linha Inferior
+    cardBottomRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 6,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+    },
+    valueGroup: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 6,
+    },
+    cardTotal: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      letterSpacing: -0.3,
+    },
+    valueLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+
+    // Metadados da Direita e Ações
+    actionsGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    materialsChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+    },
+    materialsChipText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    iconActionBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 7,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    cardInfo: {
-      flex: 1,
-      gap: spacing.xs,
+    whatsappBtn: {
+      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7',
     },
-    cardHeader: {
-      flexDirection: 'row',
+    detailsBtn: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
       alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: spacing.sm,
-    },
-    cardTitle: {
-      flex: 1,
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semibold,
-      color: colors.text,
-    },
-    cardRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.xs,
-    },
-    cardText: {
-      flex: 1,
-      fontSize: typography.sizes.sm,
-      color: colors.textSecondary,
-    },
-    cardFooter: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: spacing.xs,
-    },
-    cardDate: {
-      fontSize: typography.sizes.xs,
-      color: colors.textLight,
-    },
-    cardMaterials: {
-      fontSize: typography.sizes.xs,
-      color: colors.textSecondary,
-      fontWeight: '500',
+      justifyContent: 'center',
     },
   });
 

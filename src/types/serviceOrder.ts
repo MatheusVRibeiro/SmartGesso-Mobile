@@ -40,8 +40,9 @@ export interface ServiceOrder {
   needsProduction?: boolean | null;
   createdAt: string;
   updatedAt: string;
-  client?: { id: string; name: string };
+  client?: { id: string; name: string; phone?: string | null };
   work?: { id: string; name: string };
+  quote?: { id: string; quoteNumber: number; version: number } | null;
   materials?: ServiceOrderMaterial[];
 }
 
