@@ -1,0 +1,1390 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+        "borderWidth": 1,
+      },
+      {
+        "borderRadius": 12,
+        "padding": 16,
+      },
+      {
+        "boxShadow": "0px 1px 3px rgba(79, 70, 229, 0.08)",
+        "elevation": 1,
+      },
+      {
+        "gap": 8,
+        "padding": 16,
+      },
+    ]
+  }
+>
+  <Text
+    accessibilityRole="header"
+    style={
+      {
+        "color": "#0F172A",
+        "fontSize": 16,
+        "fontWeight": "600",
+        "marginBottom": 8,
+      }
+    }
+  >
+    Resumo Financeiro
+  </Text>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Receita
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-contracted-value"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Valor contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 5.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-additional-approved"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Aditivos aprovados
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-total-contracted"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Total contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#1E40AF",
+          },
+        ]
+      }
+    >
+      R$ 5.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-received"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Recebido
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#059669",
+          },
+        ]
+      }
+    >
+      R$ 2.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-to-receive"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      A receber
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 3.000,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Custo
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-realized-cost"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Custo realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 6.500,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Resultado
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-projected-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado projetado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      -R$ 1.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-cash-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      -R$ 1.500,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-margin"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Margem
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      -30%
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+        "borderWidth": 1,
+      },
+      {
+        "borderRadius": 12,
+        "padding": 16,
+      },
+      {
+        "boxShadow": "0px 1px 3px rgba(79, 70, 229, 0.08)",
+        "elevation": 1,
+      },
+      {
+        "gap": 8,
+        "padding": 16,
+      },
+    ]
+  }
+>
+  <Text
+    accessibilityRole="header"
+    style={
+      {
+        "color": "#0F172A",
+        "fontSize": 16,
+        "fontWeight": "600",
+        "marginBottom": 8,
+      }
+    }
+  >
+    Resumo Financeiro
+  </Text>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Receita
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-contracted-value"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Valor contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-additional-approved"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Aditivos aprovados
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-total-contracted"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Total contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#1E40AF",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-received"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Recebido
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-to-receive"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      A receber
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Custo
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-realized-cost"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Custo realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Resultado
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-projected-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado projetado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-cash-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      R$ 0,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-margin"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Margem
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#64748B",
+          },
+        ]
+      }
+    >
+      0%
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`] = `
+<View
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E2E8F0",
+        "borderWidth": 1,
+      },
+      {
+        "borderRadius": 12,
+        "padding": 16,
+      },
+      {
+        "boxShadow": "0px 1px 3px rgba(79, 70, 229, 0.08)",
+        "elevation": 1,
+      },
+      {
+        "gap": 8,
+        "padding": 16,
+      },
+    ]
+  }
+>
+  <Text
+    accessibilityRole="header"
+    style={
+      {
+        "color": "#0F172A",
+        "fontSize": 16,
+        "fontWeight": "600",
+        "marginBottom": 8,
+      }
+    }
+  >
+    Resumo Financeiro
+  </Text>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Receita
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-contracted-value"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Valor contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 10.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-additional-approved"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Aditivos aprovados
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#0F172A",
+          },
+        ]
+      }
+    >
+      R$ 500,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-total-contracted"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Total contratado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#1E40AF",
+          },
+        ]
+      }
+    >
+      R$ 10.500,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-received"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Recebido
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#059669",
+          },
+        ]
+      }
+    >
+      R$ 6.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-to-receive"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      A receber
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 4.500,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Custo
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-realized-cost"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Custo realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#DC2626",
+          },
+        ]
+      }
+    >
+      R$ 5.500,00
+    </Text>
+  </View>
+  <Text
+    style={
+      {
+        "color": "#94A3B8",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "letterSpacing": 0.5,
+        "marginBottom": 4,
+        "marginTop": 8,
+        "textTransform": "uppercase",
+      }
+    }
+  >
+    Resultado
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-projected-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado projetado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#059669",
+          },
+        ]
+      }
+    >
+      R$ 3.500,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-cash-result"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Resultado realizado
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#059669",
+          },
+        ]
+      }
+    >
+      R$ 5.000,00
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingVertical": 4,
+      }
+    }
+    testID="row-margin"
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#64748B",
+          "flex": 1,
+          "fontSize": 14,
+        }
+      }
+    >
+      Margem
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "flex": 0,
+            "fontSize": 14,
+            "fontWeight": "500",
+            "textAlign": "right",
+          },
+          {
+            "color": "#059669",
+          },
+        ]
+      }
+    >
+      47,6%
+    </Text>
+  </View>
+</View>
+`;

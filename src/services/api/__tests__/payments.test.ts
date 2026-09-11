@@ -65,6 +65,31 @@ describe('paymentsService', () => {
     expect(result.id).toBe('p-1');
   });
 
+  it('create chama POST /payments com serviceOrderId quando informado (V3 — pagamento a partir da OS)', async () => {
+    const payload = {
+      clientId: 'cli-1',
+      serviceOrderId: 'so-123',
+      amount: 1500,
+      paymentMethod: 'PIX' as const,
+    };
+    mockClient.post.mockResolvedValue({
+      data: { ...mockPayment, serviceOrderId: 'so-123' },
+    });
+
+    const result = await paymentsService.create(payload);
+
+    expect(mockClient.post).toHaveBeenCalledTimes(1);
+    const [url, body] = mockClient.post.mock.calls[0];
+    expect(url).toBe('/payments');
+    // serviceOrderId presente no body E clientId preservado (não sobrescrito).
+    expect(body).toMatchObject({
+      clientId: 'cli-1',
+      serviceOrderId: 'so-123',
+      amount: 1500,
+    });
+    expect(result.serviceOrderId).toBe('so-123');
+  });
+
   it('update chama PATCH /payments/:id com o payload', async () => {
     const payload = { status: 'CONFIRMADO' as const };
     mockClient.patch.mockResolvedValue({ data: { ...mockPayment, ...payload } });

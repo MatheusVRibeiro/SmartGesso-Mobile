@@ -1,14 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
-import { colors, radius, sizes, spacing, typography } from '../../theme';
+import { radius, sizes, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 import AppButton from './AppButton';
 
-export type IconName = ComponentProps<typeof Ionicons>['name'];
-
 export interface ErrorStateProps {
-  message: string;
+  message?: string;
   title?: string;
   onRetry?: () => void;
   retryLabel?: string;
@@ -17,36 +15,38 @@ export interface ErrorStateProps {
 }
 
 function ErrorState({
-  message,
+  message = 'Ocorreu um erro ao carregar os dados.',
   title = 'Algo deu errado',
   onRetry,
   retryLabel = 'Tentar novamente',
   style,
   testID,
 }: ErrorStateProps) {
+  const { colors, isDark } = useAppTheme();
+
   return (
-    <View
-      testID={testID}
-      accessibilityRole="alert"
-      style={[styles.container, style]}
-    >
-      <View style={styles.iconCircle}>
+    <View testID={testID} style={[styles.container, style]}>
+      <View
+        style={[
+          styles.iconCircle,
+          { backgroundColor: isDark ? 'rgba(240, 113, 113, 0.15)' : colors.dangerSoft },
+        ]}
+      >
         <Ionicons
-          name="alert-circle"
+          name="alert-circle-outline"
           size={sizes.icon.xl}
           color={colors.danger}
           accessibilityElementsHidden
         />
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
       {onRetry ? (
         <AppButton
           title={retryLabel}
-          variant="primary"
-          size="sm"
+          variant="outline"
           onPress={onRetry}
-          style={styles.retry}
+          style={styles.retryButton}
         />
       ) : null}
     </View>
@@ -60,30 +60,31 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing['3xl'],
+    padding: spacing['2xl'],
+    minHeight: 240,
   },
   iconCircle: {
-    width: sizes.iconCircle,
-    height: sizes.iconCircle,
+    width: 72,
+    height: 72,
     borderRadius: radius.full,
-    backgroundColor: colors.dangerSoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
   title: {
-    marginTop: spacing.lg,
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    color: colors.text,
     textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   message: {
-    marginTop: spacing.sm,
     fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
     textAlign: 'center',
+    lineHeight: typography.sizes.sm * 1.5,
+    maxWidth: 280,
+    marginBottom: spacing.xl,
   },
-  retry: {
-    marginTop: spacing.xl,
+  retryButton: {
+    marginTop: spacing.sm,
   },
 });

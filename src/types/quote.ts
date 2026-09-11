@@ -1,3 +1,4 @@
+import type { ServiceOrderStatus } from './serviceOrder';
 // ─── Orçamentos (Fase 4) ───────────────────────────────────────────────────
 
 export type QuoteStatus =
@@ -73,7 +74,7 @@ export interface Quote {
   deadlineDate?: string | null;
   /** Marcado quando o orçamento aprovado vira ordem de serviço (V3). */
   convertedAt?: string | null;
-  client?: { id: string; name: string; document?: string | null };
+  client?: { id: string; name: string; document?: string | null; phone?: string | null; whatsapp?: string | null; };
   work?: { id: string; name: string };
   items: QuoteItemSummary[];
   /** Timeline de eventos (criação, versões, aprovação, rejeição...). */
@@ -98,6 +99,23 @@ export interface ConvertToServiceResult {
   scheduledDate?: string | null;
   saleValue: number;
   observations?: string | null;
+}
+
+/** Resposta de POST /quotes/:id/approve (V4 ETAPA 1). */
+export interface ApproveQuoteResponse {
+  quote: Quote;
+  serviceOrder: {
+    id: string;
+    code: number;
+    status: ServiceOrderStatus;
+  };
+  serviceOrderCreated: boolean;
+}
+
+/** Resposta de POST /quotes/:id/share — link público do orçamento (deep link). */
+export interface ShareQuoteResponse {
+  publicToken: string;
+  url: string;
 }
 
 /** Endereço/local onde o serviço será realizado (contexto do orçamento).

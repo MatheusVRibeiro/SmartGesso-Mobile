@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { colors, radius, shadows, sizes, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export type AppSnackbarType = 'success' | 'error' | 'info' | 'warning';
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -43,6 +44,7 @@ function AppSnackbar({
   style,
   testID,
 }: AppSnackbarProps) {
+  const { colors: themeColors, isDark } = useAppTheme();
   const onHideRef = useRef(onHide);
   onHideRef.current = onHide;
 
@@ -65,7 +67,7 @@ function AppSnackbar({
       testID={testID}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
-      style={[styles.container, style]}
+      style={[styles.container, { backgroundColor: isDark ? '#222326' : themeColors.text, borderWidth: isDark ? 1 : 0, borderColor: 'rgba(255, 255, 255, 0.12)' }, style]}
     >
       <Ionicons
         name={config.icon}

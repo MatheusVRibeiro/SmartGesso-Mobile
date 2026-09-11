@@ -1,17 +1,85 @@
-// ─── Legacy types (kept for backward compat) ────────────────────────────────
+// ─── Standardized response types ────────────────────────────────────────────
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  success: boolean;
+/**
+ * Generic list response envelope.
+ * Some endpoints return a simple array, others wrap in { data, total }.
+ * This type represents the wrapped format.
+ */
+export interface ListResponse<T> {
+  data: T[];
+  total: number;
 }
 
+/**
+ * Paginated list response with pagination metadata.
+ * Used by endpoints that support page/limit parameters.
+ */
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
+}
+
+/**
+ * Legacy success envelope (kept for backward compat).
+ */
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Re-export do utilitário canônico (src/utils/toArray) para não quebrar os
+ * consumidores existentes (services/api/agenda, dashboard, goals).
+ * Normalizes API responses that may return either:
+ * 1. A raw array (Prisma findMany style)
+ * 2. A wrapped { data, total } envelope
+ */
+export { toArray } from '../utils/toArray';
+
+/**
+ * Normalizes paginated responses.
+ * Handles both raw arrays and wrapped envelopes.
+ */
+export function toPaginated<T>(
+  result: unknown,
+  defaults?: Partial<PaginatedResponse<T>>,
+): PaginatedResponse<T> {
+  if (Array.isArray(result)) {
+    return {
+      data: result as T[],
+      total: result.length,
+      page: defaults?.page ?? 1,
+      limit: defaults?.limit ?? result.length,
+      totalPages: 1,
+    };
+  }
+
+  if (result && typeof result === 'object' && 'data' in result) {
+    const obj = result as Record<string, unknown>;
+    return {
+      data: (obj.data as T[]) ?? [],
+      total: (obj.total as number) ?? 0,
+      page: (obj.page as number) ?? defaults?.page ?? 1,
+      limit: (obj.limit as number) ?? defaults?.limit ?? 20,
+      totalPages:
+        (obj.totalPages as number) ??
+        Math.ceil(((obj.total as number) ?? 0) / ((obj.limit as number) ?? 20)),
+    };
+  }
+
+  return {
+    data: [],
+    total: 0,
+    page: defaults?.page ?? 1,
+    limit: defaults?.limit ?? 20,
+    totalPages: 0,
+  };
 }
 
 // ─── New types (services layer) ─────────────────────────────────────────────

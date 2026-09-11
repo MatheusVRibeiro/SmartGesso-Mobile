@@ -1,7 +1,8 @@
 import React, { forwardRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sizes, spacing } from '../../theme';
+import { sizes, spacing } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 import AppInput, { AppInputProps } from './AppInput';
 
 export interface PasswordInputProps
@@ -21,6 +22,7 @@ const PasswordInput = forwardRef<TextInput, PasswordInputProps>(
     },
     ref
   ) {
+    const { colors } = useAppTheme();
     const [visible, setVisible] = useState(false);
 
     function toggleVisibility() {

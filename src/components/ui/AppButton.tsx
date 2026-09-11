@@ -7,6 +7,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borders, colors, radius, sizes, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import { PressableScale } from './PressableScale';
 
 export type AppButtonVariant =
   | 'primary'
@@ -30,7 +32,9 @@ export interface AppButtonProps {
 }
 
 const VARIANT_STYLES: Record<AppButtonVariant, ViewStyle> = {
-  primary: { backgroundColor: colors.primary },
+  // Etapa 3: gradiente indigo #1E40AF→#3B82F6 (design system).
+  // expo-linear-gradient não instalado → fallback sólido com primaryLight.
+  primary: { backgroundColor: colors.primaryLight },
   secondary: {
     backgroundColor: colors.transparent,
     borderWidth: borders.width.thin,
@@ -76,40 +80,46 @@ function AppButton({
   style,
   testID,
 }: AppButtonProps) {
+  const { colors } = useAppTheme();
   const isDisabled = disabled || loading;
   const textColor = isDisabled ? colors.disabledText : TEXT_COLORS[variant];
 
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
-      disabled={isDisabled}
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        VARIANT_STYLES[variant],
-        SIZE_STYLES[size],
-        isDisabled && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
-        pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
-        style,
-      ]}
+      disabled={isDisabled}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
+      style={style}
     >
-      {loading ? (
-        <ActivityIndicator color={textColor} size="small" />
-      ) : (
-        <Text
-          style={[
-            styles.label,
-            { color: textColor, fontSize: FONT_SIZES[size] },
-          ]}
-        >
-          {title}
-        </Text>
-      )}
-    </Pressable>
+      <Pressable
+        testID={testID}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        disabled={isDisabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.base,
+          VARIANT_STYLES[variant],
+          SIZE_STYLES[size],
+          isDisabled && styles.disabled,
+          pressed && !isDisabled && styles.pressed,
+          pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <Text
+            style={[
+              styles.label,
+              { color: textColor, fontSize: FONT_SIZES[size] },
+            ]}
+          >
+            {title}
+          </Text>
+        )}
+      </Pressable>
+    </PressableScale>
   );
 }
 
@@ -130,7 +140,8 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   pressedPrimary: {
-    backgroundColor: colors.primaryDark,
+    // Press: tom mais escuro do novo primary (primaryLight → primary).
+    backgroundColor: colors.primary,
   },
   label: {
     fontWeight: typography.weights.semibold,

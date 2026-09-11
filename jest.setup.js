@@ -1,6 +1,11 @@
 // Mock de __DEV__ global
 global.__DEV__ = true;
 
+// Mock de @react-native-async-storage/async-storage
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 // Mock de expo-secure-store para testes
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(() => Promise.resolve(null)),
@@ -19,3 +24,46 @@ jest.mock('@expo/vector-icons', () => {
     Feather: MockIcon,
   };
 });
+
+// Mock de react-native-svg para testes
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockSvg = (props) => React.createElement(View, props);
+  return {
+    __esModule: true,
+    default: MockSvg,
+    Svg: MockSvg,
+    Path: MockSvg,
+    Rect: MockSvg,
+    Circle: MockSvg,
+    Line: MockSvg,
+    Polygon: MockSvg,
+    Polyline: MockSvg,
+    G: MockSvg,
+    Text: MockSvg,
+    Defs: MockSvg,
+    Use: MockSvg,
+  };
+});
+
+
+// Mock de lucide-react-native para testes
+jest.mock('lucide-react-native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockLucideIcon = (props) => React.createElement(View, props);
+  return new Proxy({}, {
+    get: () => MockLucideIcon,
+  });
+});
+
+// Mock de expo-file-system (V5 ETAPA 10 — AuthImage/uploads usam download autenticado)
+jest.mock('expo-file-system', () => ({
+  Directory: jest.fn(),
+  File: jest.fn(),
+  Paths: {
+    cache: '/cache',
+    document: '/documents',
+  },
+}));

@@ -2,17 +2,22 @@ import { useEffect } from 'react';
 import { useSessionStore } from '../store/useSessionStore';
 import { SecureTokenStorage } from '../services/auth/SecureTokenStorage';
 import { authService } from '../services/api/auth';
+import { companyMembersService } from '../services/api/companyMembers';
 
 /**
  * Bootstrap da sessão: roda uma vez no mount.
  *
  * - Sem token → clearSession (unauthenticated → login)
  * - Com token → GET /auth/me → setSession (authenticated → tabs)
+ * - Com activeCompanyId → GET /company/permissions → setPermissions + setRole
+ *   (V5: falha ⇒ permissions=[] e role=null — estado unknown, NUNCA owner)
  * - me() falha (401/expirado) → clearSession (login)
  */
 export function useSessionBootstrap() {
   const setSession = useSessionStore((s) => s.setSession);
   const clearSession = useSessionStore((s) => s.clearSession);
+  const setPermissions = useSessionStore((s) => s.setPermissions);
+  const setRole = useSessionStore((s) => s.setRole);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +45,20 @@ export function useSessionBootstrap() {
           } catch {
             setSession(user);
           }
+
+          // Permissões reais da empresa ativa (V5 — sem fallback COMPANY_OWNER)
+          try {
+            const { role, permissions } =
+              await companyMembersService.getPermissions();
+            if (cancelled) return;
+            setPermissions(permissions);
+            setRole(role);
+          } catch {
+            if (cancelled) return;
+            // Falha ⇒ estado unknown: nada liberado por permissão/role
+            setPermissions([]);
+            setRole(null);
+          }
         } else {
           setSession(user);
         }
@@ -53,5 +72,5 @@ export function useSessionBootstrap() {
     return () => {
       cancelled = true;
     };
-  }, [setSession, clearSession]);
+  }, [setSession, clearSession, setPermissions, setRole]);
 }

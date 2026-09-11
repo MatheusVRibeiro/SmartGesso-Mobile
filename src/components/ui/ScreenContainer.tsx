@@ -4,12 +4,14 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
 import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, sizes, spacing } from '../../theme';
+import { sizes } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export interface ScreenContainerProps {
   children: React.ReactNode;
@@ -24,8 +26,10 @@ export interface ScreenContainerProps {
   style?: ViewStyle;
   contentContainerStyle?: ViewStyle;
   testID?: string;
-  /** Ref da ScrollView (scroll=true) — permite scroll programático (ex.: atalhos). */
+  /** Ref da ScrollView (scroll=true) — permite scroll programático. */
   scrollRef?: React.RefObject<ScrollViewType | null>;
+  /** Largura máxima do conteúdo em telas grandes (default: 680px no web/tablets). */
+  maxContentWidth?: number;
 }
 
 function ScreenContainer({
@@ -33,15 +37,29 @@ function ScreenContainer({
   scroll = false,
   padding = true,
   keyboard = true,
-  backgroundColor = colors.background,
+  backgroundColor,
   edges = ['top', 'left', 'right'],
   style,
   contentContainerStyle,
   testID,
   scrollRef,
+  maxContentWidth = 680,
 }: ScreenContainerProps) {
+  const { colors } = useAppTheme();
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width > 768;
+
+  const bg = backgroundColor ?? colors.background;
   const paddingValue =
     typeof padding === 'number' ? padding : padding ? sizes.screenPadding : 0;
+
+  const responsiveWrapperStyle: ViewStyle = isLargeScreen
+    ? {
+        width: '100%',
+        maxWidth: maxContentWidth,
+        alignSelf: 'center',
+      }
+    : { width: '100%' };
 
   const content = scroll ? (
     <ScrollView
@@ -54,13 +72,21 @@ function ScreenContainer({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      {children}
+      <View style={[styles.flex, responsiveWrapperStyle]}>
+        {children}
+      </View>
     </ScrollView>
   ) : (
     <View
-      style={[styles.content, { padding: paddingValue }, contentContainerStyle]}
+      style={[
+        styles.content,
+        { padding: paddingValue },
+        contentContainerStyle,
+      ]}
     >
-      {children}
+      <View style={[styles.flex, responsiveWrapperStyle]}>
+        {children}
+      </View>
     </View>
   );
 
@@ -79,7 +105,7 @@ function ScreenContainer({
     <SafeAreaView
       testID={testID}
       edges={edges}
-      style={[styles.safe, { backgroundColor }, style]}
+      style={[styles.safe, { backgroundColor: bg }, style]}
     >
       {inner}
     </SafeAreaView>

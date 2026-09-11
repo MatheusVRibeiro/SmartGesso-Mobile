@@ -10,6 +10,9 @@ export type { AppCardProps } from './AppCard';
 export { default as AppInput } from './AppInput';
 export type { AppInputProps } from './AppInput';
 
+export { default as AnimatedCounter } from './AnimatedCounter';
+export type { AnimatedCounterProps } from './AnimatedCounter';
+
 export { default as ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 
@@ -18,6 +21,9 @@ export type { EmptyStateProps, IconName as EmptyStateIconName } from './EmptySta
 
 export { default as ErrorState } from './ErrorState';
 export type { ErrorStateProps } from './ErrorState';
+
+export { default as FadeInView } from './FadeInView';
+export type { FadeInViewProps } from './FadeInView';
 
 export { default as LoadingState } from './LoadingState';
 export type { LoadingStateProps } from './LoadingState';
@@ -29,8 +35,8 @@ export type { OfflineBannerProps } from './OfflineBanner';
 export { default as PasswordInput } from './PasswordInput';
 export type { PasswordInputProps } from './PasswordInput';
 
-export { default as PermissionGate } from './PermissionGate';
-export type { PermissionGateProps } from './PermissionGate';
+export { default as PressableScale } from './PressableScale';
+export type { PressableScaleProps } from './PressableScale';
 
 export { default as AppSnackbar } from './AppSnackbar';
 export type { AppSnackbarProps, AppSnackbarType } from './AppSnackbar';
@@ -40,3 +46,6 @@ export type { ScreenContainerProps } from './ScreenContainer';
 
 export { default as StatusBadge } from './StatusBadge';
 export type { StatusBadgeProps, StatusBadgeSize, StatusBadgeVariant } from './StatusBadge';
+
+export { AuthImage } from './AuthImage';
+export type { AuthImageProps } from './AuthImage';

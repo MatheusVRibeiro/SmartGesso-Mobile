@@ -15,7 +15,7 @@
  * Expo e o registra no backend (POST /notifications/tokens) — chamado após
  * o login quando há empresa ativa.
  */
-import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './notifications/pushRegistration';
 import { agendaService } from './api/agenda';
 import { catalogService } from './api/catalog';
 import { notificationsApi } from './api/notifications';
@@ -29,6 +29,7 @@ import type { Notificacao, NotificationType } from '../types/notification';
 import type { QuoteSummary } from '../types/quote';
 import type { ServiceOrder } from '../types/serviceOrder';
 import { formatCurrency } from '../utils/format';
+import { toArray } from '../utils/toArray';
 
 // ─── Helpers de data (fuso local) ──────────────────────────────────────────
 
@@ -67,15 +68,6 @@ function formatShortDate(value: string): string {
   const date = new Date(`${value}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('pt-BR');
-}
-
-/** Normaliza array puro (Prisma findMany) ou { data, total }. */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
 }
 
 /**
@@ -269,6 +261,15 @@ export async function loadNotifications(): Promise<Notificacao[]> {
 
 /** Contagem total de notificações (usada no badge do menu). */
 export async function countNotifications(): Promise<number> {
+  try {
+    // Endpoint dedicado eficiente (GET /notifications/unread-count).
+    const { getApiClient } = await import('./api/client');
+    const client = getApiClient();
+    const { data } = await client.get<{ count: number }>('/notifications/unread-count');
+    if (typeof data?.count === 'number') return data.count;
+  } catch {
+    // Fallback: conta todas as notificações (compat com API antiga).
+  }
   const notifications = await loadNotifications();
   return notifications.length;
 }
@@ -285,23 +286,7 @@ export async function countNotifications(): Promise<number> {
  * @returns Token Expo push ou null quando indisponível/negado.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  try {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') return null;
-
-    const token = await Notifications.getExpoPushTokenAsync();
-    return token.data;
-  } catch {
-    // Sem suporte a push no ambiente (ex.: web) ou erro de permissão.
-    return null;
-  }
+  return registerForPushNotificationsAsync();
 }
 
 /** Mapa de rótulos/tipos para exibição (fallback de UI). */
