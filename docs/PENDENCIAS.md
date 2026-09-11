@@ -1,7 +1,7 @@
 # PENDÊNCIAS — SmartGesso Mobile (SmartGesso-Mobile)
 
 > Lista viva de pendências, priorizadas 🔴🟠🟡🔵. Atualizar a cada fase. A IA lê este arquivo para saber O QUE FAZER EM SEGUIDA sem perguntar.
-> Última atualização: 2026-08-27
+> Última atualização: 2026-09-10
 
 ## 🔴 Refactor V4 em andamento (branch `docs-smartgesso-refactor-2026-08-24`)
 
@@ -9,6 +9,8 @@
   - **IMPORTANTE:** NUNCA commitar código quebrado. Rodar typecheck + testes ANTES de qualquer commit.
   - **IMPORTANTE:** NUNCA pular etapa — ler `docs/PLANO_REFATORACAO_FRONTEND_V4.md` (seção 'Alterações obrigatórias' + 'Testes') antes de despachar subagents
 - [ ] **Fase por fase até 100%** — seguir o plano de refatoração; cada fase: implementar → testar → revisar → commitar → só então próxima
+- [ ] **ETAPA 15 — Home acionável: helpers ✅, integração final em andamento** — helpers `src/features/home/homeToday.ts`/`homeAlerts.ts` prontos (33 testes), estilos timeline prontos; falta: seção Hoje (timeline), card Serviços Atrasados, banner parcelas vencidas, FeatureGate inventory
+- [ ] **ETAPA 17 — a11y: varredura iniciada (Orcamentos, Detalhe, Mais)**
 
 ## 🟡 Testes
 

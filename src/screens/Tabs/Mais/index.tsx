@@ -238,7 +238,11 @@ export default function MaisScreen() {
                     styles.menuItem,
                     index < array.length - 1 && styles.menuItemBorder,
                   ]}
-                  accessibilityLabel={item.title}
+                  accessibilityLabel={
+                    item.badge != null && item.badge > 0
+                      ? `${item.title}, ${item.badge} não lidas`
+                      : item.title
+                  }
                   accessibilityRole="button"
                 >
                   <View style={styles.menuItemContent}>
@@ -277,7 +281,7 @@ export default function MaisScreen() {
           <TouchableOpacity
             onPress={() => setLogoutDialogVisible(true)}
             style={styles.menuItem}
-            accessibilityLabel="Sair"
+            accessibilityLabel="Sair da conta"
             accessibilityRole="button"
           >
             <View style={styles.menuItemContent}>

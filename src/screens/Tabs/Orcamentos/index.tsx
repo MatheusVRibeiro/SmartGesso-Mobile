@@ -172,17 +172,17 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
 
   return (
     <AppCard shadow="light" radius={radius.lg} style={styles.card}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Ver orçamento ${quote.quoteNumber} versão ${quote.version}`}
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.cardInner,
-          pressed && { opacity: 0.8 },
-        ]}
-      >
-        {/* Linha Superior: Avatar, Cliente, Código/Data e Status */}
-        <View style={styles.cardTopRow}>
+      <View style={styles.cardInner}>
+        {/* Linha Superior: Clicável para abrir detalhes */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver orçamento ${formatQuoteCode(quote.quoteNumber)} versão ${quote.version} de ${quote.client?.name ?? 'cliente não informado'}, status ${statusCfg.label}, total ${formatCurrency(quote.total)}`}
+          onPress={onPress}
+          style={({ pressed }) => [
+            styles.cardTopRow,
+            pressed && { opacity: 0.75 },
+          ]}
+        >
           <View style={styles.cardClientGroup}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{clientInitials}</Text>
@@ -220,11 +220,19 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
               {statusCfg.label}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
-        {/* Linha Inferior: Valor Total + Condição + Ações Rápidas em Ícones */}
+        {/* Linha Inferior: Valor Total + Condição + Ações Rápidas (NÃO aninhadas em outro button) */}
         <View style={styles.cardBottomRow}>
-          <View style={styles.valueGroup}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Total do orçamento: ${formatCurrency(quote.total)}`}
+            onPress={onPress}
+            style={({ pressed }) => [
+              styles.valueGroup,
+              pressed && { opacity: 0.75 },
+            ]}
+          >
             <Text style={styles.cardTotal}>{formatCurrency(quote.total)}</Text>
             {quote.paymentMethod ? (
               <View style={styles.paymentChip}>
@@ -233,7 +241,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
                 </Text>
               </View>
             ) : null}
-          </View>
+          </Pressable>
 
           {/* Ações Rápidas Compactas */}
           <View style={styles.actionsGroup}>
@@ -241,7 +249,8 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
               style={[styles.iconActionBtn, styles.whatsappBtn]}
               onPress={handleShareWhatsApp}
               activeOpacity={0.7}
-              accessibilityLabel="Enviar por WhatsApp"
+              accessibilityRole="button"
+              accessibilityLabel={`Enviar orçamento ${formatQuoteCode(quote.quoteNumber)} por WhatsApp`}
             >
               <Ionicons name="logo-whatsapp" size={15} color="#25D366" />
             </TouchableOpacity>
@@ -250,17 +259,24 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
               style={[styles.iconActionBtn, styles.shareBtn]}
               onPress={handleShareGeneral}
               activeOpacity={0.7}
-              accessibilityLabel="Compartilhar link"
+              accessibilityRole="button"
+              accessibilityLabel={`Compartilhar orçamento ${formatQuoteCode(quote.quoteNumber)}`}
             >
               <Ionicons name="share-social-outline" size={15} color={colors.primary} />
             </TouchableOpacity>
 
-            <View style={styles.detailsBtn}>
+            <TouchableOpacity
+              style={styles.detailsBtn}
+              onPress={onPress}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Ver detalhes do orçamento"
+            >
               <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
-      </Pressable>
+      </View>
     </AppCard>
   );
 }
@@ -415,6 +431,7 @@ export default function OrcamentosScreen() {
             style={styles.addButton}
             onPress={() => router.push('/orcamentos/novo')}
             activeOpacity={0.85}
+            accessibilityRole="button"
             accessibilityLabel="Criar novo orçamento"
           >
             <Ionicons name="add" size={17} color="#FFFFFF" />
@@ -440,6 +457,8 @@ export default function OrcamentosScreen() {
               ]}
               onPress={() => setSelectedFilter((prev) => (prev === 'ENVIADO' ? 'TODOS' : 'ENVIADO'))}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Filtrar orçamentos em negociação, ${metrics.countNegociacao} em aberto, total ${formatCurrency(metrics.totalNegociacao)}`}
             >
               <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF' }]}>
                 <Ionicons name="trending-up" size={14} color="#3B82F6" />
@@ -463,6 +482,8 @@ export default function OrcamentosScreen() {
               ]}
               onPress={() => setSelectedFilter((prev) => (prev === 'APROVADO' ? 'TODOS' : 'APROVADO'))}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Filtrar orçamentos aprovados, ${metrics.countAprovado} aprovados, total ${formatCurrency(metrics.totalAprovado)}`}
             >
               <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5' }]}>
                 <Ionicons name="checkmark-circle" size={14} color="#10B981" />
@@ -486,6 +507,8 @@ export default function OrcamentosScreen() {
               ]}
               onPress={() => setSelectedFilter((prev) => (prev === 'ENVIADO' ? 'TODOS' : 'ENVIADO'))}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Filtrar orçamentos aguardando resposta, ${metrics.countAguardando === 1 ? '1 proposta' : `${metrics.countAguardando} propostas`} aguardando`}
             >
               <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FFFBEB' }]}>
                 <Ionicons name="time" size={14} color="#F59E0B" />
@@ -515,9 +538,15 @@ export default function OrcamentosScreen() {
               placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              accessibilityLabel="Buscar orçamentos"
+              accessibilityHint="Busca por cliente, código ou obra"
             />
             {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel="Limpar busca"
+              >
                 <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             ) : null}
@@ -527,6 +556,7 @@ export default function OrcamentosScreen() {
             style={[styles.sortButton, sortOrder !== 'RECENTES' && styles.sortButtonActive]}
             onPress={cycleSortOrder}
             activeOpacity={0.8}
+            accessibilityRole="button"
             accessibilityLabel={`Ordenar: ${sortLabelMap[sortOrder]}`}
           >
             <Ionicons
@@ -567,6 +597,9 @@ export default function OrcamentosScreen() {
                 style={[styles.filterChip, isActive && styles.filterChipActive]}
                 onPress={() => setSelectedFilter(fil)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={`Filtrar por status: ${labelMap[fil]}, ${count} orçamentos`}
               >
                 <Text
                   style={[

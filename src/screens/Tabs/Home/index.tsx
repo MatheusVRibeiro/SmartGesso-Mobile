@@ -34,6 +34,20 @@ import { radius, spacing } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
 import { haptics } from '@/src/utils/haptics';
 import { createHomeScreenStyles } from './styles';
+import {
+  buildTodayTimeline,
+  computeOverdueServices,
+} from '@/src/features/home/homeToday';
+import type {
+  TimelineItem,
+  ServiceOrderSummary,
+  OperationalTodayInput,
+} from '@/src/features/home/homeToday';
+import {
+  computeExpiringQuotes,
+  computeOverdueReceive,
+} from '@/src/features/home/homeAlerts';
+import { FeatureGate } from '@/src/components/ui/FeatureGate';
 
 interface QuickActionItem {
   id: string;
@@ -112,17 +126,7 @@ export default function HomeScreen() {
   }, [overview?.charts?.monthlyEvolution, selectedMonthIdx]);
 
   const expiringQuotes = useMemo(() => {
-    if (!Array.isArray(quotes)) return [];
-    const now = new Date();
-    const in7Days = new Date();
-    in7Days.setDate(now.getDate() + 7);
-
-    return quotes.filter((q) => {
-      if (!q || !q.validUntil) return false;
-      if (q.status === 'APROVADO' || q.status === 'REJEITADO' || q.status === 'CANCELADO') return false;
-      const validDate = new Date(q.validUntil);
-      return !isNaN(validDate.getTime()) && validDate >= now && validDate <= in7Days;
-    });
+    return computeExpiringQuotes(Array.isArray(quotes) ? quotes : [], new Date());
   }, [quotes]);
 
   const onRefresh = useCallback(() => {
@@ -159,6 +163,27 @@ export default function HomeScreen() {
   const maxEvolutionValue = Math.max(
     ...(charts?.monthlyEvolution?.map((m) => Math.max(m.revenue, m.expenses, 1)) ?? [1]),
   );
+
+  // V4 ETAPA 15 — derivados dos helpers puros (src/features/home)
+  const overdueReceive = computeOverdueReceive(
+    summary ?? { toReceive: { overdue: 0, overdueCount: 0 } },
+  );
+  const todayServices = (operationalToday?.services ?? []) as ServiceOrderSummary[];
+  const overdueServices = computeOverdueServices(todayServices, new Date());
+  const todayTimeline = buildTodayTimeline(
+    (operationalToday ?? {}) as OperationalTodayInput,
+    new Date(),
+  );
+  const timelineDotStyle: Record<TimelineItem['kind'], object> = {
+    visit: styles.timelineDotVisit,
+    service: styles.timelineDotService,
+    followUp: styles.timelineDotFollowUp,
+  };
+  const timelineKindLabel: Record<TimelineItem['kind'], string> = {
+    visit: 'Visita',
+    service: 'Serviço',
+    followUp: 'Follow-up',
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -217,6 +242,33 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#D97706" />
+              </PressableScale>
+            </FadeInView>
+          )}
+
+          {/* Banner de Parcelas Vencidas (A Receber em atraso) */}
+          {overdueReceive.hasOverdue && (
+            <FadeInView delay={110}>
+              <PressableScale
+                onPress={() => router.push('/(app)/pagamentos')}
+                style={styles.alertBannerDanger}
+                scaleTo={0.98}
+                accessibilityLabel="Ver pagamentos vencidos"
+              >
+                <View style={styles.alertIconWrapperDanger}>
+                  <Ionicons name="warning" size={22} color={colors.danger} />
+                </View>
+                <View style={styles.alertContent}>
+                  <Text style={styles.alertTitleDanger}>
+                    {overdueReceive.count === 1
+                      ? '1 parcela vencida'
+                      : `${overdueReceive.count} parcelas vencidas`}
+                  </Text>
+                  <Text style={styles.alertSubtitleDanger}>
+                    {formatCurrency(overdueReceive.amount)} em atraso — toque para cobrar
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.danger} />
               </PressableScale>
             </FadeInView>
           )}
@@ -289,7 +341,7 @@ export default function HomeScreen() {
 
 
 
-          {/* Grid de KPIs Clicáveis (Orçamentos, Visitas, OS Hoje, A Receber) */}
+          {/* Grid de KPIs Clicáveis (Em Aberto, OS Hoje, A Receber, Despesas do Mês, Visitas Hoje) */}
           <View style={styles.kpiGrid}>
             {/* 1. Orçamentos em Aberto (Clicável -> Orçamentos) */}
             <TouchableOpacity
@@ -316,30 +368,7 @@ export default function HomeScreen() {
               </AppCard>
             </TouchableOpacity>
 
-            {/* 2. Visitas de Hoje (Clicável -> Agenda) */}
-            <TouchableOpacity
-              style={styles.kpiCardWrapper}
-              activeOpacity={0.8}
-              onPress={() => router.push('/(app)/agenda')}
-            >
-              <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
-                <View style={styles.kpiCardHeader}>
-                  <Text style={styles.kpiTitle}>Visitas Hoje</Text>
-                  <View style={[styles.kpiIconBadge, { backgroundColor: isDark ? 'rgba(168,85,247,0.18)' : '#F3E8FF' }]}>
-                    <Ionicons name="eye-outline" size={14} color="#9333EA" />
-                  </View>
-                </View>
-                <Text style={styles.kpiValue}>
-                  <AnimatedCounter value={operationalToday?.visitsCount ?? 0} /> agendadas
-                </Text>
-                <View style={styles.kpiFooterRow}>
-                  <Text style={styles.kpiSub}>Ver agenda do dia</Text>
-                  <Ionicons name="arrow-forward" size={12} color={colors.textLight} />
-                </View>
-              </AppCard>
-            </TouchableOpacity>
-
-            {/* 3. OS para Hoje (Clicável -> Serviços) */}
+            {/* 2. OS para Hoje (Clicável -> Serviços) */}
             <TouchableOpacity
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
@@ -362,7 +391,7 @@ export default function HomeScreen() {
               </AppCard>
             </TouchableOpacity>
 
-            {/* 4. A Receber (Clicável -> Pagamentos) */}
+            {/* 3. A Receber (Clicável -> Pagamentos) */}
             <TouchableOpacity
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
@@ -390,7 +419,173 @@ export default function HomeScreen() {
                 </View>
               </AppCard>
             </TouchableOpacity>
+
+            {/* 4. Despesas do Mês (Clicável -> Despesas) */}
+            <TouchableOpacity
+              style={styles.kpiCardWrapper}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(app)/despesas')}
+              accessibilityLabel="Ver despesas do mês"
+            >
+              <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+                <View style={styles.kpiCardHeader}>
+                  <Text style={styles.kpiTitle}>Despesas do Mês</Text>
+                  <View style={[styles.kpiIconBadge, { backgroundColor: isDark ? 'rgba(248,113,113,0.18)' : '#FEE2E2' }]}>
+                    <Ionicons name="card-outline" size={14} color={colors.danger} />
+                  </View>
+                </View>
+                <Text style={styles.kpiValue}>
+                  {formatCurrency(summary?.revenue.monthExpenses ?? 0)}
+                </Text>
+                <View style={styles.kpiFooterRow}>
+                  <Text style={styles.kpiSub}>Ver despesas</Text>
+                  <Ionicons name="arrow-forward" size={12} color={colors.textLight} />
+                </View>
+              </AppCard>
+            </TouchableOpacity>
+
+            {/* 5. Visitas de Hoje (Clicável -> Agenda) */}
+            <TouchableOpacity
+              style={styles.kpiCardWrapper}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(app)/agenda')}
+            >
+              <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
+                <View style={styles.kpiCardHeader}>
+                  <Text style={styles.kpiTitle}>Visitas Hoje</Text>
+                  <View style={[styles.kpiIconBadge, { backgroundColor: isDark ? 'rgba(168,85,247,0.18)' : '#F3E8FF' }]}>
+                    <Ionicons name="eye-outline" size={14} color="#9333EA" />
+                  </View>
+                </View>
+                <Text style={styles.kpiValue}>
+                  <AnimatedCounter value={operationalToday?.visitsCount ?? 0} /> agendadas
+                </Text>
+                <View style={styles.kpiFooterRow}>
+                  <Text style={styles.kpiSub}>Ver agenda do dia</Text>
+                  <Ionicons name="arrow-forward" size={12} color={colors.textLight} />
+                </View>
+              </AppCard>
+            </TouchableOpacity>
           </View>
+
+          {/* Seção Hoje — Timeline do dia (V4 ETAPA 15) */}
+          {todayTimeline.length > 0 && (
+            <View style={styles.timelineSection}>
+              <View style={styles.timelineHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>Hoje</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Visitas, serviços e follow-ups programados
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.seeAllBtn}
+                  onPress={() => router.push('/(app)/agenda')}
+                >
+                  <Text style={styles.seeAllText}>Agenda</Text>
+                  <Ionicons name="chevron-forward" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <AppCard shadow="light" radius={radius.lg} style={styles.timelineCard}>
+                {todayTimeline.map((item, index) => {
+                  const isLast = index === todayTimeline.length - 1;
+                  const timeText = item.time
+                    ? item.time.toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '—';
+                  return (
+                    <TouchableOpacity
+                      key={`${item.kind}-${item.id}`}
+                      style={styles.timelineItem}
+                      activeOpacity={0.7}
+                      disabled={isLast ? false : false}
+                      onPress={() => router.push(item.route as any)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${timelineKindLabel[item.kind]}: ${item.title}`}
+                    >
+                      <View style={styles.timelineTimeCol}>
+                        <Text style={styles.timelineTime}>{timeText}</Text>
+                      </View>
+                      <View style={styles.timelineMarkerCol}>
+                        <View style={[styles.timelineDot, timelineDotStyle[item.kind]]} />
+                        {!isLast && <View style={styles.timelineLine} />}
+                      </View>
+                      <View style={styles.timelineContent}>
+                        <Text style={styles.timelineTitle} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                        {item.subtitle ? (
+                          <Text style={styles.timelineSubtitle} numberOfLines={1}>
+                            {item.subtitle}
+                          </Text>
+                        ) : (
+                          <Text style={styles.timelineSubtitle}>
+                            {timelineKindLabel[item.kind]}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </AppCard>
+            </View>
+          )}
+
+          {/* Serviços Atrasados (Clicável -> Serviços) — V4 ETAPA 15 */}
+          {overdueServices.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <View>
+                  <Text style={styles.sectionTitle}>
+                    Serviços Atrasados ({overdueServices.length})
+                  </Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Agendados para dias anteriores e ainda não concluídos
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.seeAllBtn}
+                  onPress={() => router.push('/(app)/(tabs)/servicos')}
+                >
+                  <Text style={styles.seeAllText}>Ver todos</Text>
+                  <Ionicons name="chevron-forward" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+                {overdueServices.slice(0, 4).map((service, index, array) => (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={[
+                      styles.listItem,
+                      index < array.length - 1 && styles.listItemBorder,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/(app)/servicos/${service.id}`)}
+                    accessibilityLabel={`Ver serviço atrasado OS ${service.code}`}
+                  >
+                    <View style={[styles.listIconContainer, styles.listIconWarning]}>
+                      <Ionicons name="time-outline" size={18} color={colors.danger} />
+                    </View>
+                    <View style={styles.listItemContent}>
+                      <Text style={styles.listItemTitle} numberOfLines={1}>
+                        OS #{service.code} • {service.client?.name ?? 'Cliente'}
+                      </Text>
+                      <Text style={styles.stockAlertDetail} numberOfLines={1}>
+                        {service.scheduledDate
+                          ? `Agendado para ${new Date(service.scheduledDate).toLocaleDateString('pt-BR')}`
+                          : 'Sem data de agendamento'}
+                      </Text>
+                    </View>
+                    <StatusBadge status="expired" label="Atrasado" size="sm" />
+                  </TouchableOpacity>
+                ))}
+              </AppCard>
+            </View>
+          )}
 
           {/* Gráfico de Evolução Mensal Interativo & Moderno */}
           {charts?.monthlyEvolution && charts.monthlyEvolution.length > 0 ? (
@@ -747,8 +942,9 @@ export default function HomeScreen() {
             </AppCard>
           </View>
 
-          {/* Alertas de Estoque Mínimo */}
+          {/* Alertas de Estoque Mínimo (gated pela feature 'inventory') */}
           {alerts?.stockAlerts && alerts.stockAlerts.length > 0 ? (
+            <FeatureGate feature="inventory">
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <View>
@@ -794,6 +990,7 @@ export default function HomeScreen() {
                 ))}
               </AppCard>
             </View>
+            </FeatureGate>
           ) : null}
         </View>
       </ScrollView>

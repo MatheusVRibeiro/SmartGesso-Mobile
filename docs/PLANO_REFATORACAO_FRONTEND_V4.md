@@ -805,6 +805,18 @@ CRITÉRIO
 Nenhuma tela crítica precisa adivinhar se a API retorna array ou envelope.
 ```
 
+## GOAL HERMES — ETAPA 15 (Home Acionável) — PROGRESSO
+
+### ETAPA 6 — Home Acionável (V4 ETAPA 15) 🔄 EM ANDAMENTO
+
+- [x] Helpers puros homeToday/homeAlerts com 33 testes (`src/features/home/homeToday.ts`, `src/features/home/homeAlerts.ts`)
+- [x] Estilos timeline + variantes danger (`src/screens/Tabs/Home/styles.ts`)
+- [x] Card Despesas do Mês no grid
+- [ ] Seção Hoje (timeline)
+- [ ] Card Serviços Atrasados
+- [ ] Banner parcelas vencidas
+- [ ] FeatureGate inventory no alerta de estoque
+
 ---
 
 # ETAPA 6 — Acesso suspenso, erros centralizados e sessão

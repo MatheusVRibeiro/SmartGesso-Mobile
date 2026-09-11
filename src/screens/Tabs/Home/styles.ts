@@ -607,6 +607,139 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       fontWeight: '700',
       color: colors.primary,
     },
+
+    // ─── Seção Hoje — Timeline vertical (Linear/Notion style) ────────────
+    timelineSection: {
+      marginBottom: spacing.md,
+    },
+    timelineHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    timelineCard: {
+      backgroundColor: colors.surface,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+    },
+    timelineItem: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    timelineTimeCol: {
+      width: 54,
+      alignItems: 'flex-start',
+      paddingTop: 1,
+    },
+    timelineTime: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      fontVariant: ['tabular-nums'],
+      letterSpacing: 0.2,
+    },
+    timelineMarkerCol: {
+      width: 20,
+      alignItems: 'center',
+    },
+    timelineDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginTop: 4,
+    },
+    timelineDotVisit: {
+      backgroundColor: colors.warning,
+    },
+    timelineDotService: {
+      backgroundColor: colors.primary,
+    },
+    timelineDotFollowUp: {
+      backgroundColor: colors.primaryLight,
+    },
+    timelineLine: {
+      width: 2,
+      flex: 1,
+      borderRadius: 1,
+      backgroundColor: colors.border,
+      marginVertical: 2,
+    },
+    timelineContent: {
+      flex: 1,
+      paddingBottom: spacing.md,
+    },
+    timelineTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    timelineSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    timelineBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+      marginTop: 4,
+      gap: 4,
+    },
+
+    // ─── Alert banner — variante danger ──────────────────────────────────
+    alertBannerDanger: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(248, 113, 113, 0.15)' : 'rgba(220, 38, 38, 0.1)',
+      borderColor: isDark ? 'rgba(248, 113, 113, 0.4)' : 'rgba(220, 38, 38, 0.3)',
+      borderWidth: 1,
+      borderRadius: radius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    alertIconWrapperDanger: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(248, 113, 113, 0.2)' : 'rgba(220, 38, 38, 0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    alertTitleDanger: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.danger,
+    },
+    alertSubtitleDanger: {
+      fontSize: 11,
+      color: colors.danger,
+      marginTop: 1,
+      opacity: 0.85,
+    },
+
+    // ─── KPI card — variante danger ──────────────────────────────────────
+    kpiCardDanger: {
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(248, 113, 113, 0.25)' : 'rgba(220, 38, 38, 0.18)',
+    },
+    kpiIconBadgeDanger: {
+      width: 24,
+      height: 24,
+      borderRadius: radius.full,
+      backgroundColor: colors.dangerSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
   });
 
 // Fallback estático para compatibilidade com import direto de `styles`
