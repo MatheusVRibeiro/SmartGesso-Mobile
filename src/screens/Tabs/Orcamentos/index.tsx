@@ -416,14 +416,14 @@ export default function OrcamentosScreen() {
             <View style={styles.titleIconBadge}>
               <Ionicons name="receipt-outline" size={20} color={colors.primary} />
             </View>
-            <View>
+            <View style={styles.titleTextWrap}>
               <View style={styles.titleRow}>
                 <Text style={styles.title}>Orçamentos</Text>
                 <View style={styles.countBadge}>
                   <Text style={styles.countBadgeText}>{metrics.totalGeral}</Text>
                 </View>
               </View>
-              <Text style={styles.subtitle}>Propostas e negociações comerciais</Text>
+              <Text style={styles.subtitle} numberOfLines={1}>Propostas e negociações comerciais</Text>
             </View>
           </View>
 

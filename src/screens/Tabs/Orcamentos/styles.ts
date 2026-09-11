@@ -18,6 +18,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: 10,
       paddingBottom: 10,
     },
     titleSection: {
@@ -25,6 +26,11 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       alignItems: 'center',
       gap: 10,
       flex: 1,
+      minWidth: 0,
+    },
+    titleTextWrap: {
+      flex: 1,
+      minWidth: 0,
     },
     titleIconBadge: {
       width: 38,
@@ -71,6 +77,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       marginBottom: 10,
     },
     addButton: {
+      flexShrink: 0,
       height: 36,
       borderRadius: radius.full,
       paddingHorizontal: 14,
