@@ -12,19 +12,22 @@
  * (app/_layout.tsx). Retorna uma função de cleanup que remove os listeners.
  */
 import { router, type Href } from 'expo-router';
-import * as Notifications from 'expo-notifications';
-import type { EventSubscription } from 'expo-modules-core';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 import { queryClient } from '../../lib/queryClient';
 import { useSessionStore } from '../../store/useSessionStore';
+
+const isExpoGoAndroid =
+  Platform.OS === 'android' &&
+  (Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+    Constants.appOwnership === 'expo');
 
 /**
  * Extrai a rota de destino do payload da notificação.
  * Aceita `data.route` como string (ex.: "/(app)/orcamentos") e a devolve
  * como `Href` para o expo-router. Retorna `null` quando não há rota.
  */
-function extractRoute(response: Notifications.NotificationResponse): Href | null {
-  // expo-notifications v57+: Notification = { date, request }, os dados
-  // enviados pelo servidor ficam em `request.content.data`.
+function extractRoute(response: any): Href | null {
   const data = response?.notification?.request?.content?.data;
   if (!data) return null;
   const route = data.route;
@@ -35,23 +38,27 @@ function extractRoute(response: Notifications.NotificationResponse): Href | null
 }
 
 /**
- * Registra os listeners de notificação push.
+ * Registra os listeners de notificação push de forma segura.
  *
  * @returns Função de cleanup que remove os listeners (para testes/unmount).
  */
 export function setupNotificationHandler(): () => void {
-  // Toque na notificação → navega para a rota indicada em data.route.
-  const responseSubscription: EventSubscription =
-    Notifications.addNotificationResponseReceivedListener((response) => {
+  // No Expo Go no Android, expo-notifications explode com erro de remoção de push no SDK 53+
+  if (isExpoGoAndroid) {
+    return () => {};
+  }
+
+  try {
+    const Notifications = require('expo-notifications');
+
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const route = extractRoute(response);
       if (route) {
         router.push(route);
       }
     });
 
-  // Notificação em foreground → atualiza a lista de notificações.
-  const receivedSubscription: EventSubscription =
-    Notifications.addNotificationReceivedListener(() => {
+    const receivedSubscription = Notifications.addNotificationReceivedListener(() => {
       const companyId = useSessionStore.getState().activeCompany?.company?.id;
       if (companyId) {
         queryClient.invalidateQueries({
@@ -60,8 +67,11 @@ export function setupNotificationHandler(): () => void {
       }
     });
 
-  return () => {
-    responseSubscription.remove();
-    receivedSubscription.remove();
-  };
+    return () => {
+      responseSubscription.remove();
+      receivedSubscription.remove();
+    };
+  } catch {
+    return () => {};
+  }
 }
