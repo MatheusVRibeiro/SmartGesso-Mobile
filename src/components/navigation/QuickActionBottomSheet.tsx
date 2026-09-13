@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -85,6 +86,8 @@ export interface QuickActionBottomSheetProps {
 export function QuickActionBottomSheet({ visible, onClose }: QuickActionBottomSheetProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isWideLayout = width > 600;
   const { colors, isDark } = useAppTheme();
   const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const iconColor = isDark ? '#818CF8' : colors.primary;
@@ -137,6 +140,7 @@ export function QuickActionBottomSheet({ visible, onClose }: QuickActionBottomSh
         <Animated.View
           style={[
             styles.sheet,
+            isWideLayout && styles.sheetWide,
             {
               paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl),
               transform: [{ translateY: slideAnim }],
@@ -219,6 +223,10 @@ const createStyles = (colors: ActivePalette, isDark: boolean) =>
       shadowOpacity: isDark ? 0.4 : 0.1,
       shadowRadius: 16,
       elevation: 20,
+    },
+    sheetWide: {
+      alignSelf: 'center',
+      maxWidth: 560,
     },
     indicator: {
       width: 40,
