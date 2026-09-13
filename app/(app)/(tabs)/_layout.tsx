@@ -50,6 +50,7 @@ export default function TabsLayout() {
           options={{
             title: 'Início',
             headerShown: false,
+            tabBarAccessibilityLabel: 'Início — painel do dia',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'home' : 'home-outline'}
@@ -64,6 +65,7 @@ export default function TabsLayout() {
           options={{
             title: 'Orçamentos',
             headerShown: false,
+            tabBarAccessibilityLabel: 'Orçamentos — lista e filtros',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'document-text' : 'document-text-outline'}
@@ -78,6 +80,7 @@ export default function TabsLayout() {
           options={{
             title: 'Novo',
             headerShown: false,
+            tabBarAccessibilityLabel: 'Novo orçamento ou ação rápida',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'add-circle' : 'add-circle-outline'}
@@ -98,6 +101,7 @@ export default function TabsLayout() {
           options={{
             title: 'Serviços',
             headerShown: false,
+            tabBarAccessibilityLabel: 'Serviços — ordens de serviço',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'hammer' : 'hammer-outline'}
@@ -112,6 +116,7 @@ export default function TabsLayout() {
           options={{
             title: 'Mais',
             headerShown: false,
+            tabBarAccessibilityLabel: 'Mais — menu completo de funcionalidades',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'grid' : 'grid-outline'}

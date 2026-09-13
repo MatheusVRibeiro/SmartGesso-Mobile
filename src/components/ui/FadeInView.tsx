@@ -1,5 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleProp, ViewStyle } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 
 export interface FadeInViewProps {
   children: React.ReactNode;
@@ -27,8 +32,32 @@ export function FadeInView({
 }: FadeInViewProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translate = useRef(new Animated.Value(translateY)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
+    try {
+      Promise.resolve(AccessibilityInfo.isReduceMotionEnabled())
+        .then((value) => {
+          if (typeof value === 'boolean') setReduceMotion(value);
+        })
+        .catch(() => {});
+      const subscription = AccessibilityInfo.addEventListener?.(
+        'reduceMotionChanged',
+        setReduceMotion,
+      );
+      return () => subscription?.remove?.();
+    } catch {
+      return undefined;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      // Reduce Motion ativo: conteúdo visível imediatamente, sem animação.
+      opacity.setValue(1);
+      translate.setValue(0);
+      return undefined;
+    }
     const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
@@ -45,7 +74,7 @@ export function FadeInView({
     ]);
     animation.start();
     return () => animation.stop();
-  }, [opacity, translate, duration, delay]);
+  }, [reduceMotion, opacity, translate, duration, delay]);
 
   return (
     <Animated.View

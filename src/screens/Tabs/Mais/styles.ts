@@ -85,7 +85,7 @@ export const createMaisStyles = (colors: ActivePalette, isDark: boolean) =>
     badgeText: {
       fontSize: typography.sizes.xs,
       fontWeight: typography.weights.bold,
-      color: '#FFFFFF',
+      color: colors.white,
     },
     logoutIcon: {
       backgroundColor: colors.dangerSoft,

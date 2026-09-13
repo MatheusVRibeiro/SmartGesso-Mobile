@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
   ScrollView,
   Share,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,15 +16,16 @@ import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '@/src/components/ui/AppCard';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
-import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { toApiError } from '@/src/services/api/client';
 import { quotesService } from '@/src/services/api/quotes';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
-import { radius, sizes } from '@/src/theme';
+import { colors as defaultColors, radius, sizes } from '@/src/theme';
 import { formatCurrency, formatQuoteCode } from '@/src/utils/format';
 import { toArray } from '@/src/utils/toArray';
+import { useDebouncedValue } from '@/src/hooks/useDebouncedValue';
 import type { QuotePaymentMethod, QuoteStatus, QuoteSummary } from '@/src/types/quote';
 import { createOrcamentosStyles } from './styles';
 
@@ -76,61 +78,62 @@ const STATUS_VISUAL: Record<
   RASCUNHO: {
     label: 'Rascunho',
     bg: 'rgba(100, 116, 139, 0.14)',
-    text: '#94A3B8',
-    dot: '#64748B',
+    text: defaultColors.disabled,
+    dot: defaultColors.textSecondary,
   },
   PRONTO_PARA_ENVIAR: {
     label: 'Pronto',
     bg: 'rgba(59, 130, 246, 0.14)',
-    text: '#60A5FA',
-    dot: '#3B82F6',
+    text: defaultColors.secondaryLight,
+    dot: defaultColors.primaryLight,
   },
   ENVIADO: {
     label: 'Enviado',
     bg: 'rgba(245, 158, 11, 0.14)',
-    text: '#FBBF24',
-    dot: '#F59E0B',
+    text: defaultColors.warningLight,
+    dot: defaultColors.warning,
   },
   AGUARDANDO_APROVACAO: {
     label: 'Aguardando',
     bg: 'rgba(245, 158, 11, 0.14)',
-    text: '#FBBF24',
-    dot: '#F59E0B',
+    text: defaultColors.warningLight,
+    dot: defaultColors.warning,
   },
   APROVADO: {
     label: 'Aprovado',
     bg: 'rgba(16, 185, 129, 0.14)',
-    text: '#34D399',
-    dot: '#10B981',
+    text: defaultColors.chartSuccess,
+    dot: defaultColors.success,
   },
   REJEITADO: {
     label: 'Recusado',
     bg: 'rgba(239, 68, 68, 0.14)',
-    text: '#F87171',
-    dot: '#EF4444',
+    text: defaultColors.dangerLight,
+    dot: defaultColors.dangerBright,
   },
   VENCIDO: {
     label: 'Vencido',
     bg: 'rgba(239, 68, 68, 0.14)',
-    text: '#F87171',
-    dot: '#EF4444',
+    text: defaultColors.dangerLight,
+    dot: defaultColors.dangerBright,
   },
   CANCELADO: {
     label: 'Cancelado',
     bg: 'rgba(148, 163, 184, 0.14)',
-    text: '#94A3B8',
-    dot: '#64748B',
+    text: defaultColors.disabled,
+    dot: defaultColors.textSecondary,
   },
 };
 
 interface QuoteCardProps {
   quote: QuoteSummary;
-  onPress: () => void;
+  /** Callback estável (recebe o id) — permite React.memo sem re-render por tecla. */
+  onPress: (quoteId: string) => void;
   styles: ReturnType<typeof createOrcamentosStyles>;
   colors: any;
 }
 
-function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
+const QuoteCard = React.memo(function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
   const expired = isQuoteExpired(quote);
   const statusCfg = expired ? STATUS_VISUAL.VENCIDO : STATUS_VISUAL[quote.status];
 
@@ -166,7 +169,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
         url,
       });
     } catch {
-      onPress();
+      onPress(quote.id);
     }
   };
 
@@ -177,7 +180,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Ver orçamento ${formatQuoteCode(quote.quoteNumber)} versão ${quote.version} de ${quote.client?.name ?? 'cliente não informado'}, status ${statusCfg.label}, total ${formatCurrency(quote.total)}`}
-          onPress={onPress}
+          onPress={() => onPress(quote.id)}
           style={({ pressed }) => [
             styles.cardTopRow,
             pressed && { opacity: 0.75 },
@@ -227,7 +230,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Total do orçamento: ${formatCurrency(quote.total)}`}
-            onPress={onPress}
+            onPress={() => onPress(quote.id)}
             style={({ pressed }) => [
               styles.valueGroup,
               pressed && { opacity: 0.75 },
@@ -252,7 +255,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
               accessibilityRole="button"
               accessibilityLabel={`Enviar orçamento ${formatQuoteCode(quote.quoteNumber)} por WhatsApp`}
             >
-              <Ionicons name="logo-whatsapp" size={15} color="#25D366" />
+              <Ionicons name="logo-whatsapp" size={15} color={defaultColors.whatsapp} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -267,7 +270,7 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
 
             <TouchableOpacity
               style={styles.detailsBtn}
-              onPress={onPress}
+              onPress={() => onPress(quote.id)}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Ver detalhes do orçamento"
@@ -279,7 +282,67 @@ function QuoteCard({ quote, onPress, styles, colors }: QuoteCardProps) {
       </View>
     </AppCard>
   );
+});
+
+// ─── Skeleton de carregamento (Fase 4 — impeccable: substitui spinner) ──────
+
+function QuoteCardSkeleton({ colors }: { colors: any }) {
+  return (
+    <View style={[skeletonStyles.card, { backgroundColor: colors.card }]}>
+      {/* Linha superior: avatar + nome/código + pill de status */}
+      <View style={skeletonStyles.topRow}>
+        <Skeleton width={40} height={40} radius={radius.full} />
+        <View style={skeletonStyles.lines}>
+          <Skeleton width="55%" height={14} />
+          <Skeleton width="38%" height={11} />
+        </View>
+        <Skeleton width={84} height={24} radius={radius.full} />
+      </View>
+      {/* Linha inferior: valor + ações rápidas */}
+      <View style={skeletonStyles.bottomRow}>
+        <Skeleton width={110} height={18} radius={radius.sm} />
+        <Skeleton width={96} height={30} radius={radius.sm} />
+      </View>
+    </View>
+  );
 }
+
+function QuotesListSkeleton({ colors }: { colors: any }) {
+  return (
+    <View style={skeletonStyles.list}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <QuoteCardSkeleton key={i} colors={colors} />
+      ))}
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    borderRadius: radius.lg,
+    padding: 12,
+    gap: 8,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  lines: {
+    flex: 1,
+    gap: 8,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  list: {
+    paddingHorizontal: sizes.screenPadding,
+    paddingTop: 4,
+    gap: 12,
+  },
+});
 
 type FilterType = 'TODOS' | 'RASCUNHO' | 'ENVIADO' | 'APROVADO' | 'RECUSADO';
 type SortType = 'RECENTES' | 'MAIOR_VALOR' | 'MENOR_VALOR';
@@ -292,6 +355,8 @@ export default function OrcamentosScreen() {
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounce da busca (P0 audit impeccable): evita refiltrar a lista a cada tecla
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const [sortOrder, setSortOrder] = useState<SortType>('RECENTES');
 
   const {
@@ -360,6 +425,8 @@ export default function OrcamentosScreen() {
   // Filtragem e Ordenação
   const filteredQuotes = useMemo(() => {
     const list = toArray<QuoteSummary>(quotes);
+    // Pré-computa a query uma vez (não por item) — lowercase fica barato
+    const query = debouncedSearch.trim().toLowerCase();
     const filtered = list.filter((q) => {
       const matchFilter =
         selectedFilter === 'TODOS' ||
@@ -369,11 +436,11 @@ export default function OrcamentosScreen() {
         (selectedFilter === 'RECUSADO' && (q.status === 'REJEITADO' || q.status === 'CANCELADO' || isQuoteExpired(q)));
 
       const matchSearch =
-        !searchQuery.trim() ||
-        q.client?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        String(q.quoteNumber).includes(searchQuery) ||
-        formatQuoteCode(q.quoteNumber).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (q.work?.name && q.work.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        !query ||
+        q.client?.name?.toLowerCase().includes(query) ||
+        String(q.quoteNumber).includes(query) ||
+        formatQuoteCode(q.quoteNumber).toLowerCase().includes(query) ||
+        (q.work?.name && q.work.name.toLowerCase().includes(query));
 
       return matchFilter && matchSearch;
     });
@@ -391,13 +458,21 @@ export default function OrcamentosScreen() {
       if (dateA !== dateB) return dateB - dateA;
       return (b.quoteNumber || 0) - (a.quoteNumber || 0);
     });
-  }, [quotes, selectedFilter, searchQuery, sortOrder]);
+  }, [quotes, selectedFilter, debouncedSearch, sortOrder]);
 
   const cycleSortOrder = () => {
     if (sortOrder === 'RECENTES') setSortOrder('MAIOR_VALOR');
     else if (sortOrder === 'MAIOR_VALOR') setSortOrder('MENOR_VALOR');
     else setSortOrder('RECENTES');
   };
+
+  // Navegação estável — referência fixa p/ React.memo do QuoteCard (sem re-render por tecla)
+  const openQuote = useCallback(
+    (quoteId: string) => {
+      router.push(`/orcamentos/${quoteId}`);
+    },
+    [router],
+  );
 
   const sortLabelMap: Record<SortType, string> = {
     RECENTES: 'Recentes',
@@ -434,7 +509,7 @@ export default function OrcamentosScreen() {
             accessibilityRole="button"
             accessibilityLabel="Criar novo orçamento"
           >
-            <Ionicons name="add" size={17} color="#FFFFFF" />
+            <Ionicons name="add" size={17} color={colors.white} />
             <Text style={styles.addButtonText}>Novo</Text>
           </TouchableOpacity>
         </View>
@@ -460,13 +535,13 @@ export default function OrcamentosScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Filtrar orçamentos em negociação, ${metrics.countNegociacao} em aberto, total ${formatCurrency(metrics.totalNegociacao)}`}
             >
-              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF' }]}>
-                <Ionicons name="trending-up" size={14} color="#3B82F6" />
+              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : colors.primarySoft }]}>
+                <Ionicons name="trending-up" size={14} color={colors.primaryLight} />
               </View>
               <View style={styles.kpiContent}>
                 <View style={styles.kpiLabelRow}>
                   <Text style={styles.kpiLabel}>Aberto</Text>
-                  <Text style={[styles.kpiBadge, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE', color: '#3B82F6' }]}>
+                  <Text style={[styles.kpiBadge, { backgroundColor: colors.primaryBadge, color: colors.primaryLight }]}>
                     {metrics.countNegociacao}
                   </Text>
                 </View>
@@ -485,17 +560,17 @@ export default function OrcamentosScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Filtrar orçamentos aprovados, ${metrics.countAprovado} aprovados, total ${formatCurrency(metrics.totalAprovado)}`}
             >
-              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5' }]}>
-                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : colors.successSoft }]}>
+                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
               </View>
               <View style={styles.kpiContent}>
                 <View style={styles.kpiLabelRow}>
                   <Text style={styles.kpiLabel}>Aprovado</Text>
-                  <Text style={[styles.kpiBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5', color: '#10B981' }]}>
+                  <Text style={[styles.kpiBadge, { backgroundColor: colors.successBadge, color: colors.success }]}>
                     {metrics.countAprovado}
                   </Text>
                 </View>
-                <Text style={[styles.kpiValue, { color: '#10B981' }]} numberOfLines={1}>{formatCurrency(metrics.totalAprovado)}</Text>
+                <Text style={[styles.kpiValue, { color: colors.success }]} numberOfLines={1}>{formatCurrency(metrics.totalAprovado)}</Text>
               </View>
             </TouchableOpacity>
 
@@ -510,13 +585,13 @@ export default function OrcamentosScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Filtrar orçamentos aguardando resposta, ${metrics.countAguardando === 1 ? '1 proposta' : `${metrics.countAguardando} propostas`} aguardando`}
             >
-              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FFFBEB' }]}>
-                <Ionicons name="time" size={14} color="#F59E0B" />
+              <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : colors.warningSoft }]}>
+                <Ionicons name="time" size={14} color={colors.warning} />
               </View>
               <View style={styles.kpiContent}>
                 <View style={styles.kpiLabelRow}>
                   <Text style={styles.kpiLabel}>Aguardando</Text>
-                  <Text style={[styles.kpiBadge, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7', color: '#D97706' }]}>
+                  <Text style={[styles.kpiBadge, { backgroundColor: colors.warningBadge, color: colors.warning }]}>
                     {metrics.countAguardando}
                   </Text>
                 </View>
@@ -629,7 +704,7 @@ export default function OrcamentosScreen() {
 
       {/* Conteúdo Principal / Lista de Alta Densidade */}
       {isLoading ? (
-        <LoadingState text="Carregando orçamentos..." />
+        <QuotesListSkeleton colors={colors} />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : filteredQuotes.length === 0 ? (
@@ -651,7 +726,7 @@ export default function OrcamentosScreen() {
           renderItem={({ item }) => (
             <QuoteCard
               quote={item}
-              onPress={() => router.push(`/orcamentos/${item.id}`)}
+              onPress={openQuote}
               styles={styles}
               colors={colors}
             />

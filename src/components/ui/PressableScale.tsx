@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
   Pressable,
   StyleProp,
@@ -32,8 +33,31 @@ export function PressableScale({
   scaleTo = 0.97,
 }: PressableScaleProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    try {
+      Promise.resolve(AccessibilityInfo.isReduceMotionEnabled())
+        .then((value) => {
+          if (typeof value === 'boolean') setReduceMotion(value);
+        })
+        .catch(() => {});
+      const subscription = AccessibilityInfo.addEventListener?.(
+        'reduceMotionChanged',
+        setReduceMotion,
+      );
+      return () => subscription?.remove?.();
+    } catch {
+      return undefined;
+    }
+  }, []);
 
   const animateTo = (value: number) => {
+    if (reduceMotion) {
+      // Reduce Motion ativo: sem animação de scale, toque funciona normal.
+      scale.setValue(1);
+      return;
+    }
     Animated.spring(scale, {
       toValue: value,
       useNativeDriver: true,
