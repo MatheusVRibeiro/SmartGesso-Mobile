@@ -40,6 +40,11 @@ export interface AppInputProps {
   multiline?: boolean;
   /** Número de linhas visíveis quando `multiline` (default: 3). */
   numberOfLines?: number;
+  /**
+   * Largura relativa do campo dentro de um container row (default: 'full').
+   * 'half' → base 48% com flexGrow; 'third' → base 31% com flexGrow.
+   */
+  width?: 'full' | 'half' | 'third';
   style?: ViewStyle;
   inputStyle?: ViewStyle;
   testID?: string;
@@ -68,6 +73,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
     rightAccessory,
     multiline = false,
     numberOfLines = 3,
+    width = 'full',
     style,
     inputStyle,
     testID,
@@ -79,7 +85,7 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
   const hasError = Boolean(error);
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style, WIDTH_STYLES[width]]}>
       {label ? (
         <Text style={[styles.label, { color: colors.textSecondary }]}>
           {label}
@@ -146,6 +152,17 @@ const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
 
 export default AppInput;
 export { AppInput };
+
+// Largura relativa do campo dentro de um container row (tablet/expanded).
+// 'full' não adiciona estilo → comportamento atual (100% do container).
+const WIDTH_STYLES: Record<
+  NonNullable<AppInputProps['width']>,
+  ViewStyle | undefined
+> = {
+  full: undefined,
+  half: { flexGrow: 1, flexBasis: '48%' },
+  third: { flexGrow: 1, flexBasis: '31%' },
+};
 
 const styles = StyleSheet.create({
   container: {

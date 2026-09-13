@@ -61,4 +61,23 @@ describe('AppButton', () => {
     await render(<AppButton title="Grande" size="lg" onPress={() => {}} />);
     expect(screen.getByText('Grande')).toBeTruthy();
   });
+
+  it('aplica maxWidth no style do botão quando fornecido', async () => {
+    await render(<AppButton title="Limitado" maxWidth={360} testID="btn-limited" onPress={() => {}} />);
+    const style = screen.getByTestId('btn-limited').props.style;
+    const flattened = Array.isArray(style) ? style : [style];
+    expect(flattened).toEqual(
+      expect.arrayContaining([expect.objectContaining({ maxWidth: 360 })])
+    );
+  });
+
+  it('não aplica maxWidth quando a prop não é fornecida', async () => {
+    await render(<AppButton title="Livre" testID="btn-free" onPress={() => {}} />);
+    const style = screen.getByTestId('btn-free').props.style;
+    const flattened = Array.isArray(style) ? style : [style];
+    const hasMaxWidth = flattened.some(
+      (s: any) => s && typeof s === 'object' && 'maxWidth' in s
+    );
+    expect(hasMaxWidth).toBe(false);
+  });
 });

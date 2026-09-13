@@ -67,4 +67,36 @@ describe('AppInput', () => {
     await render(<AppInput label="Campo" value="" onChangeText={() => {}} />);
     expect(screen.getByDisplayValue('')).toBeTruthy();
   });
+
+  it('width "full" (default) não adiciona estilo de largura ao container', async () => {
+    const result = await render(<AppInput label="A" value="" onChangeText={() => {}} />);
+    const style = result.root!.props.style;
+    const flattened = (Array.isArray(style) ? style : [style]).filter(Boolean);
+    const hasFlexBasis = flattened.some((s: any) => 'flexBasis' in s);
+    expect(hasFlexBasis).toBe(false);
+  });
+
+  it('width "half" aplica flexGrow com base 48% no container', async () => {
+    const result = await render(
+      <AppInput label="UF" value="" onChangeText={() => {}} width="half" />
+    );
+    const container = result.root!;
+    const style = container.props.style;
+    const flattened = (Array.isArray(style) ? style : [style]).filter(Boolean);
+    expect(flattened).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flexGrow: 1, flexBasis: '48%' })])
+    );
+  });
+
+  it('width "third" aplica flexGrow com base 31% no container', async () => {
+    const result = await render(
+      <AppInput label="CEP" value="" onChangeText={() => {}} width="third" />
+    );
+    const container = result.root!;
+    const style = container.props.style;
+    const flattened = (Array.isArray(style) ? style : [style]).filter(Boolean);
+    expect(flattened).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flexGrow: 1, flexBasis: '31%' })])
+    );
+  });
 });

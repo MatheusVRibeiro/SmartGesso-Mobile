@@ -27,6 +27,8 @@ export interface AppButtonProps {
   loading?: boolean;
   disabled?: boolean;
   accessibilityLabel?: string;
+  /** Limite opcional de largura do botão (ex.: 360 no expanded/tablet). */
+  maxWidth?: number;
   style?: ViewStyle;
   testID?: string;
 }
@@ -79,6 +81,7 @@ function AppButton({
   loading = false,
   disabled = false,
   accessibilityLabel,
+  maxWidth,
   style,
   testID,
 }: AppButtonProps) {
@@ -103,6 +106,7 @@ function AppButton({
           styles.base,
           VARIANT_STYLES[variant],
           SIZE_STYLES[size],
+          maxWidth != null && { maxWidth },
           isDisabled && styles.disabled,
           pressed && !isDisabled && styles.pressed,
           pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
