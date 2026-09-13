@@ -42,7 +42,7 @@ export const createNovoStyles = (colors: ActivePalette, isDark: boolean) =>
       width: 56,
       height: 56,
       borderRadius: 14,
-      backgroundColor: isDark ? '#1C1F28' : 'rgba(99, 102, 241, 0.08)',
+      backgroundColor: isDark ? colors.surfaceRaised : 'rgba(99, 102, 241, 0.08)',
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(99, 102, 241, 0.15)',
       alignItems: 'center',

@@ -51,7 +51,7 @@ export const createCatalogoStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.textSecondary,
     },
     tabPillTextActive: {
-      color: colors.textOnPrimary ?? '#FFFFFF',
+      color: colors.textOnPrimary,
       fontWeight: typography.weights.semibold,
     },
     badgeCount: {
@@ -69,7 +69,7 @@ export const createCatalogoStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.textSecondary,
     },
     badgeCountTextActive: {
-      color: colors.textOnPrimary ?? '#FFFFFF',
+      color: colors.textOnPrimary,
     },
     cardsContainer: {
       gap: spacing.md,

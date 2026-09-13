@@ -30,9 +30,9 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       width: 38,
       height: 38,
       borderRadius: 11,
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      backgroundColor: isDark ? colors.statusOsInfoBg : colors.primarySoft,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
+      borderColor: colors.statusOsInfoBg,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -150,7 +150,7 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.textSecondary,
     },
     filterChipTextActive: {
-      color: '#FFFFFF',
+      color: colors.white,
       fontWeight: '700',
     },
     filterBadge: {
@@ -168,7 +168,7 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.textSecondary,
     },
     filterBadgeTextActive: {
-      color: '#FFFFFF',
+      color: colors.white,
     },
 
     // Lista de OS
@@ -210,9 +210,9 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+      backgroundColor: isDark ? colors.avatarBackground : colors.primarySoft,
       borderWidth: 1,
-      borderColor: isDark ? '#334155' : '#DBEAFE',
+      borderColor: colors.avatarBorder,
     },
     avatarText: {
       fontSize: 13,
@@ -236,7 +236,7 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       marginTop: 2,
     },
     codeBadge: {
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      backgroundColor: isDark ? colors.statusOsInfoBg : colors.primarySoft,
       paddingHorizontal: 5,
       paddingVertical: 1,
       borderRadius: radius.sm,
@@ -347,7 +347,7 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       justifyContent: 'center',
     },
     whatsappBtn: {
-      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7',
+      backgroundColor: isDark ? colors.statusOsSuccessBg : colors.successBadge,
     },
     detailsBtn: {
       width: 24,

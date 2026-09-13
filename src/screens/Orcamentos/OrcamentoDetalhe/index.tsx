@@ -619,7 +619,7 @@ export default function OrcamentoDetalheScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Aprovar orçamento"
                     >
-                      <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                      <Ionicons name="checkmark-circle" size={20} color={colors.white} />
                       <Text style={styles.approveButtonText}>Aprovar proposta</Text>
                     </TouchableOpacity>
                   )}
@@ -629,9 +629,9 @@ export default function OrcamentoDetalheScreen() {
                       style={[
                         styles.approveButton,
                         {
-                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : colors.editActionBg,
                           borderWidth: 1,
-                          borderColor: isDark ? '#3B82F6' : '#2563EB',
+                          borderColor: isDark ? colors.editActionBorder : colors.editActionBorder,
                         },
                       ]}
                       onPress={() =>
@@ -644,11 +644,11 @@ export default function OrcamentoDetalheScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Editar orçamento"
                     >
-                      <Ionicons name="create-outline" size={20} color={isDark ? '#60A5FA' : '#1D4ED8'} />
+                      <Ionicons name="create-outline" size={20} color={isDark ? colors.editActionText : colors.editActionText} />
                       <Text
                         style={[
                           styles.approveButtonText,
-                          { color: isDark ? '#60A5FA' : '#1D4ED8' },
+                          { color: isDark ? colors.editActionText : colors.editActionText },
                         ]}
                       >
                         Editar proposta
@@ -663,7 +663,7 @@ export default function OrcamentoDetalheScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Enviar orçamento por WhatsApp"
                   >
-                    <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+                    <Ionicons name="logo-whatsapp" size={20} color={colors.white} />
                     <Text style={styles.whatsAppButtonText}>Enviar por WhatsApp</Text>
                   </TouchableOpacity>
 
@@ -675,7 +675,7 @@ export default function OrcamentoDetalheScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Enviar mensagem de lembrete por WhatsApp"
                     >
-                      <Ionicons name="chatbubble-ellipses-outline" size={17} color={isDark ? '#34D399' : '#059669'} />
+                      <Ionicons name="chatbubble-ellipses-outline" size={17} color={isDark ? colors.followUpText : colors.followUpText} />
                       <Text style={styles.followUpWhatsAppText}>Lembrar cliente no WhatsApp</Text>
                     </TouchableOpacity>
                   )}
@@ -689,7 +689,7 @@ export default function OrcamentoDetalheScreen() {
                       accessibilityLabel="Duplicar orçamento vencido e atualizar"
                       disabled={duplicateMutation.isPending}
                     >
-                      <Ionicons name="refresh-outline" size={19} color="#FFFFFF" />
+                      <Ionicons name="refresh-outline" size={19} color={colors.white} />
                       <Text style={styles.approveButtonText}>Duplicar e atualizar</Text>
                     </TouchableOpacity>
                   )}

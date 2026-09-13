@@ -71,7 +71,7 @@ export const createDespesasStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.textSecondary,
     },
     filterChipTextActive: {
-      color: colors.textOnPrimary ?? '#FFFFFF',
+      color: colors.textOnPrimary,
     },
     searchWrapper: {
       paddingHorizontal: sizes.screenPadding,

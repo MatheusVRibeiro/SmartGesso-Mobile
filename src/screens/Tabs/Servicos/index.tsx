@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Linking,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,16 +16,18 @@ import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '@/src/components/ui/AppCard';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
-import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { toApiError } from '@/src/services/api/client';
 import { serviceOrdersService } from '@/src/services/api/serviceOrders';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
-import { radius } from '@/src/theme';
+import { radius, sizes } from '@/src/theme';
+import type { Colors } from '@/src/theme';
 import { formatCurrency, formatQuoteCode } from '@/src/utils/format';
 import { formatDateBr } from '@/src/utils/date';
 import { toArray } from '@/src/utils/toArray';
+import { useDebouncedValue } from '@/src/hooks/useDebouncedValue';
 import type { ServiceOrder, ServiceOrderStatus } from '@/src/types/serviceOrder';
 import { createServicosStyles } from './styles';
 
@@ -37,49 +40,49 @@ interface StatusVisualConfig {
   label: string;
 }
 
-function getStatusVisual(status: ServiceOrderStatus, isDark: boolean): StatusVisualConfig {
+function getStatusVisual(status: ServiceOrderStatus, colors: Colors): StatusVisualConfig {
   switch (status) {
     case 'PENDENTE':
       return {
-        bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-        text: isDark ? '#FBBF24' : '#92400E',
-        dot: '#F59E0B',
+        bg: colors.statusOsWarningBg,
+        text: colors.statusOsWarningText,
+        dot: colors.warning,
         label: 'Pendente',
       };
     case 'EM_DESLOCAMENTO':
       return {
-        bg: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
-        text: isDark ? '#60A5FA' : '#1E40AF',
-        dot: '#3B82F6',
+        bg: colors.statusOsInfoBg,
+        text: colors.statusOsInfoText,
+        dot: colors.primaryLight,
         label: 'Deslocamento',
       };
     case 'EM_ANDAMENTO':
       return {
-        bg: isDark ? 'rgba(99, 102, 241, 0.15)' : '#E0E7FF',
-        text: isDark ? '#818CF8' : '#3730A3',
-        dot: '#6366F1',
+        bg: colors.statusOsProgressBg,
+        text: colors.statusOsProgressText,
+        dot: colors.primary,
         label: 'Em andamento',
       };
     case 'PAUSADA':
       return {
-        bg: isDark ? 'rgba(249, 115, 22, 0.15)' : '#FFEDD5',
-        text: isDark ? '#FB923C' : '#9A3412',
-        dot: '#F97316',
+        bg: colors.statusOsPausedBg,
+        text: colors.statusOsPausedText,
+        dot: colors.warning,
         label: 'Pausada',
       };
     case 'CONCLUIDA':
       return {
-        bg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5',
-        text: isDark ? '#34D399' : '#065F46',
-        dot: '#10B981',
+        bg: colors.statusOsSuccessBg,
+        text: colors.statusOsSuccessText,
+        dot: colors.success,
         label: 'Concluída',
       };
     case 'CANCELADA':
     default:
       return {
-        bg: isDark ? 'rgba(107, 114, 128, 0.15)' : '#F3F4F6',
-        text: isDark ? '#9CA3AF' : '#4B5563',
-        dot: '#9CA3AF',
+        bg: colors.statusOsNeutralBg,
+        text: colors.statusOsNeutralText,
+        dot: colors.statusOsNeutralText,
         label: 'Cancelada',
       };
   }
@@ -89,14 +92,15 @@ function getStatusVisual(status: ServiceOrderStatus, isDark: boolean): StatusVis
 
 interface ServiceOrderCardProps {
   order: ServiceOrder;
-  onPress: () => void;
+  /** Callback estável (recebe o id) — permite React.memo sem re-render por tecla. */
+  onPress: (orderId: string) => void;
   styles: ReturnType<typeof createServicosStyles>;
   colors: any;
   isDark: boolean;
 }
 
-function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrderCardProps) {
-  const statusCfg = getStatusVisual(order.status, isDark);
+const ServiceOrderCard = React.memo(function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrderCardProps) {
+  const statusCfg = getStatusVisual(order.status, colors);
 
   // Iniciais do cliente
   const clientInitials = useMemo(() => {
@@ -128,7 +132,7 @@ function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrd
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Ver ordem de serviço OS #${formatQuoteCode(order.code)} de ${order.client?.name ?? 'cliente não informado'}, status ${statusCfg.label}`}
-          onPress={onPress}
+          onPress={() => onPress(order.id)}
           style={({ pressed }) => [
             styles.cardTopRow,
             pressed && { opacity: 0.75 },
@@ -194,7 +198,7 @@ function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrd
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Valor do serviço: ${hasSaleValue ? formatCurrency(Number(order.saleValue)) : 'A definir'}`}
-            onPress={onPress}
+            onPress={() => onPress(order.id)}
             style={({ pressed }) => [
               styles.valueGroup,
               pressed && { opacity: 0.75 },
@@ -239,7 +243,7 @@ function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrd
 
             <TouchableOpacity
               style={styles.detailsBtn}
-              onPress={onPress}
+              onPress={() => onPress(order.id)}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Ver detalhes da ordem de serviço"
@@ -251,7 +255,67 @@ function ServiceOrderCard({ order, onPress, styles, colors, isDark }: ServiceOrd
       </View>
     </AppCard>
   );
+});
+
+// ─── Skeleton de carregamento (Fase 4 — impeccable: substitui spinner) ──────
+
+function ServiceOrderCardSkeleton({ colors }: { colors: any }) {
+  return (
+    <View style={[skeletonStyles.card, { backgroundColor: colors.card }]}>
+      {/* Linha superior: avatar + nome/código + pill de status */}
+      <View style={skeletonStyles.topRow}>
+        <Skeleton width={40} height={40} radius={radius.full} />
+        <View style={skeletonStyles.lines}>
+          <Skeleton width="55%" height={14} />
+          <Skeleton width="42%" height={11} />
+        </View>
+        <Skeleton width={84} height={24} radius={radius.full} />
+      </View>
+      {/* Linha inferior: valor + ações rápidas */}
+      <View style={skeletonStyles.bottomRow}>
+        <Skeleton width={110} height={18} radius={radius.sm} />
+        <Skeleton width={96} height={30} radius={radius.sm} />
+      </View>
+    </View>
+  );
 }
+
+function ServiceOrdersListSkeleton({ colors }: { colors: any }) {
+  return (
+    <View style={skeletonStyles.list}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <ServiceOrderCardSkeleton key={i} colors={colors} />
+      ))}
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    borderRadius: radius.lg,
+    padding: 12,
+    gap: 8,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  lines: {
+    flex: 1,
+    gap: 8,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  list: {
+    paddingHorizontal: sizes.screenPadding,
+    paddingTop: 4,
+    gap: 12,
+  },
+});
 
 // ─── Screen Principal ───────────────────────────────────────────────────────
 
@@ -265,6 +329,8 @@ export default function ServicosScreen() {
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('TODAS');
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounce da busca (P2 audit impeccable): evita refiltrar a lista a cada tecla
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   const {
     data: orders,
@@ -294,6 +360,7 @@ export default function ServicosScreen() {
 
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
+    const q = debouncedSearch.toLowerCase().trim();
     return orders.filter((o) => {
       const matchFilter =
         selectedFilter === 'TODAS' ||
@@ -303,7 +370,6 @@ export default function ServicosScreen() {
         (selectedFilter === 'PAUSADAS' && o.status === 'PAUSADA') ||
         (selectedFilter === 'CONCLUIDAS' && o.status === 'CONCLUIDA');
 
-      const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
         o.client?.name?.toLowerCase().includes(q) ||
@@ -313,7 +379,7 @@ export default function ServicosScreen() {
 
       return matchFilter && matchSearch;
     });
-  }, [orders, selectedFilter, searchQuery]);
+  }, [orders, selectedFilter, debouncedSearch]);
 
   const filterTabs: Array<{ key: FilterType; label: string; count: number }> = [
     { key: 'TODAS', label: 'Todas', count: metrics.total },
@@ -322,6 +388,14 @@ export default function ServicosScreen() {
     { key: 'PAUSADAS', label: 'Pausadas', count: metrics.pausadas },
     { key: 'CONCLUIDAS', label: 'Concluídas', count: metrics.concluidas },
   ];
+
+  // Navegação estável — referência fixa p/ React.memo do ServiceOrderCard (sem re-render por tecla)
+  const openServiceOrder = useCallback(
+    (orderId: string) => {
+      router.push(`/servicos/${orderId}`);
+    },
+    [router],
+  );
 
   return (
     <ScreenContainer padding={false} keyboard={false}>
@@ -352,7 +426,7 @@ export default function ServicosScreen() {
         {/* KPIs Slim no Topo */}
         <View style={styles.kpiStrip}>
           <View style={styles.kpiItem}>
-            <View style={[styles.kpiDot, { backgroundColor: '#3B82F6' }]} />
+            <View style={[styles.kpiDot, { backgroundColor: colors.primaryLight }]} />
             <View style={styles.kpiContent}>
               <Text style={styles.kpiCount}>{metrics.emAndamento}</Text>
               <Text style={styles.kpiLabel}>Em andamento</Text>
@@ -360,7 +434,7 @@ export default function ServicosScreen() {
           </View>
 
           <View style={styles.kpiItem}>
-            <View style={[styles.kpiDot, { backgroundColor: '#F59E0B' }]} />
+            <View style={[styles.kpiDot, { backgroundColor: colors.warning }]} />
             <View style={styles.kpiContent}>
               <Text style={styles.kpiCount}>{metrics.pendentes}</Text>
               <Text style={styles.kpiLabel}>Pendentes</Text>
@@ -368,7 +442,7 @@ export default function ServicosScreen() {
           </View>
 
           <View style={styles.kpiItem}>
-            <View style={[styles.kpiDot, { backgroundColor: '#10B981' }]} />
+            <View style={[styles.kpiDot, { backgroundColor: colors.success }]} />
             <View style={styles.kpiContent}>
               <Text style={styles.kpiCount}>{metrics.concluidas}</Text>
               <Text style={styles.kpiLabel}>Concluídas</Text>
@@ -436,7 +510,7 @@ export default function ServicosScreen() {
 
       {/* Conteúdo Principal */}
       {isLoading ? (
-        <LoadingState text="Carregando ordens de serviço..." />
+        <ServiceOrdersListSkeleton colors={colors} />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : filteredOrders.length === 0 ? (
@@ -458,7 +532,7 @@ export default function ServicosScreen() {
           renderItem={({ item }) => (
             <ServiceOrderCard
               order={item}
-              onPress={() => router.push(`/servicos/${item.id}`)}
+              onPress={openServiceOrder}
               styles={styles}
               colors={colors}
               isDark={isDark}

@@ -66,7 +66,7 @@ export default function NovoScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createNovoStyles(colors, isDark), [colors, isDark]);
-  const iconColor = isDark ? '#818CF8' : colors.primary;
+  const iconColor = colors.iconAccent;
 
   const handleAction = (action: QuickAction) => {
     if (action.route) {

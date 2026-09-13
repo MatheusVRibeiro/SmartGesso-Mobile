@@ -200,7 +200,7 @@ _Valores aproximados para orçamento prévio._`;
                     <Ionicons
                       name={app.icon}
                       size={24}
-                      color={isSelected ? '#FFFFFF' : colors.primary}
+                      color={isSelected ? colors.white : colors.primary}
                     />
                   </View>
                   <Text style={[styles.appLabel, isSelected && styles.appLabelSelected]}>

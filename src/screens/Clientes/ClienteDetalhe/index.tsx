@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCepLookup } from '@/src/hooks/useCepLookup';
 import { AppButton } from '@/src/components/ui/AppButton';
@@ -14,7 +14,7 @@ import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '@/src/components/ui/AppSnackbar';
 import { ConfirmDialog } from '@/src/components/ui/ConfirmDialog';
 import { ErrorState } from '@/src/components/ui/ErrorState';
-import { LoadingState } from '@/src/components/ui/LoadingState';
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { clientsService } from '@/src/services/api/clients';
 import { toApiError } from '@/src/services/api/client';
@@ -180,7 +180,13 @@ export default function ClienteDetailScreen() {
     return (
       <ScreenContainer padding keyboard={false}>
         <Stack.Screen options={{ title: 'Cliente' }} />
-        <LoadingState text="Carregando cliente..." />
+        {/* Skeleton loading (padronização — substitui spinner LoadingState) */}
+        <View style={{ gap: spacing.md }} testID="cliente-detalhe-skeleton">
+          <Skeleton height={20} />
+          <Skeleton height={20} width="80%" />
+          <Skeleton height={20} width="90%" />
+          <Skeleton height={20} width="60%" />
+        </View>
       </ScreenContainer>
     );
   }

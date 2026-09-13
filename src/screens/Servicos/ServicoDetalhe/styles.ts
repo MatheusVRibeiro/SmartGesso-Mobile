@@ -61,7 +61,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : colors.kpiBadgeDanger,
     },
 
     // ── Cockpit Card (Resumo Superior do Serviço) ──
@@ -89,7 +89,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       flexWrap: 'wrap',
     },
     osCodeBadge: {
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : colors.infoSoft,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: radius.sm,
@@ -138,9 +138,9 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+      backgroundColor: isDark ? colors.avatarBackground : colors.avatarBackground,
       borderWidth: 1,
-      borderColor: isDark ? '#334155' : '#DBEAFE',
+      borderColor: isDark ? colors.avatarBorder : colors.avatarBorder,
     },
     avatarText: {
       fontSize: 14,
@@ -179,13 +179,13 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       paddingVertical: 8,
       paddingHorizontal: 10,
       borderRadius: radius.md,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F8FAFC',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.background,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.border,
     },
     contactBtnWhatsApp: {
-      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.12)' : '#DCFCE7',
-      borderColor: isDark ? 'rgba(37, 211, 102, 0.25)' : '#BBF7D0',
+      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.12)' : colors.whatsappSoftBg,
+      borderColor: isDark ? 'rgba(37, 211, 102, 0.25)' : colors.whatsappSoftBorder,
     },
     contactBtnText: {
       fontSize: 12,
@@ -193,7 +193,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       color: colors.text,
     },
     contactBtnTextWhatsApp: {
-      color: isDark ? '#4ADE80' : '#15803D',
+      color: isDark ? colors.whatsappDotDark : colors.whatsappDotLight,
     },
 
     // Datas / Prazo compacto
@@ -222,7 +222,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       color: colors.text,
     },
     lateBadge: {
-      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : colors.kpiBadgeDanger,
       paddingHorizontal: 7,
       paddingVertical: 2,
       borderRadius: radius.sm,
@@ -238,7 +238,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       flexDirection: 'row',
       marginHorizontal: sizes.screenPadding,
       marginVertical: spacing.sm,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.divider,
       borderRadius: radius.md,
       padding: 3,
       gap: 3,
@@ -254,7 +254,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
     },
     tabItemActive: {
       backgroundColor: colors.surface,
-      shadowColor: '#000',
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.1,
       shadowRadius: 2,
@@ -278,7 +278,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
     tabBadgeText: {
       fontSize: 9,
       fontWeight: '800',
-      color: '#FFFFFF',
+      color: colors.white,
     },
 
     // Painéis de Abas
@@ -469,7 +469,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       borderRadius: 10,
     },
     accordionBadgeSuccess: {
-      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
+      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : colors.whatsappSoftBg,
     },
     accordionBadgeText: {
       fontSize: 11,
@@ -553,10 +553,10 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: radius.full,
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : colors.infoSoft,
     },
     etapaBadgeDone: {
-      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
+      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : colors.whatsappSoftBg,
     },
     etapaBadgeText: {
       fontSize: 10,
@@ -597,7 +597,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.md,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.divider,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -611,7 +611,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       color: colors.textSecondary,
     },
     producaoToggleButtonTextActive: {
-      color: '#FFFFFF',
+      color: colors.white,
     },
 
     // ── Fotos da Obra ──
@@ -847,7 +847,7 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : colors.avatarBackground,
     },
     materialInfo: {
       flex: 1,

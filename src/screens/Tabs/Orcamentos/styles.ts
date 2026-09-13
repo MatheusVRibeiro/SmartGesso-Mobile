@@ -36,9 +36,9 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       width: 38,
       height: 38,
       borderRadius: 11,
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : colors.primarySoft,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(59, 130, 246, 0.28)' : '#DBEAFE',
+      borderColor: isDark ? 'rgba(59, 130, 246, 0.28)' : colors.primaryBadge,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -57,9 +57,9 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       paddingHorizontal: 7,
       paddingVertical: 1.5,
       borderRadius: radius.full,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.divider,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0',
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : colors.border,
     },
     countBadgeText: {
       fontSize: 11,
@@ -73,7 +73,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
     },
     headerDivider: {
       height: 1,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.border,
       marginBottom: 10,
     },
     addButton: {
@@ -96,7 +96,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       } as any),
     },
     addButtonText: {
-      color: '#FFFFFF',
+      color: colors.white,
       fontSize: 13,
       fontWeight: '600',
     },
@@ -125,7 +125,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
     },
     kpiCardActive: {
       borderColor: colors.primary,
-      backgroundColor: isDark ? 'rgba(30, 64, 175, 0.2)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(30, 64, 175, 0.2)' : colors.primarySoft,
     },
     kpiIconWrap: {
       width: 30,
@@ -202,7 +202,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
     },
     sortButtonActive: {
       borderColor: colors.primary,
-      backgroundColor: isDark ? 'rgba(30, 64, 175, 0.12)' : '#EFF6FF',
+      backgroundColor: isDark ? 'rgba(30, 64, 175, 0.12)' : colors.primarySoft,
     },
     sortButtonText: {
       fontSize: 11,
@@ -237,7 +237,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       color: colors.textSecondary,
     },
     filterChipTextActive: {
-      color: '#FFFFFF',
+      color: colors.white,
     },
     filterChipBadge: {
       backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
@@ -254,7 +254,7 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       color: colors.textSecondary,
     },
     filterChipBadgeTextActive: {
-      color: '#FFFFFF',
+      color: colors.white,
     },
 
     // ── Lista e Cards de Alta Densidade ───────────────────────────
@@ -295,9 +295,9 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+      backgroundColor: colors.avatarBackground,
       borderWidth: 1,
-      borderColor: isDark ? '#334155' : '#DBEAFE',
+      borderColor: colors.avatarBorder,
     },
     avatarText: {
       fontSize: 13,

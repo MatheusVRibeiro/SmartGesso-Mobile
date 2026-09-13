@@ -53,12 +53,12 @@ const SERVICE_ORDER_STATUS_BADGE: Record<
   ServiceOrderStatus,
   { variant: StatusBadgeVariant; label: string; dotColor: string }
 > = {
-  PENDENTE: { variant: 'expired', label: 'Agendado', dotColor: '#3B82F6' },
-  EM_DESLOCAMENTO: { variant: 'info', label: 'Em deslocamento', dotColor: '#6366F1' },
-  EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento', dotColor: '#F59E0B' },
-  PAUSADA: { variant: 'suspended', label: 'Pausado', dotColor: '#F97316' },
-  CONCLUIDA: { variant: 'active', label: 'Concluído', dotColor: '#10B981' },
-  CANCELADA: { variant: 'cancelled', label: 'Cancelado', dotColor: '#EF4444' },
+  PENDENTE: { variant: 'expired', label: 'Agendado', dotColor: colors.info },
+  EM_DESLOCAMENTO: { variant: 'info', label: 'Em deslocamento', dotColor: colors.progressDot },
+  EM_ANDAMENTO: { variant: 'warning', label: 'Em andamento', dotColor: colors.warningDot },
+  PAUSADA: { variant: 'suspended', label: 'Pausado', dotColor: colors.pausedDot },
+  CONCLUIDA: { variant: 'active', label: 'Concluído', dotColor: colors.successDot },
+  CANCELADA: { variant: 'cancelled', label: 'Cancelado', dotColor: colors.dangerBright },
 };
 
 const CHECKLIST_ITEMS = [
@@ -728,7 +728,7 @@ export default function DetalheOrdemServicoScreen() {
                   onPress={openWhatsApp}
                   style={[styles.contactBtn, styles.contactBtnWhatsApp]}
                 >
-                  <Ionicons name="logo-whatsapp" size={15} color={isDark ? '#4ADE80' : '#15803D'} />
+                  <Ionicons name="logo-whatsapp" size={15} color={isDark ? colors.whatsappDotDark : colors.whatsappDotLight} />
                   <Text style={[styles.contactBtnText, styles.contactBtnTextWhatsApp]}>WhatsApp</Text>
                 </Pressable>
 
@@ -748,7 +748,7 @@ export default function DetalheOrdemServicoScreen() {
                   onPress={openRoute}
                   style={styles.contactBtn}
                 >
-                  <Ionicons name="navigate-outline" size={15} color="#3B82F6" />
+                  <Ionicons name="navigate-outline" size={15} color={colors.info} />
                   <Text style={styles.contactBtnText}>GPS</Text>
                 </Pressable>
               </View>
