@@ -710,7 +710,7 @@ export default function HomeScreen() {
               )}
 
               {/* Viewport do Gráfico com Linhas Guia e Barras Arredondadas */}
-              <View style={styles.chartViewport}>
+              <View style={isExpanded ? [styles.chartViewport, styles.chartViewportMedium] : styles.chartViewport}>
                 {/* Linhas Guia de Fundo */}
                 <View style={styles.chartGridLines}>
                   <View style={styles.chartGridLine} />
@@ -769,6 +769,7 @@ export default function HomeScreen() {
                             <View
                               style={[
                                 styles.chartBar,
+                                isExpanded && styles.chartBarMedium,
                                 {
                                   height: `${revH}%`,
                                   backgroundColor: revColor,
@@ -785,6 +786,7 @@ export default function HomeScreen() {
                             <View
                               style={[
                                 styles.chartBar,
+                                isExpanded && styles.chartBarMedium,
                                 {
                                   height: `${expH}%`,
                                   backgroundColor: expColor,

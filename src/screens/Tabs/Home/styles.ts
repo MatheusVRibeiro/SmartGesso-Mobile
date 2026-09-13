@@ -752,6 +752,29 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       flex: 1,
       width: undefined,
     },
+
+    // ─── Chart — densidade medium+ (FASE 2 adaptividade) ─────────────────
+    chartViewportMedium: {
+      position: 'relative',
+      height: 180,
+      marginVertical: spacing.xs,
+    },
+    chartBarMedium: {
+      width: 15,
+      borderTopLeftRadius: 5,
+      borderTopRightRadius: 5,
+    },
+    chartColBtnMedium: {
+      flex: 1,
+      alignItems: 'center',
+      height: '100%',
+      justifyContent: 'flex-end',
+      paddingBottom: 2,
+      borderRadius: 8,
+      marginHorizontal: 2,
+      borderWidth: 1,
+      borderColor: 'transparent',
+    },
   });
 
 // Fallback estático para compatibilidade com import direto de `styles`
