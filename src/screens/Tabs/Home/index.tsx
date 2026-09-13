@@ -204,7 +204,7 @@ export default function HomeScreen() {
           <FadeInView>
             <View style={styles.header}>
               <View>
-                <Text style={styles.greeting}>Olá, {userName} 👋</Text>
+                <Text style={styles.greeting}>Olá, {userName}</Text>
                 <Text style={styles.companyName}>{companyName}</Text>
               </View>
               <TouchableOpacity
@@ -278,7 +278,7 @@ export default function HomeScreen() {
             <Text style={styles.quickActionsTitle}>Ações Rápidas</Text>
             <View style={styles.quickActionsRow}>
               {QUICK_ACTIONS.map(({ id, label, Icon, route }) => {
-                const iconColor = isDark ? '#818CF8' : colors.primary;
+                const iconColor = isDark ? colors.primaryLight : colors.primary;
                 return (
                   <PressableScale
                     key={id}
@@ -348,6 +348,7 @@ export default function HomeScreen() {
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/(tabs)/orcamentos')}
+              accessibilityLabel="Ver orçamentos em aberto"
             >
               <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
                 <View style={styles.kpiCardHeader}>
@@ -373,6 +374,7 @@ export default function HomeScreen() {
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/(tabs)/servicos')}
+              accessibilityLabel="Ver serviços de hoje"
             >
               <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
                 <View style={styles.kpiCardHeader}>
@@ -396,6 +398,7 @@ export default function HomeScreen() {
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/pagamentos')}
+              accessibilityLabel="Ver pagamentos a receber"
             >
               <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
                 <View style={styles.kpiCardHeader}>
@@ -410,10 +413,12 @@ export default function HomeScreen() {
                 <View style={styles.kpiFooterRow}>
                   {(summary?.toReceive.overdue ?? 0) > 0 ? (
                     <Text style={styles.overdueText}>
-                      ⚠️ {formatCurrency(summary?.toReceive.overdue ?? 0)} vencidos
+                      <Ionicons name="warning" size={12} color={colors.danger} /> {formatCurrency(summary?.toReceive.overdue ?? 0)} vencidos
                     </Text>
                   ) : (
-                    <Text style={styles.okText}>✓ Em dia</Text>
+                    <Text style={styles.okText}>
+                      <Ionicons name="checkmark-circle" size={12} color={colors.success} /> Em dia
+                    </Text>
                   )}
                   <Ionicons name="arrow-forward" size={12} color={colors.textLight} />
                 </View>
@@ -430,7 +435,7 @@ export default function HomeScreen() {
               <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
                 <View style={styles.kpiCardHeader}>
                   <Text style={styles.kpiTitle}>Despesas do Mês</Text>
-                  <View style={[styles.kpiIconBadge, { backgroundColor: isDark ? 'rgba(248,113,113,0.18)' : '#FEE2E2' }]}>
+                  <View style={[styles.kpiIconBadge, { backgroundColor: colors.kpiBadgeDanger }]}>
                     <Ionicons name="card-outline" size={14} color={colors.danger} />
                   </View>
                 </View>
@@ -449,11 +454,12 @@ export default function HomeScreen() {
               style={styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/agenda')}
+              accessibilityLabel="Ver agenda de visitas"
             >
               <AppCard shadow="light" radius={radius.lg} style={styles.kpiCard}>
                 <View style={styles.kpiCardHeader}>
                   <Text style={styles.kpiTitle}>Visitas Hoje</Text>
-                  <View style={[styles.kpiIconBadge, { backgroundColor: isDark ? 'rgba(168,85,247,0.18)' : '#F3E8FF' }]}>
+                  <View style={[styles.kpiIconBadge, { backgroundColor: colors.kpiBadgePurple }]}>
                     <Ionicons name="eye-outline" size={14} color="#9333EA" />
                   </View>
                 </View>
@@ -597,7 +603,7 @@ export default function HomeScreen() {
                     <Ionicons
                       name="stats-chart"
                       size={18}
-                      color={isDark ? '#818CF8' : colors.primary}
+                      color={isDark ? colors.primaryLight : colors.primary}
                     />
                   </View>
                   <View>
@@ -626,7 +632,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name="calendar-outline"
                         size={13}
-                        color={isDark ? '#818CF8' : colors.primary}
+                        color={isDark ? colors.primaryLight : colors.primary}
                       />
                       <Text style={styles.chartInspectorMonthText}>
                         {activeMonth.monthLabel}
@@ -638,16 +644,12 @@ export default function HomeScreen() {
                         {
                           backgroundColor:
                             activeMonth.profit > 0
-                              ? isDark
-                                ? 'rgba(52, 211, 153, 0.15)'
-                                : '#ECFDF5'
-                              : activeMonth.profit < 0
-                              ? isDark
-                                ? 'rgba(248, 113, 113, 0.15)'
-                                : '#FEF2F2'
-                              : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#F1F5F9',
+                            ? colors.successSoft
+                            : activeMonth.profit < 0
+                            ? colors.dangerSoft
+                            : isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : colors.divider,
                         },
                       ]}
                     >
@@ -657,14 +659,10 @@ export default function HomeScreen() {
                           {
                             color:
                               activeMonth.profit > 0
-                                ? isDark
-                                  ? '#34D399'
-                                  : '#059669'
-                                : activeMonth.profit < 0
-                                ? isDark
-                                  ? '#F87171'
-                                  : '#DC2626'
-                                : colors.textSecondary,
+                              ? colors.success
+                              : activeMonth.profit < 0
+                              ? colors.danger
+                              : colors.textSecondary,
                           },
                         ]}
                       >
@@ -682,7 +680,7 @@ export default function HomeScreen() {
                       <View
                         style={[
                           styles.chartInspectorMetricDot,
-                          { backgroundColor: isDark ? '#60A5FA' : '#2563EB' },
+                          { backgroundColor: colors.chartRevenue },
                         ]}
                       />
                       <Text style={styles.chartInspectorMetricLabel}>Faturamento:</Text>
@@ -695,7 +693,7 @@ export default function HomeScreen() {
                       <View
                         style={[
                           styles.chartInspectorMetricDot,
-                          { backgroundColor: isDark ? '#F87171' : '#E11D48' },
+                          { backgroundColor: colors.chartExpense },
                         ]}
                       />
                       <Text style={styles.chartInspectorMetricLabel}>Despesas:</Text>
@@ -743,8 +741,8 @@ export default function HomeScreen() {
                         ? Math.max(8, Math.round((item.expenses / maxEvolutionValue) * 100))
                         : 0;
 
-                    const revColor = isDark ? '#60A5FA' : '#2563EB';
-                    const expColor = isDark ? '#F87171' : '#E11D48';
+                    const revColor = colors.chartRevenue;
+                    const expColor = colors.chartExpense;
 
                     return (
                       <TouchableOpacity
@@ -824,7 +822,7 @@ export default function HomeScreen() {
                     <View
                       style={[
                         styles.legendDot,
-                        { backgroundColor: isDark ? '#60A5FA' : '#2563EB' },
+                        { backgroundColor: colors.chartRevenue },
                       ]}
                     />
                     <Text style={styles.legendLabel}>Faturamento</Text>
@@ -833,7 +831,7 @@ export default function HomeScreen() {
                     <View
                       style={[
                         styles.legendDot,
-                        { backgroundColor: isDark ? '#F87171' : '#E11D48' },
+                        { backgroundColor: colors.chartExpense },
                       ]}
                     />
                     <Text style={styles.legendLabel}>Despesas</Text>
@@ -928,7 +926,13 @@ export default function HomeScreen() {
                         OS #{service.code} • {service.client?.name ?? 'Cliente'}
                       </Text>
                       <Text style={styles.listItemValue} numberOfLines={1}>
-                        {service.work?.name ? `📍 ${service.work.name}` : formatCurrency(service.saleValue)}
+                        {service.work?.name ? (
+                          <>
+                            <Ionicons name="location-outline" size={12} color={colors.textSecondary} /> {service.work.name}
+                          </>
+                        ) : (
+                          formatCurrency(service.saleValue)
+                        )}
                       </Text>
                     </View>
                     <StatusBadge

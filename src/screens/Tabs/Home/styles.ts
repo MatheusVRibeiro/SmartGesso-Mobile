@@ -54,8 +54,8 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
     alertBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FFFBEB',
-      borderColor: isDark ? 'rgba(217, 119, 6, 0.4)' : '#FDE68A',
+      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : colors.warningSoft,
+      borderColor: colors.warningBorder,
       borderWidth: 1,
       borderRadius: radius.lg,
       paddingHorizontal: spacing.md,
@@ -67,7 +67,7 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       width: 36,
       height: 36,
       borderRadius: radius.full,
-      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.25)' : '#FEF3C7',
+      backgroundColor: isDark ? 'rgba(217, 119, 6, 0.25)' : colors.warningBadge,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -77,11 +77,11 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
     alertTitle: {
       fontSize: 13,
       fontWeight: '700',
-      color: isDark ? '#FCD34D' : '#92400E',
+      color: colors.warningText,
     },
     alertSubtitle: {
       fontSize: 11,
-      color: isDark ? '#FDE68A' : '#B45309',
+      color: colors.warningTextStrong,
       marginTop: 1,
     },
     quickActionsSection: {
@@ -110,7 +110,7 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       minWidth: 54,
       minHeight: 54,
       borderRadius: 14,
-      backgroundColor: isDark ? '#1C1F28' : colors.surface,
+      backgroundColor: colors.surfaceRaised,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
       justifyContent: 'center',
@@ -123,7 +123,7 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
     actionLabel: {
       fontSize: 11,
       fontWeight: '600',
-      color: isDark ? '#F1F5F9' : '#334155',
+      color: colors.textAction,
       textAlign: 'center',
       marginTop: 7,
       letterSpacing: -0.2,
@@ -541,14 +541,14 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
     whatsappBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#16A34A',
+      backgroundColor: colors.whatsappStrong,
       paddingHorizontal: 10,
       paddingVertical: 6,
       borderRadius: radius.md,
       gap: 4,
     },
     whatsappBtnText: {
-      color: '#FFFFFF',
+      color: colors.white,
       fontSize: 11,
       fontWeight: '700',
     },
