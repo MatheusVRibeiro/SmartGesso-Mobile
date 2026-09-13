@@ -24,7 +24,7 @@ import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { PermissionGate } from '@/src/components/domain/PermissionGate';
 import { COST_VIEW_ROLES } from '@/src/types/permissions';
-import { sizes } from '@/src/theme';
+import { sizes, useSizeClass } from '@/src/theme';
 import { formatCurrency, formatNumber, formatQuoteCode } from '@/src/utils/format';
 import { ClienteStep } from '@/src/components/domain/quotes/steps/ClienteStep';
 import { AmbientesStep } from '@/src/components/domain/quotes/steps/AmbientesStep';
@@ -66,6 +66,9 @@ export default function NovoOrcamentoScreen() {
   const styles = useMemo(() => createWizardStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
   const companyId = useSessionStore((s) => s.activeCompany?.company?.id);
+
+  // Fase 3 (adaptividade): rodapé sticky fora do scroll no tablet expanded
+  const isExpanded = useSizeClass() === 'expanded';
 
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [quickClientVisible, setQuickClientVisible] = useState(false);
@@ -626,6 +629,40 @@ export default function NovoOrcamentoScreen() {
     );
   }
 
+  const footerButtons = (
+    <>
+      {currentStep > 0 ? (
+        <AppButton
+          title="Voltar"
+          variant="outline"
+          size="lg"
+          onPress={goBack}
+          accessibilityLabel="Voltar para a etapa anterior"
+          style={styles.footerButton}
+        />
+      ) : null}
+      {currentStep < STEP_META.length - 1 ? (
+        <AppButton
+          title="Continuar"
+          size="lg"
+          onPress={() => goNext(setServiceErrors)}
+          accessibilityLabel="Continuar para a próxima etapa"
+          style={styles.footerButton}
+        />
+      ) : (
+        <AppButton
+          title="Gerar orçamento"
+          size="lg"
+          onPress={() => handleSubmit(draft)}
+          loading={createMutation.isPending}
+          disabled={createMutation.isPending}
+          accessibilityLabel="Gerar orçamento"
+          style={styles.footerButton}
+        />
+      )}
+    </>
+  );
+
   return (
     <View style={styles.screen}>
       <ScreenContainer scroll padding keyboardAvoiding>
@@ -665,38 +702,16 @@ export default function NovoOrcamentoScreen() {
           </View>
         ) : null}
 
-        <View style={styles.footer}>
-          {currentStep > 0 ? (
-            <AppButton
-              title="Voltar"
-              variant="outline"
-              size="lg"
-              onPress={goBack}
-              accessibilityLabel="Voltar para a etapa anterior"
-              style={styles.footerButton}
-            />
-          ) : null}
-          {currentStep < STEP_META.length - 1 ? (
-            <AppButton
-              title="Continuar"
-              size="lg"
-              onPress={() => goNext(setServiceErrors)}
-              accessibilityLabel="Continuar para a próxima etapa"
-              style={styles.footerButton}
-            />
-          ) : (
-            <AppButton
-              title="Gerar orçamento"
-              size="lg"
-              onPress={() => handleSubmit(draft)}
-              loading={createMutation.isPending}
-              disabled={createMutation.isPending}
-              accessibilityLabel="Gerar orçamento"
-              style={styles.footerButton}
-            />
-          )}
-        </View>
+        {!isExpanded ? (
+          <View style={styles.footer}>{footerButtons}</View>
+        ) : null}
       </ScreenContainer>
+
+      {isExpanded ? (
+        <View style={[styles.footer, styles.footerExpanded]}>
+          {footerButtons}
+        </View>
+      ) : null}
 
       <ClientPickerModal
         visible={clientModalVisible}

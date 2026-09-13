@@ -368,6 +368,14 @@ export const createWizardStyles = (colors: ActivePalette, isDark: boolean) =>
     footerButton: {
       flex: 1,
     },
+    // Fase 3 — rodapé sticky no tablet expanded: coluna centralizada de 680px
+    // alinhada com o conteúdo (ScreenContainer), fora do scroll.
+    footerExpanded: {
+      width: '100%',
+      maxWidth: 680,
+      alignSelf: 'center',
+      paddingHorizontal: sizes.screenPadding,
+    },
     // Modal styles
     modalSafe: {
       flex: 1,
