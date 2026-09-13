@@ -31,6 +31,7 @@ import { quotesService } from '@/src/services/api/quotes';
 import { toApiError } from '@/src/services/api/client';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
 import { radius, spacing } from '@/src/theme';
+import { useSizeClass } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/format';
 import { haptics } from '@/src/utils/haptics';
 import { createHomeScreenStyles } from './styles';
@@ -90,6 +91,9 @@ export default function HomeScreen() {
   const { colors, isDark } = useAppTheme();
 
   const styles = useMemo(() => createHomeScreenStyles(colors, isDark), [colors, isDark]);
+
+  // Adaptividade (plano tablet): kpiGrid vira barra de 5 KPIs em 1 linha no expanded
+  const isExpanded = useSizeClass() === 'expanded';
 
   const companyId = activeCompany?.company?.id;
   const userName = currentUser?.name?.split(' ')[0] ?? 'Usuário';
@@ -342,10 +346,10 @@ export default function HomeScreen() {
 
 
           {/* Grid de KPIs Clicáveis (Em Aberto, OS Hoje, A Receber, Despesas do Mês, Visitas Hoje) */}
-          <View style={styles.kpiGrid}>
+          <View style={isExpanded ? [styles.kpiGrid, styles.kpiGridExpanded] : styles.kpiGrid}>
             {/* 1. Orçamentos em Aberto (Clicável -> Orçamentos) */}
             <TouchableOpacity
-              style={styles.kpiCardWrapper}
+              style={isExpanded ? [styles.kpiCardWrapper, styles.kpiCardWrapperExpanded] : styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/(tabs)/orcamentos')}
               accessibilityLabel="Ver orçamentos em aberto"
@@ -371,7 +375,7 @@ export default function HomeScreen() {
 
             {/* 2. OS para Hoje (Clicável -> Serviços) */}
             <TouchableOpacity
-              style={styles.kpiCardWrapper}
+              style={isExpanded ? [styles.kpiCardWrapper, styles.kpiCardWrapperExpanded] : styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/(tabs)/servicos')}
               accessibilityLabel="Ver serviços de hoje"
@@ -395,7 +399,7 @@ export default function HomeScreen() {
 
             {/* 3. A Receber (Clicável -> Pagamentos) */}
             <TouchableOpacity
-              style={styles.kpiCardWrapper}
+              style={isExpanded ? [styles.kpiCardWrapper, styles.kpiCardWrapperExpanded] : styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/pagamentos')}
               accessibilityLabel="Ver pagamentos a receber"
@@ -427,7 +431,7 @@ export default function HomeScreen() {
 
             {/* 4. Despesas do Mês (Clicável -> Despesas) */}
             <TouchableOpacity
-              style={styles.kpiCardWrapper}
+              style={isExpanded ? [styles.kpiCardWrapper, styles.kpiCardWrapperExpanded] : styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/despesas')}
               accessibilityLabel="Ver despesas do mês"
@@ -451,7 +455,7 @@ export default function HomeScreen() {
 
             {/* 5. Visitas de Hoje (Clicável -> Agenda) */}
             <TouchableOpacity
-              style={styles.kpiCardWrapper}
+              style={isExpanded ? [styles.kpiCardWrapper, styles.kpiCardWrapperExpanded] : styles.kpiCardWrapper}
               activeOpacity={0.8}
               onPress={() => router.push('/(app)/agenda')}
               accessibilityLabel="Ver agenda de visitas"

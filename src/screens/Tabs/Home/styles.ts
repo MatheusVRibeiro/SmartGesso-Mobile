@@ -740,6 +740,18 @@ export const createHomeScreenStyles = (colors: ActivePalette, isDark: boolean) =
       alignItems: 'center',
       justifyContent: 'center',
     },
+
+    // ─── KPI grid — variante expanded (≥840): 5 cards numa única linha ──
+    kpiGridExpanded: {
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    kpiCardWrapperExpanded: {
+      flex: 1,
+      width: undefined,
+    },
   });
 
 // Fallback estático para compatibilidade com import direto de `styles`
