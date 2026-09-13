@@ -294,34 +294,54 @@ export default function NovoClienteScreen() {
       <Text style={styles.sectionTitle}>Endereço</Text>
       <Text style={styles.sectionSubtitle}>Campos opcionais — preencha se disponível.</Text>
 
-      <Controller
-        control={control}
-        name="address.zipCode"
-        render={({ field: { onChange, value } }) => (
-          <AppInput
-            label="CEP"
-            value={value ?? ''}
-            onChangeText={(text) => handleCepChange(text, handleApplyAddress, onChange)}
-            mask="cep"
-            placeholder="00000-000"
-            rightAccessory={
-              isLoadingCep ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <TouchableOpacity
-                  onPress={() => value && searchCep(value, handleApplyAddress, true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="search-outline" size={18} color={colors.primary} />
-                </TouchableOpacity>
-              )
-            }
-            helper={isLoadingCep ? 'Buscando endereço...' : undefined}
-            error={errors.address?.zipCode?.message || cepError || undefined}
-            accessibilityLabel="CEP do cliente"
+      <View style={styles.addressRow}>
+        <View style={styles.addressFieldHalf}>
+          <Controller
+            control={control}
+            name="address.zipCode"
+            render={({ field: { onChange, value } }) => (
+              <AppInput
+                label="CEP"
+                value={value ?? ''}
+                onChangeText={(text) => handleCepChange(text, handleApplyAddress, onChange)}
+                mask="cep"
+                placeholder="00000-000"
+                rightAccessory={
+                  isLoadingCep ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => value && searchCep(value, handleApplyAddress, true)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="search-outline" size={18} color={colors.primary} />
+                    </TouchableOpacity>
+                  )
+                }
+                helper={isLoadingCep ? 'Buscando endereço...' : undefined}
+                error={errors.address?.zipCode?.message || cepError || undefined}
+                accessibilityLabel="CEP do cliente"
+              />
+            )}
           />
-        )}
-      />
+        </View>
+        <View style={styles.addressFieldHalf}>
+          <Controller
+            control={control}
+            name="address.number"
+            render={({ field: { onChange, value } }) => (
+              <AppInput
+                label="Número"
+                value={value ?? ''}
+                onChangeText={onChange}
+                placeholder="Nº"
+                keyboardType="number-pad"
+                accessibilityLabel="Número do cliente"
+              />
+            )}
+          />
+        </View>
+      </View>
 
       <Controller
         control={control}
@@ -333,21 +353,6 @@ export default function NovoClienteScreen() {
             onChangeText={onChange}
             placeholder="Nome da rua"
             accessibilityLabel="Rua do cliente"
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="address.number"
-        render={({ field: { onChange, value } }) => (
-          <AppInput
-            label="Número"
-            value={value ?? ''}
-            onChangeText={onChange}
-            placeholder="Nº"
-            keyboardType="number-pad"
-            accessibilityLabel="Número do cliente"
           />
         )}
       />
@@ -366,33 +371,38 @@ export default function NovoClienteScreen() {
         )}
       />
 
-      <Controller
-        control={control}
-        name="address.neighborhood"
-        render={({ field: { onChange, value } }) => (
-          <AppInput
-            label="Bairro"
-            value={value ?? ''}
-            onChangeText={onChange}
-            placeholder="Nome do bairro"
-            accessibilityLabel="Bairro do cliente"
+      <View style={styles.addressRow}>
+        <View style={styles.addressFieldHalf}>
+          <Controller
+            control={control}
+            name="address.neighborhood"
+            render={({ field: { onChange, value } }) => (
+              <AppInput
+                label="Bairro"
+                value={value ?? ''}
+                onChangeText={onChange}
+                placeholder="Nome do bairro"
+                accessibilityLabel="Bairro do cliente"
+              />
+            )}
           />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="address.city"
-        render={({ field: { onChange, value } }) => (
-          <AppInput
-            label="Cidade"
-            value={value ?? ''}
-            onChangeText={onChange}
-            placeholder="Nome da cidade"
-            accessibilityLabel="Cidade do cliente"
+        </View>
+        <View style={styles.addressFieldHalf}>
+          <Controller
+            control={control}
+            name="address.city"
+            render={({ field: { onChange, value } }) => (
+              <AppInput
+                label="Cidade"
+                value={value ?? ''}
+                onChangeText={onChange}
+                placeholder="Nome da cidade"
+                accessibilityLabel="Cidade do cliente"
+              />
+            )}
           />
-        )}
-      />
+        </View>
+      </View>
 
       <Controller
         control={control}

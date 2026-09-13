@@ -404,34 +404,55 @@ export default function NovaObraScreen() {
 
         <Text style={styles.sectionLabel}>Endereço</Text>
 
-        <Controller
-          control={control}
-          name="postalCode"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="CEP"
-              value={field.value ?? ''}
-              onChangeText={(text) => handleCepChange(text, handleApplyAddress, field.onChange)}
-              mask="cep"
-              placeholder="00000-000"
-              rightAccessory={
-                isLoadingCep ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => field.value && searchCep(field.value, handleApplyAddress, true)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="search-outline" size={18} color={colors.primary} />
-                  </TouchableOpacity>
-                )
-              }
-              helper={isLoadingCep ? 'Buscando endereço...' : undefined}
-              error={fieldState.error?.message || cepError || undefined}
-              accessibilityLabel="CEP"
+        {/* Endereço em rows de 2 (padrão localRow do wizard) */}
+        <View style={styles.localRow}>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="postalCode"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="CEP"
+                  value={field.value ?? ''}
+                  onChangeText={(text) => handleCepChange(text, handleApplyAddress, field.onChange)}
+                  mask="cep"
+                  placeholder="00000-000"
+                  rightAccessory={
+                    isLoadingCep ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => field.value && searchCep(field.value, handleApplyAddress, true)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="search-outline" size={18} color={colors.primary} />
+                      </TouchableOpacity>
+                    )
+                  }
+                  helper={isLoadingCep ? 'Buscando endereço...' : undefined}
+                  error={fieldState.error?.message || cepError || undefined}
+                  accessibilityLabel="CEP"
+                />
+              )}
             />
-          )}
-        />
+          </View>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="number"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="Número"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  placeholder="Nº"
+                  error={fieldState.error?.message}
+                  accessibilityLabel="Número"
+                />
+              )}
+            />
+          </View>
+        </View>
 
         <Controller
           control={control}
@@ -448,82 +469,77 @@ export default function NovaObraScreen() {
           )}
         />
 
-        <Controller
-          control={control}
-          name="number"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="Número"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              placeholder="Nº"
-              error={fieldState.error?.message}
-              accessibilityLabel="Número"
+        <View style={styles.localRow}>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="complement"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="Complemento"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  placeholder="Apto, bloco... (opcional)"
+                  error={fieldState.error?.message}
+                  accessibilityLabel="Complemento"
+                />
+              )}
             />
-          )}
-        />
+          </View>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="district"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="Bairro"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  placeholder="Bairro"
+                  error={fieldState.error?.message}
+                  accessibilityLabel="Bairro"
+                />
+              )}
+            />
+          </View>
+        </View>
 
-        <Controller
-          control={control}
-          name="complement"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="Complemento"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              placeholder="Apto, bloco... (opcional)"
-              error={fieldState.error?.message}
-              accessibilityLabel="Complemento"
+        <View style={styles.localRow}>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="city"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="Cidade"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  placeholder="Cidade"
+                  error={fieldState.error?.message}
+                  accessibilityLabel="Cidade"
+                />
+              )}
             />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="district"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="Bairro"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              placeholder="Bairro"
-              error={fieldState.error?.message}
-              accessibilityLabel="Bairro"
+          </View>
+          <View style={styles.localFieldHalf}>
+            <Controller
+              control={control}
+              name="state"
+              render={({ field, fieldState }) => (
+                <AppInput
+                  label="Estado"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  placeholder="UF"
+                  maxLength={2}
+                  autoCapitalize="characters"
+                  error={fieldState.error?.message}
+                  accessibilityLabel="Estado"
+                />
+              )}
             />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="city"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="Cidade"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              placeholder="Cidade"
-              error={fieldState.error?.message}
-              accessibilityLabel="Cidade"
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="state"
-          render={({ field, fieldState }) => (
-            <AppInput
-              label="Estado"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              placeholder="UF"
-              maxLength={2}
-              autoCapitalize="characters"
-              error={fieldState.error?.message}
-              accessibilityLabel="Estado"
-            />
-          )}
-        />
+          </View>
+        </View>
 
         <Text style={styles.sectionLabel}>Status</Text>
         <Controller

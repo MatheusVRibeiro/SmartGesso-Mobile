@@ -69,6 +69,14 @@ export const createNovaObraStyles = (colors: ActivePalette, isDark: boolean) => 
     marginTop: -spacing.sm,
     marginBottom: spacing.lg,
   },
+  // Endereço em rows de 2 (padrão localRow do wizard)
+  localRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  localFieldHalf: {
+    flex: 1,
+  },
   statusRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

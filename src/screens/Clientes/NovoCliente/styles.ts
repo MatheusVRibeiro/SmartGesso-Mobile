@@ -66,6 +66,13 @@ export const createNovoClienteStyles = (colors: ActivePalette, isDark: boolean) 
     typeButtonTextSelected: {
       color: colors.textOnPrimary,
     },
+    addressRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    addressFieldHalf: {
+      flex: 1,
+    },
     observationsInput: {
       backgroundColor: colors.surface,
       borderWidth: 1,
