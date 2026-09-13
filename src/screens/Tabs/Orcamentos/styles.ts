@@ -262,7 +262,6 @@ export const createOrcamentosStyles = (colors: ActivePalette, isDark: boolean) =
       paddingHorizontal: sizes.screenPadding,
       paddingTop: 4,
       paddingBottom: spacing['4xl'],
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },

@@ -9,7 +9,6 @@ export const createCalculadoraStyles = (colors: ActivePalette, isDark: boolean) 
       backgroundColor: colors.background,
     },
     responsiveContainer: {
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },

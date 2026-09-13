@@ -22,7 +22,6 @@ export const createNovoStyles = (colors: ActivePalette, isDark: boolean) =>
       flexWrap: 'wrap',
       justifyContent: 'space-between',
       rowGap: spacing.md,
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },

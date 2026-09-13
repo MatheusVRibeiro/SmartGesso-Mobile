@@ -30,7 +30,6 @@ export const createClientesListStyles = (colors: ActivePalette, isDark: boolean)
     },
     listContent: {
       paddingBottom: spacing['3xl'],
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },

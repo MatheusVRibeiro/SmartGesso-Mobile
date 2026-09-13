@@ -176,7 +176,6 @@ export const createServicosStyles = (colors: ActivePalette, isDark: boolean) =>
       paddingHorizontal: sizes.screenPadding,
       paddingTop: 6,
       paddingBottom: spacing['3xl'],
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },

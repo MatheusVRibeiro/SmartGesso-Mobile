@@ -12,7 +12,6 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       paddingHorizontal: sizes.screenPadding,
       paddingTop: spacing.xs,
       paddingBottom: spacing['4xl'],
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },
@@ -33,8 +32,8 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       flex: 1,
     },
     backButton: {
-      width: 38,
-      height: 38,
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : colors.divider,
       borderWidth: 1,
@@ -63,8 +62,8 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       gap: 8,
     },
     headerIconBtn: {
-      width: 38,
-      height: 38,
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : colors.avatarBackground,
       borderWidth: 1,
@@ -405,7 +404,7 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       fontWeight: '700',
     },
     followUpWhatsAppBtn: {
-      height: 42,
+      minHeight: 44,
       borderRadius: radius.lg,
       backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : colors.followUpBg,
       borderWidth: 1,
@@ -459,7 +458,7 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
     },
     secondaryOutlineBtn: {
       flex: 1,
-      height: 38,
+      minHeight: 44,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.border,
@@ -475,7 +474,7 @@ export const createOrcamentoDetalheStyles = (colors: ActivePalette, isDark: bool
       color: colors.textSecondary,
     },
     deleteButton: {
-      height: 38,
+      minHeight: 44,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : colors.dangerBorder,

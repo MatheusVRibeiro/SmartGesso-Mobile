@@ -10,7 +10,6 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
     },
     scrollContent: {
       paddingBottom: 48,
-      maxWidth: 680,
       width: '100%',
       alignSelf: 'center',
     },
@@ -34,9 +33,9 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       flex: 1,
     },
     headerBackBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
@@ -56,9 +55,9 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       fontWeight: '500',
     },
     headerDeleteBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : colors.kpiBadgeDanger,
@@ -249,7 +248,8 @@ export const createServicoDetalheStyles = (colors: ActivePalette, isDark: boolea
       alignItems: 'center',
       justifyContent: 'center',
       gap: 5,
-      paddingVertical: 8,
+      minHeight: 44,
+      paddingVertical: 12,
       borderRadius: radius.sm,
     },
     tabItemActive: {
