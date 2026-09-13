@@ -20,7 +20,7 @@ import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '@/src/components/ui/AppSnackbar';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
-import { LoadingState } from '@/src/components/ui/LoadingState';
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import { toApiError } from '@/src/services/api/client';
 import { clientsService } from '@/src/services/api/clients';
@@ -153,7 +153,12 @@ function ClientPickerModal({
         </View>
 
         {isLoading ? (
-          <LoadingState text="Carregando clientes..." />
+          <View style={styles.modalList} testID="client-picker-skeleton">
+            <Skeleton height={20} />
+            <Skeleton height={20} width="80%" />
+            <Skeleton height={20} width="90%" />
+            <Skeleton height={20} width="60%" />
+          </View>
         ) : isError ? (
           <ErrorState message={errorMessage} onRetry={onRetry} />
         ) : filtered.length === 0 ? (
@@ -296,7 +301,7 @@ export default function NovaObraScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenContainer scroll padding keyboard>
+      <ScreenContainer scroll padding keyboardAvoiding>
         <Stack.Screen options={{ title: 'Nova obra', headerShown: true }} />
 
         <View style={styles.header}>

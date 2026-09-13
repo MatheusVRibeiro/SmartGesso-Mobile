@@ -628,7 +628,7 @@ export default function NovoOrcamentoScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenContainer scroll padding keyboard>
+      <ScreenContainer scroll padding keyboardAvoiding>
         <Stack.Screen options={{ title: 'Novo orçamento', headerShown: false }} />
 
         <View style={styles.header}>

@@ -3,7 +3,6 @@ import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCepLookup } from '@/src/hooks/useCepLookup';
 import { useCnpjLookup } from '@/src/hooks/useCnpjLookup';
@@ -11,7 +10,7 @@ import { AppButton } from '@/src/components/ui/AppButton';
 import { AppInput } from '@/src/components/ui/AppInput';
 import { AppSnackbar } from '@/src/components/ui/AppSnackbar';
 import type { AppSnackbarType } from '@/src/components/ui/AppSnackbar';
-import { LoadingState } from '@/src/components/ui/LoadingState';
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { ScreenContainer } from '@/src/components/ui/ScreenContainer';
 import {
   createDefaultSettings,
@@ -154,7 +153,7 @@ export default function ConfiguracoesEmpresaScreen() {
   }
 
   return (
-    <ScreenContainer scroll padding keyboard>
+    <ScreenContainer scroll padding keyboardAvoiding>
       {/* Aviso: persistência local (API ainda não expõe endpoint de settings) */}
       <View style={styles.warningBanner} accessibilityRole="alert">
         <Ionicons
@@ -170,7 +169,12 @@ export default function ConfiguracoesEmpresaScreen() {
       </View>
 
       {isLoading ? (
-        <LoadingState text="Carregando dados da empresa..." />
+        <View style={{ gap: spacing.md }} testID="config-empresa-skeleton">
+          <Skeleton height={20} />
+          <Skeleton height={20} width="80%" />
+          <Skeleton height={20} width="90%" />
+          <Skeleton height={20} width="60%" />
+        </View>
       ) : (
         <>
           {/* ── Dados da empresa ── */}

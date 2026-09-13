@@ -165,7 +165,7 @@ export default function NovoClienteScreen() {
   });
 
   return (
-    <ScreenContainer scroll keyboard>
+    <ScreenContainer scroll keyboardAvoiding>
       <Stack.Screen options={{ title: 'Novo cliente' }} />
 
       {/* ── Dados básicos ── */}

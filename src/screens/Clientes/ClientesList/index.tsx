@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -22,6 +22,7 @@ import { clientsService } from '@/src/services/api/clients';
 import { toApiError } from '@/src/services/api/client';
 import { useSessionStore } from '@/src/store/useSessionStore';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
+import type { ActivePalette } from '@/src/theme/ThemeProvider';
 import { radius, sizes, spacing, typography } from '@/src/theme';
 import type { Client } from '@/src/types/client';
 import { createClientesListStyles } from './styles';
@@ -31,57 +32,18 @@ interface SnackbarState {
   message: string;
 }
 
-export default function ClientesListScreen() {
-  const router = useRouter();
-  const { colors, isDark } = useAppTheme();
-  const styles = useMemo(() => createClientesListStyles(colors, isDark), [colors, isDark]);
+interface ClienteCardProps {
+  item: Client;
+  /** Callback estável (recebe o id) — permite React.memo sem re-render por tecla. */
+  onPress: (clientId: string) => void;
+  styles: ReturnType<typeof createClientesListStyles>;
+  colors: ActivePalette;
+}
 
-  const companyId = useSessionStore((s) => s.activeCompany?.company.id ?? null);
-  const params = useLocalSearchParams<{ created?: string; deleted?: string }>();
-
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
-  const shownFeedbackRef = useRef<string | null>(null);
-
-  // Busca com debounce (300ms)
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  useEffect(() => {
-    const feedback =
-      params.created === '1' ? 'created' : params.deleted === '1' ? 'deleted' : null;
-
-    if (feedback) {
-      if (shownFeedbackRef.current !== feedback) {
-        shownFeedbackRef.current = feedback;
-        setSnackbar({
-          type: 'success',
-          message:
-            feedback === 'created'
-              ? 'Cliente criado com sucesso'
-              : 'Cliente excluído com sucesso',
-        });
-      }
-      router.setParams(feedback === 'created' ? { created: undefined } : { deleted: undefined });
-    } else {
-      shownFeedbackRef.current = null;
-    }
-  }, [params.created, params.deleted, router]);
-
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['company', companyId, 'clients', search],
-    queryFn: () => clientsService.list({ search: search || undefined }),
-    enabled: Boolean(companyId),
-  });
-
-  const clients: Client[] = Array.isArray(data) ? data : (data?.data ?? []);
-
-  const renderItem = ({ item }: { item: Client }) => (
+const ClienteCard = React.memo(function ClienteCard({ item, onPress, styles, colors }: ClienteCardProps) {
+  return (
     <TouchableOpacity
-      onPress={() => router.push(`/clientes/${item.id}`)}
+      onPress={() => onPress(item.id)}
       accessibilityRole="button"
       accessibilityLabel={`Abrir cliente ${item.name}`}
       activeOpacity={0.7}
@@ -147,6 +109,67 @@ export default function ClientesListScreen() {
         </View>
       </AppCard>
     </TouchableOpacity>
+  );
+});
+
+export default function ClientesListScreen() {
+  const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createClientesListStyles(colors, isDark), [colors, isDark]);
+
+  const companyId = useSessionStore((s) => s.activeCompany?.company.id ?? null);
+  const params = useLocalSearchParams<{ created?: string; deleted?: string }>();
+
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+  const shownFeedbackRef = useRef<string | null>(null);
+
+  // Busca com debounce (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const feedback =
+      params.created === '1' ? 'created' : params.deleted === '1' ? 'deleted' : null;
+
+    if (feedback) {
+      if (shownFeedbackRef.current !== feedback) {
+        shownFeedbackRef.current = feedback;
+        setSnackbar({
+          type: 'success',
+          message:
+            feedback === 'created'
+              ? 'Cliente criado com sucesso'
+              : 'Cliente excluído com sucesso',
+        });
+      }
+      router.setParams(feedback === 'created' ? { created: undefined } : { deleted: undefined });
+    } else {
+      shownFeedbackRef.current = null;
+    }
+  }, [params.created, params.deleted, router]);
+
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ['company', companyId, 'clients', search],
+    queryFn: () => clientsService.list({ search: search || undefined }),
+    enabled: Boolean(companyId),
+  });
+
+  const clients: Client[] = Array.isArray(data) ? data : (data?.data ?? []);
+
+  // Navegação estável — referência fixa p/ React.memo do ClienteCard (sem re-render por tecla)
+  const openCliente = useCallback(
+    (clientId: string) => {
+      router.push(`/clientes/${clientId}`);
+    },
+    [router],
+  );
+
+  const renderItem = ({ item }: { item: Client }) => (
+    <ClienteCard item={item} onPress={openCliente} styles={styles} colors={colors} />
   );
 
   let content: React.ReactNode;

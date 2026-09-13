@@ -21,6 +21,16 @@ export interface ScreenContainerProps {
   padding?: boolean | number;
   /** Envolve o conteúdo em KeyboardAvoidingView (default: true). */
   keyboard?: boolean;
+  /**
+   * Envolve o conteúdo em KeyboardAvoidingView otimizado para formulários
+   * (default: false). Quando `true`, tem precedência sobre `keyboard`.
+   * iOS: behavior 'padding' com keyboardVerticalOffset p/ headers custom.
+   * Android: behavior undefined — o ajuste fica a cargo do softInputMode
+   * `adjustResize` na janela (app.json), sem componente.
+   */
+  keyboardAvoiding?: boolean;
+  /** Offset vertical do KeyboardAvoidingView no iOS (default: 88 p/ headers custom). */
+  keyboardVerticalOffset?: number;
   backgroundColor?: string;
   edges?: ('top' | 'right' | 'bottom' | 'left')[];
   style?: ViewStyle;
@@ -37,6 +47,8 @@ function ScreenContainer({
   scroll = false,
   padding = true,
   keyboard = true,
+  keyboardAvoiding = false,
+  keyboardVerticalOffset = 88,
   backgroundColor,
   edges = ['top', 'left', 'right'],
   style,
@@ -90,7 +102,15 @@ function ScreenContainer({
     </View>
   );
 
-  const inner = keyboard ? (
+  const inner = keyboardAvoiding ? (
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
+      {content}
+    </KeyboardAvoidingView>
+  ) : keyboard ? (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -16,6 +16,46 @@ import { createCatalogoStyles } from './styles';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type CatalogTab = 'geral' | 'servicos' | 'materiais' | 'produtos';
 
+interface CatalogMenuItem {
+  id: number | string;
+  name: string;
+  unit?: string | null;
+  status?: string | null;
+  price?: number | null;
+  cost?: number | null;
+  stockQty?: number | null;
+}
+
+interface CatalogoItemCardProps {
+  item: CatalogMenuItem;
+  styles: ReturnType<typeof createCatalogoStyles>;
+}
+
+/** Card memoizado — evita re-render de todos os itens quando a tela re-renderiza. */
+const CatalogoItemCard = React.memo(function CatalogoItemCard({ item, styles }: CatalogoItemCardProps) {
+  return (
+    <AppCard shadow="light" radius={radius.md} style={styles.itemCard}>
+      <View style={styles.itemCardContent}>
+        <View style={styles.itemCardMain}>
+          <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.itemMeta}>
+            Unidade: {item.unit || 'un'}
+            {item.stockQty != null ? ` • Estoque: ${item.stockQty}` : ''}
+          </Text>
+        </View>
+        <View style={styles.itemRight}>
+          <Text style={styles.itemPrice}>{formatCurrency(item.price ?? item.cost ?? 0)}</Text>
+          <StatusBadge
+            status={item.status === 'ACTIVE' ? 'active' : 'cancelled'}
+            label={item.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+            size="sm"
+          />
+        </View>
+      </View>
+    </AppCard>
+  );
+});
+
 interface CatalogMenuCard {
   id: 'produtos' | 'servicos' | 'materiais';
   title: string;
@@ -207,22 +247,7 @@ export default function CatalogoIndexScreen() {
           ) : (
             <View style={styles.itemsList}>
               {services.map((item: any) => (
-                <AppCard key={item.id} shadow="light" radius={radius.md} style={styles.itemCard}>
-                  <View style={styles.itemCardContent}>
-                    <View style={styles.itemCardMain}>
-                      <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.itemMeta}>Unidade: {item.unit || 'un'}</Text>
-                    </View>
-                    <View style={styles.itemRight}>
-                      <Text style={styles.itemPrice}>{formatCurrency(item.price ?? 0)}</Text>
-                      <StatusBadge
-                        status={item.status === 'ACTIVE' ? 'active' : 'cancelled'}
-                        label={item.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        size="sm"
-                      />
-                    </View>
-                  </View>
-                </AppCard>
+                <CatalogoItemCard key={item.id} item={item} styles={styles} />
               ))}
             </View>
           )}
@@ -253,25 +278,7 @@ export default function CatalogoIndexScreen() {
           ) : (
             <View style={styles.itemsList}>
               {materials.map((item: any) => (
-                <AppCard key={item.id} shadow="light" radius={radius.md} style={styles.itemCard}>
-                  <View style={styles.itemCardContent}>
-                    <View style={styles.itemCardMain}>
-                      <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.itemMeta}>
-                        Unidade: {item.unit || 'un'}
-                        {item.stockQty != null ? ` • Estoque: ${item.stockQty}` : ''}
-                      </Text>
-                    </View>
-                    <View style={styles.itemRight}>
-                      <Text style={styles.itemPrice}>{formatCurrency(item.price ?? item.cost ?? 0)}</Text>
-                      <StatusBadge
-                        status={item.status === 'ACTIVE' ? 'active' : 'cancelled'}
-                        label={item.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        size="sm"
-                      />
-                    </View>
-                  </View>
-                </AppCard>
+                <CatalogoItemCard key={item.id} item={item} styles={styles} />
               ))}
             </View>
           )}
@@ -302,22 +309,7 @@ export default function CatalogoIndexScreen() {
           ) : (
             <View style={styles.itemsList}>
               {products.map((item: any) => (
-                <AppCard key={item.id} shadow="light" radius={radius.md} style={styles.itemCard}>
-                  <View style={styles.itemCardContent}>
-                    <View style={styles.itemCardMain}>
-                      <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.itemMeta}>Unidade: {item.unit || 'un'}</Text>
-                    </View>
-                    <View style={styles.itemRight}>
-                      <Text style={styles.itemPrice}>{formatCurrency(item.price ?? 0)}</Text>
-                      <StatusBadge
-                        status={item.status === 'ACTIVE' ? 'active' : 'cancelled'}
-                        label={item.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        size="sm"
-                      />
-                    </View>
-                  </View>
-                </AppCard>
+                <CatalogoItemCard key={item.id} item={item} styles={styles} />
               ))}
             </View>
           )}
