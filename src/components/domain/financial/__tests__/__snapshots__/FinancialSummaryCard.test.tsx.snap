@@ -81,6 +81,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -123,6 +124,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -165,6 +167,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -207,6 +210,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -249,6 +253,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -306,6 +311,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -363,6 +369,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -405,6 +412,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -447,6 +455,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores negativos 1`] = 
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -544,6 +553,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -586,6 +596,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -628,6 +639,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -670,6 +682,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -712,6 +725,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -769,6 +783,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -826,6 +841,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -868,6 +884,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -910,6 +927,7 @@ exports[`FinancialSummaryCard renderiza sem quebrar com valores zero 1`] = `
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1007,6 +1025,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1049,6 +1068,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1091,6 +1111,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1133,6 +1154,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1175,6 +1197,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1232,6 +1255,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1289,6 +1313,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1331,6 +1356,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",
@@ -1373,6 +1399,7 @@ exports[`FinancialSummaryCard renderiza snapshot estável com dados completos 1`
         [
           {
             "flex": 0,
+            "flexShrink": 1,
             "fontSize": 14,
             "fontWeight": "500",
             "textAlign": "right",

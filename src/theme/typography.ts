@@ -8,6 +8,9 @@ import { Platform } from 'react-native';
  */
 export const typography = {
   sizes: {
+    micro: 10,
+    caption: 11,
+    small: 13,
     xs: 12,
     sm: 14,
     md: 16,

@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     borderWidth: borders.width.thin,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
-    height: sizes.inputHeight,
+    minHeight: sizes.inputHeight,
     fontSize: typography.sizes.md,
   },
   inputError: {

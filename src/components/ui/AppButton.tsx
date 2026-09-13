@@ -58,9 +58,11 @@ const TEXT_COLORS: Record<AppButtonVariant, string> = {
 };
 
 const SIZE_STYLES: Record<AppButtonSize, ViewStyle> = {
-  sm: { height: sizes.buttonHeight.sm, paddingHorizontal: 12 },
-  md: { height: sizes.buttonHeight.md, paddingHorizontal: 20 },
-  lg: { height: sizes.buttonHeight.lg, paddingHorizontal: 28 },
+  // minHeight em vez de height: com fonte do sistema escalada (ex.: 140%),
+  // o texto cresce sem clipar; padding vertical mantém a altura visual.
+  sm: { minHeight: sizes.buttonHeight.sm, paddingHorizontal: 12 },
+  md: { minHeight: sizes.buttonHeight.md, paddingHorizontal: 20 },
+  lg: { minHeight: sizes.buttonHeight.lg, paddingHorizontal: 28 },
 };
 
 const FONT_SIZES: Record<AppButtonSize, number> = {

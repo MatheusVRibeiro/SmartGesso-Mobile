@@ -205,6 +205,7 @@ const createStyles = (colors: ActivePalette, isDark: boolean) => StyleSheet.crea
     fontWeight: typography.weights.medium,
     textAlign: 'right',
     flex: 0,
+    flexShrink: 1,
   },
 });
 
