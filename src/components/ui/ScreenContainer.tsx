@@ -4,13 +4,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
 import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { sizes } from '../../theme';
+import { sizes, useSizeClass } from '../../theme';
+import type { SizeClass } from '../../theme';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 export interface ScreenContainerProps {
@@ -40,6 +40,12 @@ export interface ScreenContainerProps {
   scrollRef?: React.RefObject<ScrollViewType | null>;
   /** Largura máxima do conteúdo em telas grandes (default: 680px no web/tablets). */
   maxContentWidth?: number;
+  /**
+   * Largura máxima do conteúdo por classe de tamanho (Material 3).
+   * Sobrescreve `maxContentWidth` para a classe atual; classes ausentes
+   * caem no valor de `maxContentWidth` (default: 680).
+   */
+  contentWidth?: Partial<Record<SizeClass, number>>;
 }
 
 function ScreenContainer({
@@ -56,22 +62,27 @@ function ScreenContainer({
   testID,
   scrollRef,
   maxContentWidth = 680,
+  contentWidth,
 }: ScreenContainerProps) {
   const { colors } = useAppTheme();
-  const { width } = useWindowDimensions();
-  const isLargeScreen = width > 768;
+  const sizeClass = useSizeClass();
 
   const bg = backgroundColor ?? colors.background;
   const paddingValue =
     typeof padding === 'number' ? padding : padding ? sizes.screenPadding : 0;
 
-  const responsiveWrapperStyle: ViewStyle = isLargeScreen
-    ? {
-        width: '100%',
-        maxWidth: maxContentWidth,
-        alignSelf: 'center',
-      }
-    : { width: '100%' };
+  // Centered wrapper applies from `medium` upward (>=600dp), closing the
+  // 600–768dp gap where tablets like iPad mini (744dp) previously missed the cap.
+  const effectiveMaxContentWidth =
+    contentWidth?.[sizeClass] ?? maxContentWidth;
+  const responsiveWrapperStyle: ViewStyle =
+    sizeClass !== 'compact'
+      ? {
+          width: '100%',
+          maxWidth: effectiveMaxContentWidth,
+          alignSelf: 'center',
+        }
+      : { width: '100%' };
 
   const content = scroll ? (
     <ScrollView
