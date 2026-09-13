@@ -1,7 +1,7 @@
 # PENDÊNCIAS — SmartGesso Mobile (SmartGesso-Mobile)
 
 > Lista viva de pendências, priorizadas 🔴🟠🟡🔵. Atualizar a cada fase. A IA lê este arquivo para saber O QUE FAZER EM SEGUIDA sem perguntar.
-> Última atualização: 2026-09-10
+> Última atualização: 2026-09-12
 
 ## 🔴 Refactor V4 em andamento (branch `docs-smartgesso-refactor-2026-08-24`)
 
@@ -10,7 +10,8 @@
   - **IMPORTANTE:** NUNCA pular etapa — ler `docs/PLANO_REFATORACAO_FRONTEND_V4.md` (seção 'Alterações obrigatórias' + 'Testes') antes de despachar subagents
 - [ ] **Fase por fase até 100%** — seguir o plano de refatoração; cada fase: implementar → testar → revisar → commitar → só então próxima
 - [ ] **ETAPA 15 — Home acionável: helpers ✅, integração final em andamento** — helpers `src/features/home/homeToday.ts`/`homeAlerts.ts` prontos (33 testes), estilos timeline prontos; falta: seção Hoje (timeline), card Serviços Atrasados, banner parcelas vencidas, FeatureGate inventory
-- [ ] **ETAPA 17 — a11y: varredura iniciada (Orcamentos, Detalhe, Mais)**
+- [x] **ETAPA 17 — a11y: ✅ CONCLUÍDA (2026-09-12)** — varredura a11y/theming/design finalizada via auditoria impeccable: contraste textLight AA corrigido, Home/Tabs/Orcamentos/Servicos/Clientes 100% tokens (0 hex), emojis→Ionicons, `tabBarAccessibilityLabel` ×5, labels em KPI cards e menu Mais, Reduce Motion em FadeInView/PressableScale, fonte dinâmica respeitada, skeleton nas 5 telas, `React.memo` nas 4 listas, `adjustResize` + prop `keyboardAvoiding` no ScreenContainer. Detalhes: reference `mobile-design-audit-2026-09.md` da skill smartgesso-development.
+- [ ] **Auditoria impeccable: 19.5/20 (Excellent) — restam: keyboardAvoiding nas 5 telas de form (P2), debounce Servicos (P2), minHeight/flexShrink AppButton/AppInput/FinancialSummaryCard (P3)**
 
 ## 🟡 Testes
 

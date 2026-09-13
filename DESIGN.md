@@ -2,27 +2,28 @@
 
 ## Identidade (UI/UX Pro Max — "Soft UI Evolution")
 
-Indigo vibrante sobre fundo indigo claro. Moderno, acessível (WCAG AA+), sombras aprimoradas.
+Indigo Enterprise sobre fundo neutro claro (com dark mode "Linear Dark"). Moderno, acessível (WCAG AA em light e dark), sombras aprimoradas.
 Tipografia geométrica (Outfit/Work Sans — fallback System/sans-serif no RN).
 
 ## Palette
 
-| Role | Hex | Uso |
+| Role | Hex (light / dark) | Uso |
 |---|---|---|
-| primary | `#6366F1` | Ações, links, foco, tab ativa |
-| primary-dark | `#4F46E5` | Pressed/hover de ações |
-| primary-light | `#818CF8` | Ícones secundários |
-| primary-soft | `#EEF2FF` | Fundo de ícones/badges |
-| secondary | `#818CF8` | Destaques secundários |
-| background | `#F5F3FF` | Fundo do app (indigo claro) |
-| surface | `#FFFFFF` | Cards, inputs, headers |
-| text | `#312E81` | Texto principal (indigo profundo) |
-| text-secondary | `#6D6A9E` | Texto secundário (≥4.5:1) |
-| border | `#E0E7FF` | Bordas de cards/inputs |
-| success | `#059669` | Pagamentos, ativo, concluído |
-| warning | `#D97706` | Pendente, alerta |
-| danger | `#DC2626` | Erro, cancelado |
-| info | `#2563EB` | Informativo |
+| primary | `#1E40AF` / `#5E6AD2` | Ações, links, foco, tab ativa |
+| primary-dark | `#1E3A8A` / `#4C55B0` | Pressed/hover de ações |
+| primary-light | `#3B82F6` / `#8B93E6` | Ícones secundários |
+| primary-soft | `#EFF6FF` / `rgba(94,106,210,0.12)` | Fundo de ícones/badges |
+| secondary | `#3B82F6` / `#5E6AD2` | Destaques secundários |
+| background | `#F8FAFC` / `#1A1B1E` | Fundo do app |
+| surface | `#FFFFFF` / `#222326` | Cards, inputs, headers |
+| text | `#0F172A` / `#F7F8F8` | Texto principal |
+| text-secondary | `#64748B` / `#A6A8AC` | Texto secundário (≥4.5:1) |
+| text-light | `#66707D` / `#9CA3AF` | Hints, metadados (contraste >=4.5:1 verificado — WCAG AA) |
+| border | `#E2E8F0` / `#2E2F33` | Bordas de cards/inputs |
+| success | `#059669` / `#5FA58C` | Pagamentos, ativo, concluído |
+| warning | `#D97706` / `#F5C366` | Pendente, alerta |
+| danger | `#DC2626` / `#F07171` | Erro, cancelado |
+| info | `#3B82F6` / `#5E6AD2` | Informativo |
 
 ## Typography
 
@@ -47,7 +48,7 @@ sm 8 · md 12 · lg 16 · xl 24 · full 999
 
 ## Regras
 
-1. Contraste ≥4.5:1 (text #312E81 sobre bg #F5F3FF / surface)
+1. Contraste ≥4.5:1 (text #0F172A sobre bg #F8FAFC / surface — dark: #F7F8F8 sobre #1A1B1E)
 2. 1 ação primária por tela · touch target ≥44px
 3. NUNCA gradiente em cards/botões
 4. NUNCA "em desenvolvimento" — empty state instrutivo
