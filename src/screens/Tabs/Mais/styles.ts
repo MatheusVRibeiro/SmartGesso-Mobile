@@ -40,6 +40,19 @@ export const createMaisStyles = (colors: ActivePalette, isDark: boolean) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
+    // FASE 2 (adaptividade): seção do menu "Mais" em grid de 2 colunas (expanded)
+    sectionExpanded: {
+      width: '48%',
+      alignItems: 'flex-start',
+      marginBottom: spacing.xl,
+    },
+    sectionGridExpanded: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: spacing.xl,
+    },
     menuItem: {
       flexDirection: 'row',
       alignItems: 'center',

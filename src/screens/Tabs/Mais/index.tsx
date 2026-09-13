@@ -13,7 +13,7 @@ import { countNotifications } from '@/src/services/notifications';
 import { useCompanyFeatures } from '@/src/services/api/companyFeatures';
 import { queryClient } from '@/src/lib/queryClient';
 import { useAppTheme } from '@/src/theme/ThemeProvider';
-import { radius, sizes, spacing, typography } from '@/src/theme';
+import { radius, sizes, spacing, typography, useSizeClass } from '@/src/theme';
 import { createMaisStyles } from './styles';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -216,6 +216,59 @@ export default function MaisScreen() {
   const visibleItems = menuItems.filter((item) => !item.feature || featureEnabled(item.feature));
   const visibleSections = Array.from(new Set(visibleItems.map((item) => item.section)));
 
+  // FASE 2 (adaptividade): no expanded, as seções ficam em grid de 2 colunas.
+  const isExpanded = useSizeClass() === 'expanded';
+
+  const renderSection = (section: string) => (
+    <View key={section} style={isExpanded ? styles.sectionExpanded : styles.section}>
+      <Text style={styles.sectionTitle}>{section}</Text>
+      <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
+        {visibleItems
+          .filter((item) => item.section === section)
+          .map((item, index, array) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={item.action}
+              style={[
+                styles.menuItem,
+                index < array.length - 1 && styles.menuItemBorder,
+              ]}
+              accessibilityLabel={
+                item.badge != null && item.badge > 0
+                  ? `${item.title}, ${item.badge} não lidas`
+                  : item.title
+              }
+              accessibilityRole="button"
+            >
+              <View style={styles.menuItemContent}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name={item.icon}
+                    size={sizes.icon.md}
+                    color={colors.primary}
+                    accessibilityElementsHidden
+                  />
+                </View>
+                <Text style={styles.menuItemTitle}>{item.title}</Text>
+                {item.badge != null && item.badge > 0 ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={sizes.icon.md}
+                color={colors.textLight}
+                accessibilityElementsHidden
+              />
+            </TouchableOpacity>
+          ))}
+      </AppCard>
+    </View>
+  );
 
   return (
     <ScreenContainer scroll padding keyboard={false}>
@@ -224,56 +277,13 @@ export default function MaisScreen() {
         <Text style={styles.subtitle}>Gestão completa da empresa</Text>
       </View>
 
-      {visibleSections.map((section) => (
-        <View key={section} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section}</Text>
-          <AppCard shadow="light" radius={radius.lg} style={styles.sectionCard}>
-            {visibleItems
-              .filter((item) => item.section === section)
-              .map((item, index, array) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={item.action}
-                  style={[
-                    styles.menuItem,
-                    index < array.length - 1 && styles.menuItemBorder,
-                  ]}
-                  accessibilityLabel={
-                    item.badge != null && item.badge > 0
-                      ? `${item.title}, ${item.badge} não lidas`
-                      : item.title
-                  }
-                  accessibilityRole="button"
-                >
-                  <View style={styles.menuItemContent}>
-                    <View style={styles.menuItemIcon}>
-                      <Ionicons
-                        name={item.icon}
-                        size={sizes.icon.md}
-                        color={colors.primary}
-                        accessibilityElementsHidden
-                      />
-                    </View>
-                    <Text style={styles.menuItemTitle}>{item.title}</Text>
-                    {item.badge != null && item.badge > 0 ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>
-                          {item.badge > 99 ? '99+' : item.badge}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={sizes.icon.md}
-                    color={colors.textLight}
-                    accessibilityElementsHidden
-                  />
-                </TouchableOpacity>
-              ))}
-          </AppCard>
+      {isExpanded ? (
+        <View style={styles.sectionGridExpanded}>
+          {visibleSections.map(renderSection)}
         </View>
-      ))}
+      ) : (
+        visibleSections.map(renderSection)
+      )}
 
       {/* Sair */}
       <View style={styles.section}>
