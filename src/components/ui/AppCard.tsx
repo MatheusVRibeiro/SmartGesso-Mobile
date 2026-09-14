@@ -1,13 +1,14 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radius as radiusTokens, shadows, spacing } from '../../theme';
+import { View, ViewStyle } from 'react-native';
+import { radius as radiusTokens, shadows, spacing } from '../../theme';
 import type { ShadowName } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export interface AppCardProps {
   children: React.ReactNode;
   /** Padding interno (default: spacing.lg = 16). */
   padding?: number;
-  /** Raio dos cantos (default: radius.md = 12). */
+  /** Raio dos cantos (default: radius.lg = 16 — Etapa 3; cards compactos podem usar md = 12). */
   radius?: number;
   /** Sombra opcional (default: 'light'). */
   shadow?: ShadowName | 'none';
@@ -18,18 +19,24 @@ export interface AppCardProps {
 function AppCard({
   children,
   padding = spacing.lg,
-  radius: radiusProp = radiusTokens.md,
+  radius: radiusProp = radiusTokens.lg,
   shadow = 'light',
   style,
   testID,
 }: AppCardProps) {
+  const { colors, isDark } = useAppTheme();
+
   return (
     <View
       testID={testID}
       style={[
-        styles.base,
+        {
+          backgroundColor: colors.surface,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+          borderWidth: 1,
+        },
         { padding, borderRadius: radiusProp },
-        shadow !== 'none' && shadows[shadow],
+        shadow !== 'none' && !isDark && shadows[shadow],
         style,
       ]}
     >
@@ -40,11 +47,3 @@ function AppCard({
 
 export default AppCard;
 export { AppCard };
-
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-});

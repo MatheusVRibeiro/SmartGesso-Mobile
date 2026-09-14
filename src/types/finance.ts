@@ -28,6 +28,8 @@ export interface Payment {
   companyId: string;
   clientId: string;
   quoteId?: string | null;
+  /** OS vinculada ao pagamento (V3 — pagamento contextual a partir do serviço). */
+  serviceOrderId?: string | null;
   amount: number;
   paymentMethod: PaymentMethod;
   paymentDate: string;
@@ -51,6 +53,8 @@ export interface PaymentListResponse {
 export interface CreatePaymentInput {
   clientId: string;
   quoteId?: string;
+  /** OS vinculada — backend valida tenant + clientId ↔ OS. */
+  serviceOrderId?: string;
   amount: number;
   paymentMethod: PaymentMethod;
   paymentDate?: string;

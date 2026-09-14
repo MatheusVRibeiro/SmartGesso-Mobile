@@ -1,5 +1,6 @@
 import { quotesService } from './quotes';
 import { serviceOrdersService } from './serviceOrders';
+import { toArray } from '../../types/api';
 import type { AgendaItem } from '../../types/agenda';
 import type { QuoteSummary } from '../../types/quote';
 import type { ServiceOrder } from '../../types/serviceOrder';
@@ -12,15 +13,6 @@ import type { ServiceOrder } from '../../types/serviceOrder';
  * - Quotes: visitDate → visita técnica; measurementDate → medição;
  * - ServiceOrders: scheduledDate → instalação/serviço.
  */
-
-/** Normaliza array puro (Prisma findMany) ou { data, total }. */
-function toArray<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  if (result && typeof result === 'object' && 'data' in result) {
-    return (result as { data: T[] }).data;
-  }
-  return [];
-}
 
 /** Chave de data local (YYYY-MM-DD) — evita deslocamento de fuso. */
 function toLocalDateKey(value: string | Date): string {

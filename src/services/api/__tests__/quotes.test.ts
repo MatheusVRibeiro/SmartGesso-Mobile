@@ -84,13 +84,78 @@ describe('quotesService', () => {
     expect(result.version).toBe(2);
   });
 
-  it('approve chama POST /quotes/:id/approve', async () => {
-    mockClient.post.mockResolvedValue({ data: { ...mockQuote, status: 'APROVADO' } });
+  it('approve chama POST /quotes/:id/approve e retorna ApproveQuoteResponse', async () => {
+    const approveResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: true,
+    };
+    mockClient.post.mockResolvedValue({ data: approveResponse });
 
     const result = await quotesService.approve('q-1');
 
     expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/approve');
-    expect(result.status).toBe('APROVADO');
+    expect(result.quote.status).toBe('APROVADO');
+    expect(result.serviceOrder.id).toBe('os-1');
+    expect(result.serviceOrderCreated).toBe(true);
+  });
+
+  it('approve repassa { quote, serviceOrder, serviceOrderCreated } intactos', async () => {
+    const approveResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: true,
+    };
+    mockClient.post.mockResolvedValue({ data: approveResponse });
+
+    const result = await quotesService.approve('q-1');
+
+    expect(mockClient.post).toHaveBeenCalledWith('/quotes/q-1/approve');
+    expect(result).toEqual(approveResponse);
+    expect(result.quote).toBe(approveResponse.quote);
+    expect(result.serviceOrder).toBe(approveResponse.serviceOrder);
+    expect(result.serviceOrderCreated).toBe(true);
+  });
+
+  it('approve retorna serviceOrderCreated=false quando serviço já existe', async () => {
+    const approveResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: false,
+    };
+    mockClient.post.mockResolvedValue({ data: approveResponse });
+
+    const result = await quotesService.approve('q-1');
+
+    expect(result.serviceOrderCreated).toBe(false);
+    expect(result.serviceOrder.id).toBe('os-1');
+  });
+
+  it('approve é idempotente: serviceOrderCreated=false retorna a MESMA serviceOrder', async () => {
+    const firstResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: true,
+    };
+    const secondResponse = {
+      quote: { ...mockQuote, status: 'APROVADO' },
+      serviceOrder: { id: 'os-1', code: 1, status: 'PENDENTE' },
+      serviceOrderCreated: false,
+    };
+    mockClient.post
+      .mockResolvedValueOnce({ data: firstResponse })
+      .mockResolvedValueOnce({ data: secondResponse });
+
+    const first = await quotesService.approve('q-1');
+    const second = await quotesService.approve('q-1');
+
+    // Simula idempotência do backend: segunda aprovação reutiliza a mesma OS
+    expect(second.serviceOrderCreated).toBe(false);
+    expect(second.serviceOrder).toEqual(first.serviceOrder);
+    expect(second.serviceOrder.id).toBe('os-1');
+    expect(mockClient.post).toHaveBeenCalledTimes(2);
+    expect(mockClient.post).toHaveBeenNthCalledWith(1, '/quotes/q-1/approve');
+    expect(mockClient.post).toHaveBeenNthCalledWith(2, '/quotes/q-1/approve');
   });
 
   it('reject chama POST /quotes/:id/reject com a nota', async () => {

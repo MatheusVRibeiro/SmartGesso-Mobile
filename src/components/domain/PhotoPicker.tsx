@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../theme/ThemeProvider';
 /**
  * SmartGesso Mobile — PhotoPicker (V3 §67).
  *
@@ -83,6 +84,7 @@ async function compressPhoto(uri: string): Promise<string> {
  * A tela decide quando persistir (ex.: no submit do formulário).
  */
 export function PhotoPicker({
+
   label,
   value,
   onChange,
@@ -228,7 +230,7 @@ export function PhotoPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
@@ -307,3 +309,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 });
+const styles = createStyles(colors, false);

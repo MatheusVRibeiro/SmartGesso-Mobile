@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export type StatusBadgeVariant =
   | 'active'
@@ -11,18 +12,6 @@ export type StatusBadgeVariant =
   | 'info';
 
 export type StatusBadgeSize = 'sm' | 'md';
-
-const STATUS_CONFIG: Record<
-  StatusBadgeVariant,
-  { label: string; backgroundColor: string; color: string }
-> = {
-  active: { label: 'Ativo', backgroundColor: colors.successSoft, color: colors.success },
-  warning: { label: 'Atenção', backgroundColor: colors.warningSoft, color: colors.warning },
-  suspended: { label: 'Suspenso', backgroundColor: colors.dangerSoft, color: colors.danger },
-  cancelled: { label: 'Cancelado', backgroundColor: colors.dangerSoft, color: colors.danger },
-  expired: { label: 'Expirado', backgroundColor: colors.dangerSoft, color: colors.danger },
-  info: { label: 'Informação', backgroundColor: colors.infoSoft, color: colors.info },
-};
 
 export interface StatusBadgeProps {
   status: StatusBadgeVariant;
@@ -40,7 +29,21 @@ function StatusBadge({
   style,
   testID,
 }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+  const { colors } = useAppTheme();
+
+  const statusConfig: Record<
+    StatusBadgeVariant,
+    { label: string; backgroundColor: string; color: string }
+  > = {
+    active: { label: 'Ativo', backgroundColor: colors.successSoft, color: colors.success },
+    warning: { label: 'Atenção', backgroundColor: colors.warningSoft, color: colors.warning },
+    suspended: { label: 'Suspenso', backgroundColor: colors.dangerSoft, color: colors.danger },
+    cancelled: { label: 'Cancelado', backgroundColor: colors.dangerSoft, color: colors.danger },
+    expired: { label: 'Expirado', backgroundColor: colors.dangerSoft, color: colors.danger },
+    info: { label: 'Informação', backgroundColor: colors.infoSoft, color: colors.info },
+  };
+
+  const config = statusConfig[status];
 
   return (
     <View

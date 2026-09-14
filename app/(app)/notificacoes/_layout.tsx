@@ -1,18 +1,10 @@
+import React from 'react';
 import { Stack } from 'expo-router';
-import { BackButton } from '../../../src/components/navigation/BackButton';
-import { colors, typography } from '../../../src/theme';
 
 export default function NotificacoesLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: true,
-        headerLeft: () => <BackButton />,
-        headerStyle: { backgroundColor: colors.background },
-        headerTitleStyle: { color: colors.text, fontFamily: typography.weights.bold },
-      }}
-    >
-      <Stack.Screen name="index" options={{ title: 'Notificações' }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );
 }

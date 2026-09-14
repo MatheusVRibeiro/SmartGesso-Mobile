@@ -58,9 +58,9 @@ export interface AuthUser {
   email: string;
   activeCompanyId: string | null;
   /**
-   * Perfil V3 (ex.: COMPANY_OWNER). Ainda não retornado pela API
-   * (GET /auth/me não expõe role) — o PermissionGate usa COMPANY_OWNER
-   * como padrão enquanto o campo não existir, sem quebrar o fluxo atual.
+   * Perfil V3 (ex.: COMPANY_OWNER). Legado: GET /auth/me não expõe role —
+   * o perfil real vem de GET /company/permissions e fica em
+   * useSessionStore.role (V5: null = unknown, nunca assumir COMPANY_OWNER).
    */
   role?: CompanyProfileRole | null;
 }

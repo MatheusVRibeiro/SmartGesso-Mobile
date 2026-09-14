@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartGesso — Design System Mockup (Light + Dark)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Light */
+    --primary: #1E40AF;
+    --primary-light: #3B82F6;
+    --secondary: #3B82F6;
+    --accent: #059669;
+    --accent-light: #10B981;
+    --destructive: #DC2626;
+    --warning: #D97706;
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --text: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --border: #E2E8F0;
+    --shadow: rgba(79, 70, 229, 0.08);
+    --input-bg: #FFFFFF;
+    --tab-bg: #FFFFFF;
+  }
+  [data-theme="dark"] {
+    /* Linear Dark — cinzas neutros, não preto puro */
+    --primary: #5E6AD2;
+    --primary-light: #8B93E6;
+    --secondary: #5E6AD2;
+    --accent: #5FA58C;
+    --accent-light: #7CC4AA;
+    --destructive: #F07171;
+    --warning: #F5C366;
+    --bg: #1A1B1E;
+    --card: #222326;
+    --card-hover: #2A2B2F;
+    --text: #F7F8F8;
+    --text-secondary: #A6A8AC;
+    --text-muted: #76787D;
+    --border: #2E2F33;
+    --shadow: rgba(0, 0, 0, 0.4);
+    --input-bg: #222326;
+    --tab-bg: #1A1B1E;
+    --hover: #2A2B2F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #E2E8F0; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 16px; }
+  .controls { display: flex; align-items: center; gap: 16px; background: white; padding: 12px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(30,64,175,0.15); position: sticky; top: 12px; z-index: 100; }
+  .controls h2 { font-size: 16px; font-weight: 800; color: #0F172A; }
+  .theme-toggle { display: flex; background: #E2E8F0; border-radius: 30px; padding: 4px; gap: 4px; }
+  .theme-btn { padding: 8px 18px; border-radius: 24px; border: none; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 200ms; color: #64748B; background: transparent; }
+  .theme-btn.active { background: linear-gradient(135deg, #1E40AF, #3B82F6); color: white; box-shadow: 0 4px 12px rgba(30,64,175,0.3); }
+  .phones { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+  .phone { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 25px 60px var(--shadow); position: relative; border: 8px solid #0F172A; transition: background 300ms; }
+  .status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; color: var(--text); font-size: 14px; font-weight: 600; }
+  .content { padding: 0 20px; overflow-y: auto; height: calc(100% - 44px - 80px); scrollbar-width: none; }
+  .content::-webkit-scrollbar { display: none; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .greeting { font-size: 20px; font-weight: 800; color: var(--text); }
+  .greeting span { color: var(--text-secondary); font-weight: 600; }
+  .company { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .period-badge { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+  .quick-actions { display: flex; justify-content: space-between; margin-bottom: 24px; }
+  .qa { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; }
+  .qa-icon { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; box-shadow: 0 8px 16px rgba(79,70,229,0.25); transition: transform 150ms; }
+  .qa-icon:hover { transform: scale(0.97); }
+  .qa-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-align: center; }
+  .grad-blue { background: linear-gradient(135deg, #1E40AF, #3B82F6); }
+  .grad-green { background: linear-gradient(135deg, #059669, #10B981); }
+  .grad-amber { background: linear-gradient(135deg, #D97706, #F59E0B); }
+  .grad-slate { background: linear-gradient(135deg, #475569, #64748B); }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: 0 4px 12px var(--shadow); transition: background 300ms, transform 150ms, border-color 200ms; }
+  .kpi-card:hover { background: var(--hover, var(--card-hover, var(--card))); transform: translateY(-1px); border-color: var(--primary); }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+  .kpi-value { font-size: 18px; font-weight: 800; color: var(--text); }
+  .kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .section-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 4px 12px var(--shadow); margin-bottom: 24px; transition: background 300ms; }
+  .chart-legend { display: flex; gap: 16px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .chart { height: 90px; display: flex; align-items: flex-end; gap: 4px; }
+  .bar { flex: 1; border-radius: 4px 4px 0 0; transition: all 300ms; }
+  .bar-green { background: linear-gradient(180deg, #34D399, #059669); }
+  .bar-blue { background: linear-gradient(180deg, #93C5FD, #3B82F6); }
+  .followup-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px; box-shadow: 0 4px 12px var(--shadow); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: background 300ms; }
+  .followup-info { display: flex; align-items: center; gap: 10px; }
+  .followup-icon { width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; }
+  .followup-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .followup-sub { font-size: 11px; color: var(--text-muted); }
+  .wa-btn { background: linear-gradient(135deg, #059669, #10B981); color: white; border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 10px rgba(5,150,105,0.3); }
+  .tab-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: var(--tab-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding-bottom: 20px; transition: background 300ms; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--text-muted); }
+  .tab.active { color: var(--primary); }
+  .tab-center { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #1E40AF, #3B82F6); display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; box-shadow: 0 10px 20px rgba(30,64,175,0.35); margin-top: -24px; }
+  .tab-label { font-size: 10px; font-weight: 700; }
+
+  /* Login */
+  .login-pad { padding: 60px 28px; text-align: center; }
+  .logo { width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, #1E40AF, #3B82F6); margin: 20px auto 16px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: white; box-shadow: 0 12px 24px rgba(30,64,175,0.35); }
+  .login-title { font-size: 24px; font-weight: 800; color: var(--text); }
+  .login-sub { font-size: 14px; color: var(--text-secondary); margin: 6px 0 32px; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+  .input-wrap { border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; background: var(--input-bg); transition: border-color 200ms, box-shadow 200ms; }
+  .input-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
+  .input-wrap span { color: var(--text-muted); }
+  .input-wrap input { border: none; outline: none; font-size: 15px; font-family: inherit; flex: 1; background: transparent; color: var(--text); }
+  .btn-primary { background: linear-gradient(135deg, #1E40AF, #3B82F6); border-radius: 12px; padding: 14px; color: white; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 0 10px 20px rgba(30,64,175,0.3); cursor: pointer; transition: transform 150ms, opacity 200ms; }
+  .btn-primary:hover { transform: scale(0.97); opacity: 0.95; }
+  .link { font-size: 13px; color: var(--primary); font-weight: 600; margin-top: 20px; display: block; }
+  .tag { position: absolute; top: 54px; right: 18px; background: var(--primary); color: white; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; z-index: 5; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <h2>🌗 SmartGesso — Light / Dark</h2>
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️ Claro</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙 Escuro</button>
+  </div>
+</div>
+
+<div class="phones">
+  <!-- DASHBOARD -->
+  <div class="phone" id="phone-dash">
+    <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="content">
+      <div class="header">
+        <div>
+          <div class="greeting">Olá, <span>João</span> 👋</div>
+          <div class="company">Gesseiro Silva &amp; Filhos</div>
+        </div>
+        <div class="period-badge">📅 Agosto 2026</div>
+      </div>
+      <div class="quick-actions">
+        <div class="qa"><div class="qa-icon grad-blue">📄</div><div class="qa-label">Orçamento</div></div>
+        <div class="qa"><div class="qa-icon grad-green">🔨</div><div class="qa-label">Nova OS</div></div>
+        <div class="qa"><div class="qa-icon grad-amber">💳</div><div class="qa-label">Pagamento</div></div>
+        <div class="qa"><div class="qa-icon grad-slate">📉</div><div class="qa-label">Despesa</div></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">A receber</div><div class="kpi-value">R$ 12.450</div><div class="kpi-sub">2 pendentes</div></div>
+        <div class="kpi-card"><div class="kpi-label">Serviços hoje</div><div class="kpi-value">3</div><div class="kpi-sub">agendados</div></div>
+        <div class="kpi-card"><div class="kpi-label">Orçamentos abertos</div><div class="kpi-value">5</div><div class="kpi-sub">R$ 28.900</div></div>
+        <div class="kpi-card"><div class="kpi-label">Despesas do mês</div><div class="kpi-value">R$ 4.320</div><div class="kpi-sub">-12% vs mês</div></div>
+      </div>
+      <div class="section-title">Receita vs Despesas</div>
+      <div class="section-sub">Últimos 6 meses</div>
+      <div class="chart-card">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>Receita</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>Despesa</div>
+        </div>
+        <div class="chart">
+          <div class="bar bar-green" style="height:40%"></div><div class="bar bar-blue" style="height:25%"></div>
+          <div class="bar bar-green" style="height:55%"></div><div class="bar bar-blue" style="height:30%"></div>
+          <div class="bar bar-green" style="height:65%"></div><div class="bar bar-blue" style="height:35%"></div>
+          <div class="bar bar-green" style="height:48%"></div><div class="bar bar-blue" style="height:28%"></div>
+          <div class="bar bar-green" style="height:78%"></div><div class="bar bar-blue" style="height:40%"></div>
+          <div class="bar bar-green" style="height:90%"></div><div class="bar bar-blue" style="height:45%"></div>
+        </div>
+      </div>
+      <div class="section-title">Follow-ups Pendentes</div>
+      <div class="section-sub">Contate os clientes para fechar orçamentos</div>
+      <div class="followup-card">
+        <div class="followup-info"><div class="followup-icon">📞</div><div><div class="followup-text">Orçamento #1024</div><div class="followup-sub">Carlos Mendes · Ligação</div></div></div>
+        <div class="wa-btn">WhatsApp</div>
+      </div>
+      <div class="followup-card">
+        <div class="followup-info"><div class="followup-icon">💬</div><div><div class="followup-text">Orçamento #1021</div><div class="followup-sub">Ana Paula · WhatsApp</div></div></div>
+        <div class="wa-btn">WhatsApp</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active"><span>🏠</span><span class="tab-label">Início</span></div>
+      <div class="tab"><span>📋</span><span class="tab-label">Orçamentos</span></div>
+      <div class="tab-center">+</div>
+      <div class="tab"><span>🔧</span><span class="tab-label">Serviços</span></div>
+      <div class="tab"><span>☰</span><span class="tab-label">Mais</span></div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="login-pad">
+      <div class="logo">🏗️</div>
+      <div class="login-title">SmartGesso</div>
+      <div class="login-sub">Acesse sua conta</div>
+      <div class="field">
+        <label class="field-label">E-mail</label>
+        <div class="input-wrap"><span>✉️</span><input placeholder="seu@email.com"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Senha</label>
+        <div class="input-wrap"><span>🔒</span><input type="password" placeholder="••••••••"><span style="font-size:12px;font-weight:600;">Mostrar</span></div>
+      </div>
+      <div class="btn-primary">Entrar na conta</div>
+      <span class="link">Esqueci a senha</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  // Persist
+  localStorage.setItem('sg-theme', theme);
+}
+// Init
+(function() {
+  const saved = localStorage.getItem('sg-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
+</body>
+</html>

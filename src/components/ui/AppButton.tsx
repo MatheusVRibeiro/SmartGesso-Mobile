@@ -7,6 +7,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { borders, colors, radius, sizes, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import { PressableScale } from './PressableScale';
 
 export type AppButtonVariant =
   | 'primary'
@@ -25,12 +27,16 @@ export interface AppButtonProps {
   loading?: boolean;
   disabled?: boolean;
   accessibilityLabel?: string;
+  /** Limite opcional de largura do botão (ex.: 360 no expanded/tablet). */
+  maxWidth?: number;
   style?: ViewStyle;
   testID?: string;
 }
 
 const VARIANT_STYLES: Record<AppButtonVariant, ViewStyle> = {
-  primary: { backgroundColor: colors.primary },
+  // Etapa 3: gradiente indigo #1E40AF→#3B82F6 (design system).
+  // expo-linear-gradient não instalado → fallback sólido com primaryLight.
+  primary: { backgroundColor: colors.primaryLight },
   secondary: {
     backgroundColor: colors.transparent,
     borderWidth: borders.width.thin,
@@ -54,9 +60,11 @@ const TEXT_COLORS: Record<AppButtonVariant, string> = {
 };
 
 const SIZE_STYLES: Record<AppButtonSize, ViewStyle> = {
-  sm: { height: sizes.buttonHeight.sm, paddingHorizontal: 12 },
-  md: { height: sizes.buttonHeight.md, paddingHorizontal: 20 },
-  lg: { height: sizes.buttonHeight.lg, paddingHorizontal: 28 },
+  // minHeight em vez de height: com fonte do sistema escalada (ex.: 140%),
+  // o texto cresce sem clipar; padding vertical mantém a altura visual.
+  sm: { minHeight: sizes.buttonHeight.sm, paddingHorizontal: 12 },
+  md: { minHeight: sizes.buttonHeight.md, paddingHorizontal: 20 },
+  lg: { minHeight: sizes.buttonHeight.lg, paddingHorizontal: 28 },
 };
 
 const FONT_SIZES: Record<AppButtonSize, number> = {
@@ -73,43 +81,51 @@ function AppButton({
   loading = false,
   disabled = false,
   accessibilityLabel,
+  maxWidth,
   style,
   testID,
 }: AppButtonProps) {
+  const { colors } = useAppTheme();
   const isDisabled = disabled || loading;
   const textColor = isDisabled ? colors.disabledText : TEXT_COLORS[variant];
 
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
-      disabled={isDisabled}
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        VARIANT_STYLES[variant],
-        SIZE_STYLES[size],
-        isDisabled && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
-        pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
-        style,
-      ]}
+      disabled={isDisabled}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
+      style={style}
     >
-      {loading ? (
-        <ActivityIndicator color={textColor} size="small" />
-      ) : (
-        <Text
-          style={[
-            styles.label,
-            { color: textColor, fontSize: FONT_SIZES[size] },
-          ]}
-        >
-          {title}
-        </Text>
-      )}
-    </Pressable>
+      <Pressable
+        testID={testID}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        disabled={isDisabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.base,
+          VARIANT_STYLES[variant],
+          SIZE_STYLES[size],
+          maxWidth != null && { maxWidth },
+          isDisabled && styles.disabled,
+          pressed && !isDisabled && styles.pressed,
+          pressed && !isDisabled && variant === 'primary' && styles.pressedPrimary,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <Text
+            style={[
+              styles.label,
+              { color: textColor, fontSize: FONT_SIZES[size] },
+            ]}
+          >
+            {title}
+          </Text>
+        )}
+      </Pressable>
+    </PressableScale>
   );
 }
 
@@ -130,7 +146,8 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   pressedPrimary: {
-    backgroundColor: colors.primaryDark,
+    // Press: tom mais escuro do novo primary (primaryLight → primary).
+    backgroundColor: colors.primary,
   },
   label: {
     fontWeight: typography.weights.semibold,

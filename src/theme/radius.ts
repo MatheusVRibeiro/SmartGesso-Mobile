@@ -1,12 +1,13 @@
 /**
  * SmartGesso Mobile — Tokens de raio (cantos arredondados).
- * Escala refinada do design system indigo.
+ * Design system Enterprise SaaS Mobile: cards 12pt, modais 16pt,
+ * pill buttons 12pt (MASTER.md — "pill buttons or 12pt radius").
  */
 export const radius = {
   sm: 8,
   md: 12,
-  lg: 16,
-  xl: 24,
+  lg: 12,
+  xl: 16,
   full: 999,
 } as const;
 

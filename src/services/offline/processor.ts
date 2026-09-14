@@ -1,5 +1,7 @@
 import { addMutation, getPendingMutations, markAsProcessing, markAsCompleted, markAsFailed } from './syncQueue';
 import NetInfo from '@react-native-community/netinfo';
+import { config } from '../../constants/config';
+import { SecureTokenStorage } from '../auth/SecureTokenStorage';
 
 /**
  * Processador de fila de sincronização offline.
@@ -11,6 +13,9 @@ import NetInfo from '@react-native-community/netinfo';
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 segundo
 const MAX_DELAY = 30000; // 30 segundos
+
+/** Base URL da API — mesma fonte do client axios (EXPO_PUBLIC_API_URL / __DEV__). */
+const API_BASE_URL = config.apiUrl;
 
 /**
  * Calcula delay com backoff exponencial.
@@ -31,13 +36,20 @@ async function processMutation(mutation: any): Promise<boolean> {
     // Marca como processando
     await markAsProcessing(mutation.id);
     
-    // Faz a requisição HTTP
-    const response = await fetch(mutation.endpoint, {
+    // V5 ETAPA 11 — nunca enviar requisição sem autenticação.
+    const token = await SecureTokenStorage.getAccessToken();
+    if (!token) {
+      console.error(`[Processor] Sem token de acesso — mutação ${mutation.id} marcada como failed`);
+      await markAsFailed(mutation.id, MAX_RETRIES);
+      return false;
+    }
+    
+    // Faz a requisição HTTP (base URL + Authorization)
+    const response = await fetch(`${API_BASE_URL}${mutation.endpoint}`, {
       method: mutation.method,
       headers: {
         'Content-Type': 'application/json',
-        // Adicione headers de autenticação se necessário
-        // 'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(mutation.body),
     });
@@ -48,12 +60,12 @@ async function processMutation(mutation: any): Promise<boolean> {
       return true;
     } else {
       console.error(`[Processor] Erro HTTP ${response.status} para mutação ${mutation.id}`);
-      const shouldRetry = await markAsFailed(mutation.id, MAX_RETRIES);
+      await markAsFailed(mutation.id, MAX_RETRIES);
       return false;
     }
   } catch (error) {
     console.error(`[Processor] Erro ao processar mutação ${mutation.id}:`, error);
-    const shouldRetry = await markAsFailed(mutation.id, MAX_RETRIES);
+    await markAsFailed(mutation.id, MAX_RETRIES);
     return false;
   }
 }

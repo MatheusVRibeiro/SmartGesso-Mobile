@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { AppCard } from '../ui/AppCard';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../theme/ThemeProvider';
+import type { ActivePalette } from '../../theme/ThemeProvider';
 import { formatCurrency, formatNumber } from '../../utils/format';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -46,6 +48,8 @@ function MaterialResultCard({
   style,
   testID,
 }: MaterialResultCardProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const totalValue = total ?? unitPrice;
 
   const accessibilityLabel = [
@@ -96,49 +100,50 @@ function MaterialResultCard({
 export default MaterialResultCard;
 export { MaterialResultCard };
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  name: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.text,
-  },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.md,
-  },
-  quantity: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.primary,
-  },
-  unitPrice: {
-    fontSize: typography.sizes.xs,
-    color: colors.textLight,
-  },
-  total: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-});
+const createStyles = (colors: ActivePalette, isDark: boolean) =>
+  StyleSheet.create({
+    card: {
+      marginBottom: spacing.md,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    iconCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.full,
+      backgroundColor: isDark ? 'rgba(94, 106, 210, 0.18)' : colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    info: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    name: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+    },
+    meta: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: spacing.md,
+    },
+    quantity: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.primary,
+    },
+    unitPrice: {
+      fontSize: typography.sizes.xs,
+      color: colors.textLight,
+    },
+    total: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+      color: colors.primary,
+    },
+  });

@@ -22,3 +22,6 @@ export type { ShadowName } from './shadows';
 
 export { sizes } from './sizes';
 export type { Sizes } from './sizes';
+
+export { getSizeClass, useSizeClass, useSizeClassValue } from './useSizeClass';
+export type { SizeClass } from './useSizeClass';

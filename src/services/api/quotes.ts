@@ -1,10 +1,12 @@
 import { getApiClient } from './client';
 import type {
+  ApproveQuoteResponse,
   ConvertToServiceResult,
   Quote,
   QuoteSummary,
   CreateQuoteInput,
   UpdateQuoteInput,
+  ShareQuoteResponse,
 } from '../../types/quote';
 
 function api() {
@@ -15,8 +17,18 @@ function api() {
 export const quotesService = {
   /** GET /quotes */
   async list(): Promise<QuoteSummary[]> {
-    const response = await api().get<QuoteSummary[]>('/quotes');
-    return response.data;
+    const response = await api().get<QuoteSummary[] | { data: QuoteSummary[] }>('/quotes');
+    const resData: any = response.data;
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    if (resData && typeof resData === 'object' && Array.isArray(resData.data)) {
+      return resData.data;
+    }
+    if (resData && typeof resData === 'object' && Array.isArray(resData.items)) {
+      return resData.items;
+    }
+    return [];
   },
 
   /** GET /quotes/:id */
@@ -48,9 +60,9 @@ export const quotesService = {
     return response.data;
   },
 
-  /** POST /quotes/:id/approve — aprova o orçamento (status APROVADO). */
-  async approve(id: string): Promise<Quote> {
-    const response = await api().post<Quote>(`/quotes/${id}/approve`);
+  /** POST /quotes/:id/approve — aprova o orçamento (status APROVADO) e retorna serviço. */
+  async approve(id: string): Promise<ApproveQuoteResponse> {
+    const response = await api().post<ApproveQuoteResponse>(`/quotes/${id}/approve`);
     return response.data;
   },
 
@@ -77,6 +89,18 @@ export const quotesService = {
   /** POST /quotes/:id/pdf — retorna blob do PDF */
   async getPdf(id: string): Promise<Blob> {
     const response = await api().get<Blob>(`/quotes/${id}/pdf`, { responseType: 'blob' });
+    return response.data;
+  },
+
+  /** POST /quotes/:id/share — gera link público de aprovação (deep link). */
+  async share(id: string): Promise<ShareQuoteResponse> {
+    const response = await api().post<ShareQuoteResponse>(`/quotes/${id}/share`);
+    return response.data;
+  },
+
+  /** GET /quotes/by-token/:token — localiza o orçamento pelo token público (deep link). */
+  async getByToken(token: string): Promise<Quote> {
+    const response = await api().get<Quote>(`/quotes/by-token/${token}`);
     return response.data;
   },
 };

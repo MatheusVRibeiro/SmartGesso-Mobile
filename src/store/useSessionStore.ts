@@ -13,6 +13,8 @@ export interface SessionState {
   activeCompany: CompanyResult | null;
   /** User's permission codes */
   permissions: string[];
+  /** User's company role (from GET /company/permissions). Null = unknown. */
+  role: string | null;
   /** Company access status */
   accessStatus: string | null;
 
@@ -25,6 +27,8 @@ export interface SessionState {
   setActiveCompany: (company: CompanyResult | null) => void;
   /** Replace the permissions list */
   setPermissions: (permissions: string[]) => void;
+  /** Set the user's company role (null = unknown / fetch failed) */
+  setRole: (role: string | null) => void;
   /** Update access status */
   setAccessStatus: (status: string | null) => void;
   /** Transition to unauthenticated — clears all state */
@@ -39,6 +43,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   currentUser: null,
   activeCompany: null,
   permissions: [],
+  role: null,
   accessStatus: null,
 
   // ── Actions ─────────────────────────────────────────────────────────────
@@ -55,6 +60,8 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   setPermissions: (permissions) => set({ permissions }),
 
+  setRole: (role) => set({ role }),
+
   setAccessStatus: (status) => set({ accessStatus: status }),
 
   clearSession: () =>
@@ -63,6 +70,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       currentUser: null,
       activeCompany: null,
       permissions: [],
+      role: null,
       accessStatus: null,
     }),
 }));

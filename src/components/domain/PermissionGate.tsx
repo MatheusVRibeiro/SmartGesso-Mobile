@@ -1,22 +1,32 @@
 import React from 'react';
 import { useSessionStore } from '../../store/useSessionStore';
-import { DEFAULT_COMPANY_PROFILE_ROLE } from '../../types/permissions';
+import { COMPANY_PROFILE_ROLES } from '../../types/permissions';
 import type { CompanyProfileRole } from '../../types/permissions';
 
 /**
- * Gate de permissão por perfil (V3 — Usuários e Permissões).
+ * Gate de permissão (V5 — princípio 17: nunca assumir COMPANY_OWNER).
  *
- * - `allow` ausente = qualquer perfil autenticado tem acesso.
- * - `deny` tem precedência sobre `allow`.
+ * Modos de uso (combináveis):
+ * - `permission` — código explícito (ex.: 'users:manage'); verificada contra
+ *   `permissions` do store (populadas por GET /company/permissions no
+ *   bootstrap da sessão).
+ * - `allow`/`deny` por role — compatibilidade V3. `allow` ausente = qualquer
+ *   role autenticado tem acesso; `deny` tem precedência sobre `allow`.
  * - Sem `fallback`, renderiza `null` quando o usuário não tem acesso.
- * - Se o usuário ainda não tem `role` (API ainda não expõe), usa
- *   COMPANY_OWNER como padrão — não quebra o fluxo atual.
+ *
+ * Estado unknown (role null / permissions vazias / fetch falhou):
+ * - Com `permission`: só renderiza children se a permissão estiver na lista.
+ *   Lista vazia ⇒ fallback (nada liberado por padrão).
+ * - Com `allow`: role null não pertence a nenhuma lista ⇒ fallback.
+ * - Sem `permission` nem `allow` (sem `deny`): renderiza children.
  *
  * O mobile esconde recursos, mas o backend continua sendo a autoridade
  * definitiva das permissões.
  */
 export interface PermissionGateProps {
-  /** Perfis com acesso. Ausente = qualquer perfil. */
+  /** Código de permissão explícito (ex.: 'users:manage'). */
+  permission?: string;
+  /** Perfis com acesso. Ausente = qualquer perfil conhecido. */
   allow?: readonly CompanyProfileRole[];
   /** Perfis sem acesso (tem precedência sobre `allow`). */
   deny?: readonly CompanyProfileRole[];
@@ -26,24 +36,38 @@ export interface PermissionGateProps {
 }
 
 /**
- * Perfil do usuário atual (com fallback COMPANY_OWNER).
+ * Perfil do usuário atual (null = unknown — NUNCA assume COMPANY_OWNER).
+ * Fontes: store.role (GET /company/permissions) e, como legado,
+ * currentUser.role. String fora dos roles conhecidos ⇒ null (unknown ⇒ deny).
  * Útil para ajustes de layout condicionais além do gate declarativo.
  */
-export function useCompanyRole(): CompanyProfileRole {
+export function useCompanyRole(): CompanyProfileRole | null {
   const currentUser = useSessionStore((s) => s.currentUser);
-  return currentUser?.role ?? DEFAULT_COMPANY_PROFILE_ROLE;
+  const role = useSessionStore((s) => s.role);
+  const candidate = role ?? currentUser?.role ?? null;
+  return COMPANY_PROFILE_ROLES.includes(candidate as CompanyProfileRole)
+    ? (candidate as CompanyProfileRole)
+    : null;
 }
 
 export function PermissionGate({
+  permission,
   allow,
   deny,
   children,
   fallback = null,
 }: PermissionGateProps) {
   const role = useCompanyRole();
+  const permissions = useSessionStore((s) => s.permissions);
 
-  const allowed = allow ? allow.includes(role) : true;
-  const denied = deny ? deny.includes(role) : false;
+  if (permission != null) {
+    const hasPermission = permissions.includes(permission);
+    return <>{hasPermission ? children : fallback}</>;
+  }
+
+  const allowed = allow ? (role != null && allow.includes(role)) : true;
+  // Role unknown não escapa de uma blocklist (deny): fail-closed (V5).
+  const denied = deny ? (role == null || deny.includes(role)) : false;
 
   return <>{allowed && !denied ? children : fallback}</>;
 }

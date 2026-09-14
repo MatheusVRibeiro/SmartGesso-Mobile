@@ -6,9 +6,9 @@ export const sizes = {
   touchTarget: 44,
   /** Altura padrão de inputs. */
   inputHeight: 48,
-  /** Alturas de botão por tamanho. */
+  /** Alturas de botão por tamanho (mínimo WCAG de 44px de área de toque). */
   buttonHeight: {
-    sm: 40,
+    sm: 44,
     md: 48,
     lg: 52,
   },
@@ -23,8 +23,12 @@ export const sizes = {
   },
   /** Padding horizontal padrão de telas. */
   screenPadding: 16,
-  /** Largura máxima de conteúdo em telas largas (tablets). */
-  maxContentWidth: 600,
+  /**
+   * Largura máxima de conteúdo em telas largas (tablets).
+   * Unificado em 680 (antes 600): o ScreenContainer já aplicava 680 por padrão,
+   * então telas que consomem este token divergiam. Agora ambas as fontes usam 680.
+   */
+  maxContentWidth: 680,
 } as const;
 
 export type Sizes = typeof sizes;

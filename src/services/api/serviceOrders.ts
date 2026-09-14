@@ -46,9 +46,9 @@ export const serviceOrdersService = {
     return response.data;
   },
 
-  /** Registra o resultado financeiro (custo/venda) de uma OS — lucro/margem calculados pela API. */
+  /** Registra o resultado financeiro (custo/venda) de uma OS (V3 §44) — PATCH /service-orders/:id/result — lucro/margem calculados pela API. */
   async registerResult(id: string, data: RegisterServiceOrderResultInput): Promise<ServiceOrder> {
-    const response = await api().post<ServiceOrder>(`/service-orders/${id}/result`, data);
+    const response = await api().patch<ServiceOrder>(`/service-orders/${id}/result`, data);
     return response.data;
   },
 
