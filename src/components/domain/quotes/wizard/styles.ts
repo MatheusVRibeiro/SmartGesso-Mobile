@@ -98,6 +98,95 @@ export const createWizardStyles = (colors: ActivePalette, isDark: boolean) =>
       color: colors.primary,
       fontWeight: typography.weights.medium,
     },
+    // ─── Estilos ricos de Cliente & Local ─────────────────────────────
+    clientSelectedHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+    },
+    clientAvatar: {
+      width: 46,
+      height: 46,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    clientAvatarText: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+    },
+    clientInfoCol: {
+      flex: 1,
+      gap: 3,
+    },
+    clientNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      flexWrap: 'wrap',
+    },
+    clientBadgePill: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    clientBadgePillText: {
+      fontSize: 10,
+      fontWeight: typography.weights.bold,
+      textTransform: 'uppercase',
+    },
+    clientMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      flexWrap: 'wrap',
+      marginTop: 2,
+    },
+    clientMetaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    clientMetaText: {
+      fontSize: typography.sizes.xs,
+      color: colors.textSecondary,
+    },
+    clientAddressBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: 5,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.12)' : '#ECFDF5',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(37, 211, 102, 0.25)' : '#A7F3D0',
+    },
+    clientAddressBadgeText: {
+      fontSize: 11,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? '#4ADE80' : '#059669',
+      flex: 1,
+    },
+    useClientAddressBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 9,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(94, 106, 210, 0.15)' : 'rgba(30, 64, 175, 0.08)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(94, 106, 210, 0.3)' : 'rgba(30, 64, 175, 0.2)',
+      marginBottom: spacing.md,
+    },
+    useClientAddressText: {
+      fontSize: typography.sizes.xs + 1,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? '#8B93E6' : colors.primary,
+    },
     // Etapa 1 — Cliente
     clientCard: {
       marginBottom: spacing.md,
@@ -590,7 +679,7 @@ export const createWizardStyles = (colors: ActivePalette, isDark: boolean) =>
       marginTop: 2,
     },
     materialQtyField: {
-      width: 96,
+      width: 110,
     },
     materialQtyInput: {
       marginBottom: spacing.xs,

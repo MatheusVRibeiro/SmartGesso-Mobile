@@ -356,9 +356,12 @@ export default function RelatoriosIndexScreen() {
         }
       >
         <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Relatórios</Text>
-            <Text style={styles.subtitle}>Visão consolidada da operação</Text>
+          <View style={styles.headerLeft}>
+            <BackButton fallback="/(app)/(tabs)/mais" />
+            <View style={styles.headerText}>
+              <Text style={styles.title}>Relatórios</Text>
+              <Text style={styles.subtitle}>Visão consolidada da operação</Text>
+            </View>
           </View>
           {pendingCount > 0 ? (
             <View style={styles.pendingBadge}>

@@ -121,7 +121,7 @@ export function useQuoteDraft() {
         environments: d.environments.map((env) => {
           if (env.id !== envId) return env;
           const updatedMeasurement = { ...env.measurement, [field]: value };
-          // Auto-calculate area when length or width changes
+          // Auto-calculate area and perimeter when length or width changes
           if (field === 'length' || field === 'width') {
             const length = parseNumber(updatedMeasurement.length);
             const width = parseNumber(updatedMeasurement.width);
@@ -131,7 +131,23 @@ export function useQuoteDraft() {
               length > 0 &&
               width > 0
             ) {
-              updatedMeasurement.area = String(length * width);
+              const calcArea = Math.round(length * width * 100) / 100;
+              const calcPerimeter = Math.round(2 * (length + width) * 100) / 100;
+              updatedMeasurement.area = String(calcArea);
+              updatedMeasurement.perimeter = String(calcPerimeter);
+            }
+          }
+
+          // Auto-estimate perimeter when area is entered directly without length/width
+          if (field === 'area') {
+            const area = parseNumber(updatedMeasurement.area);
+            const length = parseNumber(updatedMeasurement.length);
+            const width = parseNumber(updatedMeasurement.width);
+            if (!Number.isNaN(area) && area > 0) {
+              if (Number.isNaN(length) || Number.isNaN(width) || length <= 0 || width <= 0) {
+                const estimatedPerimeter = Math.round(4 * Math.sqrt(area) * 100) / 100;
+                updatedMeasurement.perimeter = String(estimatedPerimeter);
+              }
             }
           }
           return { ...env, measurement: updatedMeasurement };

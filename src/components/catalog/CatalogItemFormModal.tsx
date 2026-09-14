@@ -36,6 +36,7 @@ export interface CatalogItemFormModalProps {
   visible: boolean;
   title: string;
   submitLabel?: string;
+  initialValues?: Partial<CatalogItemFormValues>;
   /** Quando true, exibe os campos de estoque (schema de material). */
   includeStockFields?: boolean;
   submitting?: boolean;
@@ -59,6 +60,7 @@ function CatalogItemFormModal({
   visible,
   title,
   submitLabel = 'Salvar',
+  initialValues,
   includeStockFields = false,
   submitting = false,
   onSubmit,
@@ -90,9 +92,9 @@ function CatalogItemFormModal({
   // Reinicia o formulário sempre que o modal é aberto.
   useEffect(() => {
     if (visible) {
-      reset(DEFAULT_VALUES);
+      reset({ ...DEFAULT_VALUES, ...initialValues });
     }
-  }, [visible, reset]);
+  }, [visible, initialValues, reset]);
 
   function handleBackdropPress() {
     if (!submitting) {

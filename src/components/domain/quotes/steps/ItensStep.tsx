@@ -50,6 +50,52 @@ export interface ItensStepProps {
   removeService: (id: string) => void;
 }
 
+/**
+ * Retorna o rótulo amigável para a unidade do material (ex.: Metros, Unidades, Quilos, Metros²),
+ * evitando o rótulo genérico e confuso "Qtd".
+ */
+export function getMaterialUnitLabel(unit?: string): string {
+  const u = (unit ?? '').toLowerCase().trim();
+  switch (u) {
+    case 'm':
+    case 'metro':
+    case 'metros':
+      return 'Metros';
+    case 'un':
+    case 'und':
+    case 'unidade':
+    case 'unidades':
+      return 'Unidades';
+    case 'm²':
+    case 'm2':
+      return 'Metros²';
+    case 'kg':
+    case 'quilo':
+    case 'quilos':
+      return 'Quilos (kg)';
+    case 'l':
+    case 'litro':
+    case 'litros':
+      return 'Litros';
+    case 'saco':
+    case 'sacos':
+      return 'Sacos';
+    case 'rolo':
+    case 'rolos':
+      return 'Rolos';
+    case 'cx':
+    case 'caixa':
+    case 'caixas':
+      return 'Caixas';
+    case 'pct':
+    case 'pacote':
+    case 'pacotes':
+      return 'Pacotes';
+    default:
+      return unit ? unit : 'Quantidade';
+  }
+}
+
 export function ItensStep({
   environments,
   materials,
@@ -132,14 +178,14 @@ export function ItensStep({
                   </View>
                   <View style={styles.materialQtyField}>
                     <AppInput
-                      label="Qtd"
+                      label={getMaterialUnitLabel(material.unit)}
                       value={material.quantity}
                       onChangeText={(text) =>
                         updateMaterialQuantity(material.key, text)
                       }
                       keyboardType="decimal-pad"
                       placeholder="0"
-                      accessibilityLabel={`Quantidade de ${material.name}`}
+                      accessibilityLabel={`${getMaterialUnitLabel(material.unit)} de ${material.name}`}
                       style={styles.materialQtyInput}
                     />
                   </View>

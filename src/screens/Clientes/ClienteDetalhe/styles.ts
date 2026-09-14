@@ -1,25 +1,40 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import type { ActivePalette } from '@/src/theme/ThemeProvider';
-import { typography, spacing, borders, radius, sizes } from '@/src/theme';
+import { typography, spacing, radius, sizes } from '@/src/theme';
 
 export const createClienteDetalheStyles = (colors: ActivePalette, isDark: boolean) =>
   StyleSheet.create({
+    outerContainer: {
+      flex: 1,
+      width: '100%',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    innerContainer: {
+      flex: 1,
+      width: '100%',
+      maxWidth: Platform.OS === 'web' ? 880 : undefined,
+    },
+    scrollContent: {
+      paddingBottom: spacing['5xl'],
+    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: spacing.md,
-      marginBottom: spacing.xl,
-      paddingTop: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
     },
-    headerText: {
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
       flex: 1,
     },
-    headerAction: {
-      minWidth: sizes.touchTarget,
-      minHeight: sizes.touchTarget,
-      justifyContent: 'center',
-      alignItems: 'center',
+    headerTitles: {
+      flex: 1,
     },
     title: {
       fontSize: typography.sizes['2xl'],
@@ -29,23 +44,305 @@ export const createClienteDetalheStyles = (colors: ActivePalette, isDark: boolea
     },
     subtitle: {
       marginTop: 2,
-      fontSize: typography.sizes.sm,
+      fontSize: typography.sizes.xs,
       color: colors.textSecondary,
     },
-    sectionTitle: {
-      fontSize: typography.sizes.lg,
+    headerDeleteBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : '#FEF2F2',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : '#FCA5A5',
+    },
+    // ─── Profile Hero Card ──────────────────────────────────────────────
+    heroCardWrapper: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    heroCard: {
+      padding: spacing.lg,
+      borderRadius: radius.xl,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+      gap: spacing.md,
+    },
+    heroTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    heroAvatar: {
+      width: 58,
+      height: 58,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroAvatarText: {
+      fontSize: typography.sizes.xl,
+      fontWeight: typography.weights.bold,
+    },
+    heroInfo: {
+      flex: 1,
+      gap: 4,
+    },
+    heroNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    heroName: {
+      fontSize: typography.sizes.xl,
       fontWeight: typography.weights.bold,
       color: colors.text,
-      marginTop: spacing.xl,
+    },
+    heroDoc: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    typeBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    typeBadgeText: {
+      fontSize: 10,
+      fontWeight: typography.weights.bold,
+      textTransform: 'uppercase',
+    },
+    // ─── Hero Quick Action Strip ────────────────────────────────────────
+    quickActionsStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.divider,
+    },
+    heroActionBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 7,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.inputBackground,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+    },
+    heroActionBtnWhatsapp: {
+      backgroundColor: isDark ? 'rgba(37, 211, 102, 0.12)' : '#ECFDF5',
+      borderColor: isDark ? 'rgba(37, 211, 102, 0.25)' : '#A7F3D0',
+    },
+    heroActionTextWhatsapp: {
+      fontSize: 12,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? '#4ADE80' : '#059669',
+    },
+    heroActionBtnPrimary: {
+      backgroundColor: isDark ? 'rgba(94, 106, 210, 0.15)' : 'rgba(30, 64, 175, 0.1)',
+      borderColor: isDark ? 'rgba(94, 106, 210, 0.3)' : 'rgba(30, 64, 175, 0.2)',
+    },
+    heroActionTextPrimary: {
+      fontSize: 12,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? '#8B93E6' : colors.primary,
+    },
+    heroActionText: {
+      fontSize: 12,
+      fontWeight: typography.weights.medium,
+      color: colors.textSecondary,
+    },
+    // ─── Segment Tabs ───────────────────────────────────────────────────
+    tabsWrapper: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    segmentedControl: {
+      flexDirection: 'row',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.inputBackground,
+      borderRadius: radius.lg,
+      padding: 3,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+    },
+    segmentTab: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 8,
+      borderRadius: radius.md,
+    },
+    segmentTabActive: {
+      backgroundColor: isDark ? '#2E2F33' : colors.surface,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    segmentTabText: {
+      fontSize: typography.sizes.xs + 1,
+      fontWeight: typography.weights.medium,
+      color: colors.textSecondary,
+    },
+    segmentTabTextActive: {
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+    },
+    // ─── Overview Tab Content ───────────────────────────────────────────
+    sectionWrapper: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    detailCard: {
+      padding: spacing.md,
+      borderRadius: radius.xl,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+      gap: spacing.sm,
+    },
+    cardSectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    cardSectionTitle: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    contactRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.04)' : colors.divider,
+    },
+    contactRowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flex: 1,
+    },
+    contactLabel: {
+      fontSize: typography.sizes.xs,
+      color: colors.textSecondary,
+    },
+    contactValue: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.text,
+    },
+    contactRowAction: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.inputBackground,
+    },
+    contactRowActionText: {
+      fontSize: 11,
+      fontWeight: typography.weights.medium,
+      color: colors.primary,
+    },
+    addressText: {
+      fontSize: typography.sizes.sm,
+      color: colors.text,
+      lineHeight: 20,
+    },
+    mapsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 8,
+      borderRadius: radius.md,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.inputBackground,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+      marginTop: spacing.xs,
+    },
+    mapsButtonText: {
+      fontSize: typography.sizes.xs,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? colors.text : colors.primary,
+    },
+    observationsText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      fontStyle: 'italic',
+    },
+    quoteItemCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.sm + 2,
+      borderRadius: radius.lg,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : colors.inputBackground,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.border,
+      marginBottom: spacing.xs,
+    },
+    quoteItemLeft: {
+      gap: 2,
+      flex: 1,
+    },
+    quoteItemTitle: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+    },
+    quoteItemMeta: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    quoteItemRight: {
+      alignItems: 'flex-end',
+      gap: 3,
+    },
+    quoteItemTotal: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+    },
+    editAllButton: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+    },
+    // ─── Edit Tab Form ──────────────────────────────────────────────────
+    formWrapper: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+      marginTop: spacing.md,
       marginBottom: spacing.xs,
     },
     sectionSubtitle: {
-      fontSize: typography.sizes.sm,
+      fontSize: typography.sizes.xs,
       color: colors.textSecondary,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
     fieldGroup: {
-      marginBottom: spacing.lg,
+      marginBottom: spacing.sm,
     },
     label: {
       fontSize: typography.sizes.sm,
@@ -91,7 +388,7 @@ export const createClienteDetalheStyles = (colors: ActivePalette, isDark: boolea
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: radius.md,
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
       minHeight: 96,
       fontSize: typography.sizes.md,
@@ -99,7 +396,24 @@ export const createClienteDetalheStyles = (colors: ActivePalette, isDark: boolea
       textAlignVertical: 'top',
     },
     submitButton: {
-      marginTop: spacing.sm,
-      marginBottom: spacing['3xl'],
+      marginTop: spacing.md,
+      marginBottom: spacing.md,
+    },
+    deleteAccountBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 12,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FCA5A5',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2',
+      marginBottom: spacing['4xl'],
+    },
+    deleteAccountText: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.semibold,
+      color: isDark ? '#F87171' : '#DC2626',
     },
   });

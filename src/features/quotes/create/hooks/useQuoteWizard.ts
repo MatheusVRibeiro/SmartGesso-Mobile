@@ -186,15 +186,6 @@ export function useQuoteWizard(draft: QuoteDraft) {
       setStepError(null);
       const stepKey = STEP_META[currentStep].key;
 
-      // QUIRK DO MONÓLITO PRESERVADO (V5 ETAPA 9 — zero mudança de
-      // comportamento): no index.tsx original, o branch `stepKey === 'local'`
-      // fazia `return (<LocalStep ... />)` dentro do handler goNext — JSX que
-      // é descartado (retorno de onPress), pulando o setCurrentStep. Ou seja,
-      // na etapa 'local' o botão "Continuar" nunca avançava. Reproduzimos o
-      // mesmo early-return. Corrigir isso é arranho de regra/comportamento e
-      // está FORA do escopo desta extração mecânica.
-      if (stepKey === 'local') return;
-
       const result = validateStep(stepKey, draft);
       if (Object.keys(result.serviceErrors).length > 0) {
         onServiceErrors(result.serviceErrors);

@@ -205,6 +205,13 @@ export function AmbientesStep({
                     placeholder="0"
                     keyboardType="decimal-pad"
                     accessibilityLabel={`Perímetro do ambiente ${env.name}`}
+                    helper={
+                      env.measurement.length && env.measurement.width
+                        ? 'Auto-calculado: 2 × (C + L)'
+                        : env.measurement.area
+                          ? 'Auto-estimado: 4 × √Área'
+                          : undefined
+                    }
                   />
                 </View>
                 <View style={styles.environmentMeasurementField}>

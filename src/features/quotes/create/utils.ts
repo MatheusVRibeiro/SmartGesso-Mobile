@@ -36,13 +36,32 @@ export function computeMaterialsTotal(materials: MaterialDraft[]): number {
   return materials.reduce((sum, m) => {
     const qty = parseNumber(m.quantity);
     const price = m.unitPrice ?? 0;
-    return sum + qty * price;
+    return sum + (Number.isNaN(qty) ? 0 : qty * price);
   }, 0);
+}
+
+/**
+ * Converte valor monetário (string formatada com máscara "R$ 1.500,00" ou número pt-BR)
+ * de forma resiliente para número decimal.
+ */
+export function parseMonetaryValue(value: string | number | undefined | null): number {
+  if (value == null) return 0;
+  if (typeof value === 'number') return Number.isNaN(value) ? 0 : value;
+  const str = String(value).trim();
+  if (!str) return 0;
+
+  if (str.includes('R$') || str.includes(',')) {
+    const parsed = parseCurrencyInput(str);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  const num = Number(str);
+  return Number.isNaN(num) ? 0 : num;
 }
 
 /** Soma dos serviços (preço unitário de cada linha). */
 export function computeServicesTotal(services: ServiceDraft[]): number {
-  return services.reduce((sum, s) => sum + parseNumber(s.unitPrice), 0);
+  return services.reduce((sum, s) => sum + parseMonetaryValue(s.unitPrice), 0);
 }
 
 /** Total do orçamento: itens − desconto + margem (% sobre itens). */
@@ -51,9 +70,12 @@ export function computeQuoteTotal(
   discount: string,
   marginPct: string,
 ): number {
-  const discountValue = parseNumber(discount);
+  const discountValue = parseMonetaryValue(discount);
   const marginPctValue = parseNumber(marginPct);
-  return itemsTotal - discountValue + (itemsTotal * marginPctValue) / 100;
+  const safeItems = Number.isNaN(itemsTotal) ? 0 : itemsTotal;
+  const safeDiscount = Number.isNaN(discountValue) ? 0 : discountValue;
+  const safeMargin = Number.isNaN(marginPctValue) ? 0 : marginPctValue;
+  return safeItems - safeDiscount + (safeItems * safeMargin) / 100;
 }
 
 // ─── Payload de submissão (monólito: buildPayload) ──────────────────────────
@@ -75,7 +97,7 @@ export function buildQuotePayload(draft: QuoteDraft): CreateQuoteInput {
       name: s.name.trim(),
       quantity: 1,
       unit: 'un',
-      unitPrice: parseCurrencyInput(s.unitPrice),
+      unitPrice: parseMonetaryValue(s.unitPrice),
     })),
   ];
 
@@ -123,7 +145,7 @@ export function buildQuotePayload(draft: QuoteDraft): CreateQuoteInput {
       draft.prazoMode === 'C'
         ? draft.deadlineDate.trim() || undefined
         : undefined,
-    discount: parseNumber(draft.discount),
+    discount: parseMonetaryValue(draft.discount),
     marginPct: parseNumber(draft.marginPct),
     paymentMethod: draft.paymentMethod,
     observations,

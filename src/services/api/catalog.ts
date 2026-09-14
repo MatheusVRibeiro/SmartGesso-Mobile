@@ -69,4 +69,8 @@ export const catalogService = {
   async removeMaterial(id: string): Promise<void> {
     await api().delete(`/catalog/materials/${id}`);
   },
+  async seedDefaults(): Promise<{ success: boolean; materialsAdded: number; servicesAdded: number }> {
+    const response = await api().post<{ success: boolean; materialsAdded: number; servicesAdded: number }>('/catalog/seed-defaults');
+    return response.data;
+  },
 };

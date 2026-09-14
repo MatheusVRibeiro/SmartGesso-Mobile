@@ -57,7 +57,7 @@ export interface UseQuoteSubmitParams {
   /** Se informado, executa atualização (PATCH /quotes/:id) em vez de criação */
   editQuoteId?: string | null;
   /** Navegação — no monólito, `router.back()` após sucesso. */
-  onBack: () => void;
+  onBack: (quoteId?: string) => void;
   setSnackbar: (value: QuoteSnackbarState | null) => void;
   /**
    * Fluxo do cadastro rápido de cliente (V3 §12): no monólito o onSuccess da
@@ -103,7 +103,7 @@ export function useQuoteSubmit({
         return;
       }
       setSnackbar({ type: 'success', message: 'Orçamento criado com sucesso' });
-      setTimeout(() => onBack(), 600);
+      setTimeout(() => onBack(quote.id), 600);
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });
@@ -137,7 +137,7 @@ export function useQuoteSubmit({
         return;
       }
       setSnackbar({ type: 'success', message: 'Orçamento atualizado com sucesso' });
-      setTimeout(() => onBack(), 600);
+      setTimeout(() => onBack(quote.id), 600);
     },
     onError: (error: unknown) => {
       setSnackbar({ type: 'error', message: toApiError(error).message });

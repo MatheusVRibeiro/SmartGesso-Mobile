@@ -7,7 +7,7 @@
  * estado de UI do draft. Zero mudança de comportamento em relação ao
  * monólito original (1676 linhas).
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -27,6 +27,7 @@ import { COST_VIEW_ROLES } from '@/src/types/permissions';
 import { sizes, useSizeClass } from '@/src/theme';
 import { formatCurrency, formatNumber, formatQuoteCode } from '@/src/utils/format';
 import { ClienteStep } from '@/src/components/domain/quotes/steps/ClienteStep';
+import { LocalStep } from '@/src/components/domain/quotes/steps/LocalStep';
 import { AmbientesStep } from '@/src/components/domain/quotes/steps/AmbientesStep';
 import { ItensStep } from '@/src/components/domain/quotes/steps/ItensStep';
 import { ValoresStep } from '@/src/components/domain/quotes/steps/ValoresStep';
@@ -57,6 +58,7 @@ import type { QuoteSnackbarState } from '@/src/features/quotes/create/hooks/useQ
 import {
   computeCalcKey,
   computeQuoteTotal,
+  parseMonetaryValue,
 } from '@/src/features/quotes/create/utils';
 
 // ─── Screen ─────────────────────────────────────────────────────────────────
@@ -185,18 +187,73 @@ export default function NovoOrcamentoScreen() {
   // ── Submissão (Etapa 8) ────────────────────────────────────────────────────
 
   function handleSelectClient(clientId: string) {
+    const client = clientsQuery.data?.find((c) => c.id === clientId);
+    const hasAddr = Boolean(client && (client.postalCode || client.street || client.city));
     setDraft((d) => ({
       ...d,
       clientId,
       environments: [],
+      local: hasAddr
+        ? {
+            zipCode: client?.postalCode ?? '',
+            street: client?.street ?? '',
+            number: client?.number ?? '',
+            complement: client?.complement ?? '',
+            neighborhood: client?.district ?? '',
+            city: client?.city ?? '',
+            state: client?.state ?? '',
+            reference: d.local.reference ?? '',
+          }
+        : d.local,
     }));
     clearMaterialsCalc();
     setClientModalVisible(false);
   }
 
+  const handleUseClientAddress = useCallback(() => {
+    if (!selectedClient) return;
+    setDraft((d) => ({
+      ...d,
+      local: {
+        zipCode: selectedClient.postalCode ?? '',
+        street: selectedClient.street ?? '',
+        number: selectedClient.number ?? '',
+        complement: selectedClient.complement ?? '',
+        neighborhood: selectedClient.district ?? '',
+        city: selectedClient.city ?? '',
+        state: selectedClient.state ?? '',
+        reference: d.local.reference ?? '',
+      },
+    }));
+  }, [selectedClient, setDraft]);
+
+  const handleNavigateAfterSubmit = useCallback(
+    (createdQuoteId?: string) => {
+      if (createdQuoteId) {
+        router.replace({
+          pathname: '/orcamentos/[id]',
+          params: { id: createdQuoteId },
+        });
+      } else if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/orcamentos');
+      }
+    },
+    [router],
+  );
+
+  const handleHeaderBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/orcamentos');
+    }
+  }, [router]);
+
   const { createMutation, createClientMutation, handleSubmit } = useQuoteSubmit({
     companyId,
-    onBack: () => router.back(),
+    onBack: handleNavigateAfterSubmit,
     setSnackbar,
     onClientCreated: handleSelectClient,
     onCloseQuickClient: () => setQuickClientVisible(false),
@@ -223,86 +280,18 @@ export default function NovoOrcamentoScreen() {
     }
 
     if (stepKey === 'local') {
-      const local = draft.local;
-      const setLocal = (field: keyof QuoteLocalDraft, value: string) =>
-        setDraft((d) => ({ ...d, local: { ...d.local, [field]: value } }));
       return (
-        <View>
-          <Text style={styles.sectionLabel}>
-            Onde o serviço será realizado?
-          </Text>
-          <View style={styles.localRow}>
-            <View style={styles.localFieldHalf}>
-              <AppInput
-                label="CEP"
-                value={local.zipCode}
-                onChangeText={(text) => setLocal('zipCode', text)}
-                mask="cep"
-                placeholder="00000-000"
-                accessibilityLabel="CEP"
-              />
-            </View>
-            <View style={styles.localFieldHalf}>
-              <AppInput
-                label="Número"
-                value={local.number}
-                onChangeText={(text) => setLocal('number', text)}
-                placeholder="Ex.: 123"
-                accessibilityLabel="Número"
-              />
-            </View>
-          </View>
-          <AppInput
-            label="Rua"
-            value={local.street}
-            onChangeText={(text) => setLocal('street', text)}
-            placeholder="Ex.: Rua das Flores"
-            accessibilityLabel="Rua"
-          />
-          <AppInput
-            label="Complemento"
-            value={local.complement}
-            onChangeText={(text) => setLocal('complement', text)}
-            placeholder="Ex.: Apto 42, bloco B (opcional)"
-            accessibilityLabel="Complemento"
-          />
-          <AppInput
-            label="Bairro"
-            value={local.neighborhood}
-            onChangeText={(text) => setLocal('neighborhood', text)}
-            placeholder="Ex.: Centro"
-            accessibilityLabel="Bairro"
-          />
-          <View style={styles.localRow}>
-            <View style={styles.localFieldHalf}>
-              <AppInput
-                label="Cidade"
-                value={local.city}
-                onChangeText={(text) => setLocal('city', text)}
-                placeholder="Ex.: São Paulo"
-                accessibilityLabel="Cidade"
-              />
-            </View>
-            <View style={styles.localFieldHalf}>
-              <AppInput
-                label="Estado"
-                value={local.state}
-                onChangeText={(text) => setLocal('state', text)}
-                placeholder="UF"
-                maxLength={2}
-                autoCapitalize="characters"
-                accessibilityLabel="Estado"
-              />
-            </View>
-          </View>
-          <AppInput
-            label="Referência"
-            value={local.reference}
-            onChangeText={(text) => setLocal('reference', text)}
-            placeholder="Ex.: Próximo ao mercado central (opcional)"
-            accessibilityLabel="Referência"
-          />
-        </View>
+        <LocalStep
+          local={draft.local}
+          selectedClient={selectedClient}
+          onUseClientAddress={handleUseClientAddress}
+          onChangeField={(field, value) =>
+            setDraft((d) => ({ ...d, local: { ...d.local, [field]: value } }))
+          }
+          onBulkChange={(fields) =>
+            setDraft((d) => ({ ...d, local: { ...d.local, ...fields } }))
+          }
+        />
       );
     }
 
@@ -538,7 +527,7 @@ export default function NovoOrcamentoScreen() {
                   {service.name}
                 </Text>
                 <Text style={styles.reviewItemQty}>
-                  {formatCurrency(parseNumber(service.unitPrice))}
+                  {formatCurrency(parseMonetaryValue(service.unitPrice))}
                 </Text>
               </View>
             ))
@@ -554,7 +543,7 @@ export default function NovoOrcamentoScreen() {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Desconto</Text>
             <Text style={styles.summaryValue}>
-              {formatCurrency(parseNumber(draft.discount))}
+              {formatCurrency(parseMonetaryValue(draft.discount))}
             </Text>
           </View>
           <PermissionGate allow={COST_VIEW_ROLES}>
@@ -665,14 +654,14 @@ export default function NovoOrcamentoScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenContainer scroll padding keyboardAvoiding>
+      <ScreenContainer scroll padding keyboardAvoiding maxContentWidth={860}>
         <Stack.Screen options={{ title: 'Novo orçamento', headerShown: false }} />
 
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Voltar"
-            onPress={() => router.back()}
+            onPress={handleHeaderBack}
             hitSlop={8}
             style={styles.backButton}
           >

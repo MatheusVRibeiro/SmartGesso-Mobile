@@ -224,13 +224,27 @@ export function buildCalculateInput(
     .filter(environmentHasMeasurements)
     .flatMap((env) => {
       const m = env.measurement;
+      const length = parseMeasurementValue(m.length);
+      const width = parseMeasurementValue(m.width);
+      let area = parseMeasurementValue(m.area);
+      if (area == null && length != null && width != null && length > 0 && width > 0) {
+        area = Math.round(length * width * 100) / 100;
+      }
+      let perimeter = parseMeasurementValue(m.perimeter);
+      if (perimeter == null || perimeter <= 0) {
+        if (length != null && width != null && length > 0 && width > 0) {
+          perimeter = Math.round(2 * (length + width) * 100) / 100;
+        } else if (area != null && area > 0) {
+          perimeter = Math.round(4 * Math.sqrt(area) * 100) / 100;
+        }
+      }
       return [
         {
-          length: parseMeasurementValue(m.length),
-          width: parseMeasurementValue(m.width),
+          length,
+          width,
           ceilingHeight: parseMeasurementValue(m.height),
-          area: parseMeasurementValue(m.area),
-          perimeter: parseMeasurementValue(m.perimeter),
+          area,
+          perimeter,
         },
       ];
     });
